@@ -68,6 +68,7 @@ static void sigquit_handler(int code, siginfo_t *siginfo, void *context);
 #if USE_SIGNALS_FOR_THREAD_SUSPENSION
 void CorUnix::suspend_handler(int code, siginfo_t *siginfo, void *context);
 void CorUnix::resume_handler(int code, siginfo_t *siginfo, void *context);
+void CorUnix::check_state_and_hijack_handler(int code, siginfo_t *siginfo, void *context);
 #endif // USE_SIGNALS_FOR_THREAD_SUSPENSION
 
 static void common_signal_handler(PEXCEPTION_POINTERS pointers, int code, 
@@ -89,6 +90,7 @@ struct sigaction g_previous_sigquit;
 #if USE_SIGNALS_FOR_THREAD_SUSPENSION
 struct sigaction g_previous_sigusr1;
 struct sigaction g_previous_sigusr2;
+struct sigaction g_previous_sigrtmin;
 #endif // USE_SIGNALS_FOR_THREAD_SUSPENSION
 
 // Pipe used for sending SIGINT / SIGQUIT signals notifications to a helper thread
@@ -136,6 +138,7 @@ BOOL SEHInitializeSignals()
 #if USE_SIGNALS_FOR_THREAD_SUSPENSION
     handle_signal(SIGUSR1, suspend_handler, &g_previous_sigusr1);
     handle_signal(SIGUSR2, resume_handler, &g_previous_sigusr2);
+    handle_signal(SIGRTMIN, check_state_and_hijack_handler, &g_previous_sigrtmin);
 #endif
 
     /* The default action for SIGPIPE is process termination.
@@ -227,6 +230,25 @@ void CorUnix::resume_handler(int code, siginfo_t *siginfo, void *context)
     if (g_previous_sigusr2.sa_sigaction != NULL)
     {
         g_previous_sigusr2.sa_sigaction(code, siginfo, context);
+    }
+}
+
+void CorUnix::check_state_and_hijack_handler(int code, siginfo_t *siginfo, void *context)
+{
+    native_context_t *ucontext = (native_context_t *)context;
+    CONTEXT winContext;
+    CONTEXTFromNativeContext(
+        ucontext,
+        &winContext,
+        CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_FLOATING_POINT);
+
+    ////// not sure whether this context is reliable on FreeBSD. Investigate?
+
+    bool shouldUpdateContext = TakeToSafePointIfManagedCode(&winContext);
+    if(shouldUpdateContext)
+    {
+        // The GC might have modified the contents of the context. Need to write it back.
+        CONTEXTToNativeContext(&winContext, ucontext);
     }
 }
 

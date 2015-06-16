@@ -172,6 +172,121 @@ NESTED_ENTRY JIT_RareDisableHelper, _TEXT, NoHandler
 
 NESTED_END JIT_RareDisableHelper, _TEXT
 
+
+
+//------------------------------------------------
+// OnHijackScalarTripThread_Foo
+//
+NESTED_ENTRY OnHijackScalarTripThread_Foo, _TEXT, NoHandler
+
+    // Make room for the real return address (rip)
+    push_register rax
+
+    // Push callee saved registers. Use macro for this...
+    push_register rbp
+    push_register rbx
+    push_register r15
+    push_register r14
+    push_register r13
+    push_register r12
+
+    // push rax again - this is where integer/pointer return values are returned
+    push_register rax
+
+    mov                 rdi, rsp
+
+    alloc_stack         0x20
+
+    // First float return register
+    movdqa              [rsp], xmm0
+    // Second float return register
+    movdqa              [rsp+0x10], xmm1
+
+    END_PROLOGUE
+
+    call                C_FUNC(OnHijackScalarWorker)  
+
+    movdqa              xmm0, [rsp]
+    movdqa              xmm1, [rsp+0x10]
+    free_stack          0x20
+    pop_register        rax
+
+    POP_CALLEE_SAVED_REGISTERS
+    ret
+
+NESTED_END OnHijackScalarTripThread_Foo, _TEXT
+
+
+//------------------------------------------------
+// OnHijackObjectTripThread_Foo
+//
+NESTED_ENTRY OnHijackObjectTripThread_Foo, _TEXT, NoHandler 
+
+    // Make room for the real return address (rip)
+    push_register rax
+
+    // Push callee saved registers.
+    push_register rbp
+    push_register rbx
+    push_register r15
+    push_register r14
+    push_register r13
+    push_register r12
+
+    // push rax again - this is where integer/pointer return values are returned
+    push_register rax
+
+    mov                 rdi, rsp
+
+    END_PROLOGUE
+
+    call                C_FUNC(OnHijackObjectWorker)  
+
+    pop_register        rax
+    
+    POP_CALLEE_SAVED_REGISTERS
+    ret
+
+NESTED_END OnHijackObjectTripThread_Foo, _TEXT
+
+
+//------------------------------------------------
+// OnHijackInteriorPointerTripThread_Foo
+//
+NESTED_ENTRY OnHijackInteriorPointerTripThread_Foo, _TEXT, NoHandler 
+
+    // Make room for the real return address (rip)
+    push_register rax
+
+    // Push callee saved registers.
+    push_register rbp
+    push_register rbx
+    push_register r15
+    push_register r14
+    push_register r13
+    push_register r12
+
+    // push rax again - this is where integer/pointer return values are returned
+    push_register rax
+
+    mov                 rdi, rsp
+
+    END_PROLOGUE
+
+    call                C_FUNC(OnHijackInteriorPointerWorker)  
+
+    pop_register        rax
+    
+    POP_CALLEE_SAVED_REGISTERS
+    ret
+
+NESTED_END OnHijackInteriorPointerTripThread_Foo, _TEXT
+
+
+
+
+
+
 LEAF_ENTRY SinglecastDelegateInvokeStub, _TEXT                                        
                                                                                       
         test    rdi, rdi                                                              

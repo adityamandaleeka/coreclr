@@ -258,7 +258,7 @@ void FaultingExceptionFrame::UpdateRegDisplay(const PREGDISPLAY pRD)
     pRD->IsCallerSPValid      = FALSE;        // Don't add usage of this field.  This is only temporary.
 }
 
-#ifdef FEATURE_HIJACK
+//#if defined(FEATURE_HIJACK)
 TADDR ResumableFrame::GetReturnAddressPtr()
 {
     LIMITED_METHOD_DAC_CONTRACT;
@@ -344,7 +344,8 @@ void HijackFrame::UpdateRegDisplay(const PREGDISPLAY pRD)
     pRD->SP   = (ULONG64)(pRD->PCTAddr + sizeof(TADDR));
 */
 }
-#endif // FEATURE_HIJACK
+
+/////////#endif // FEATURE_HIJACK
 
 BOOL isJumpRel32(PCODE pCode)
 {

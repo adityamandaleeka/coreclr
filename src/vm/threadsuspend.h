@@ -240,6 +240,10 @@ public:
     static void SuspendEE(SUSPEND_REASON reason);
     static void RestartEE(BOOL bFinishedGC, BOOL SuspendSucceded); //resume threads.
 
+#ifdef FEATURE_PAL
+    static void InitializeGCSuspensionHandler();
+#endif
+
     static void LockThreadStore(ThreadSuspend::SUSPEND_REASON reason);
     static void UnlockThreadStore(BOOL bThreadDestroyed = FALSE,
                                   ThreadSuspend::SUSPEND_REASON reason = ThreadSuspend::SUSPEND_OTHER);

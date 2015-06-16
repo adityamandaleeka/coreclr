@@ -1011,11 +1011,11 @@ typedef DWORD (*AppropriateWaitFunc) (void *args, DWORD timeout, DWORD option);
 // of that physical thread.
 
 
-#ifdef FEATURE_HIJACK
+///#ifdef FEATURE_HIJACK
 EXTERN_C void STDCALL OnHijackObjectWorker(HijackArgs * pArgs);
 EXTERN_C void STDCALL OnHijackInteriorPointerWorker(HijackArgs * pArgs);
 EXTERN_C void STDCALL OnHijackScalarWorker(HijackArgs * pArgs);
-#endif // FEATURE_HIJACK
+///#endif // FEATURE_HIJACK
 
 
 // This is the code we pass around for Thread.Interrupt, mainly for assertions
@@ -1060,13 +1060,13 @@ class Thread: public IUnknown
 
     friend void CommonTripThread();
 
-#ifdef FEATURE_HIJACK
+//#ifdef FEATURE_HIJACK
     // MapWin32FaultToCOMPlusException needs access to Thread::IsAddrOfRedirectFunc()
     friend DWORD MapWin32FaultToCOMPlusException(EXCEPTION_RECORD *pExceptionRecord);
     friend void STDCALL OnHijackObjectWorker(HijackArgs * pArgs);
     friend void STDCALL OnHijackInteriorPointerWorker(HijackArgs * pArgs);
     friend void STDCALL OnHijackScalarWorker(HijackArgs * pArgs);
-#endif
+//#endif
 
     friend void         InitThreadManager();
     friend void         ThreadBaseObject::SetDelegate(OBJECTREF delegate);
@@ -1143,9 +1143,9 @@ public:
 
         TS_YieldRequested         = 0x00000040,    // The task should yield
 
-#ifdef FEATURE_HIJACK
+//#ifdef FEATURE_HIJACK
         TS_Hijacked               = 0x00000080,    // Return address has been hijacked
-#endif // FEATURE_HIJACK
+///#endif // FEATURE_HIJACK
         TS_BlockGCForSO           = 0x00000100,    // If a thread does not have enough stack, WaitUntilGCComplete may fail.
                                                    // Either GC suspension will wait until the thread has cleared this bit,
                                                    // Or the current thread is going to spin if GC has suspended all threads.
@@ -2842,6 +2842,8 @@ public:
         STR_SwitchedOut,
     };
 
+    int RaiseGcSuspensionSignal();
+
 #ifndef DISABLE_THREADSUSPEND
     // SuspendThread
     //   Attempts to OS-suspend the thread, whichever GC mode it is in.
@@ -2856,6 +2858,7 @@ public:
     SuspendThreadResult SuspendThread(BOOL fOneTryOnly = FALSE, DWORD *pdwSuspendCount = NULL);
 
     DWORD ResumeThread();
+
 #endif  // DISABLE_THREADSUSPEND
 
     int GetThreadPriority();
@@ -3979,12 +3982,13 @@ public:
     // register context.
     BOOL GetSafelyRedirectableThreadContext(DWORD dwOptions, T_CONTEXT * pCtx, REGDISPLAY * pRD);
 
-private:
+//private:
 #ifdef FEATURE_HIJACK
     // Add and remove hijacks for JITted calls.
     void    HijackThread(VOID *pvHijackAddr, ExecutionState *esb);
     BOOL    HandledJITCase(BOOL ForTaskSwitchIn = FALSE);
 
+#endif // FEATURE_HIJACK
     VOID          *m_pvHJRetAddr;             // original return address (before hijack)
     VOID         **m_ppvHJRetAddrPtr;         // place we bashed a new return address
     MethodDesc  *m_HijackedFunction;        // remember what we hijacked
@@ -3993,8 +3997,9 @@ private:
     PCODE       m_LastRedirectIP;
     ULONG       m_SpinCount;
 #endif // _TARGET_X86_
-#endif // FEATURE_HIJACK
+// #endif // FEATURE_HIJACK
 
+private: /// moved from above
 
     DWORD       m_Win32FaultAddress;
     DWORD       m_Win32FaultCode;

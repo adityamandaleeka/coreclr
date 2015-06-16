@@ -1243,6 +1243,12 @@ BOOL StackFrameIterator::Init(Thread *    pThread,
     if (m_crawl.pFrame != FRAME_TOP)
     {
         m_crawl.SetCurGSCookie(Frame::SafeGetGSCookiePtr(m_crawl.pFrame));
+
+        // unsigned uFrameAttribs = m_crawl.pFrame->GetFrameAttribs();
+        // if((uFrameAttribs & Frame::FRAME_ATTR_MEOW) != 0)
+        // {
+        //     /////
+        // }
     }
 
     m_crawl.pRD = pRegDisp;

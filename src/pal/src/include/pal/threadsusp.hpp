@@ -80,7 +80,10 @@ Abstract:
 #endif // HAS_POSIX_SEMAPHORES
 
 #include <stdarg.h>
-	
+
+bool
+TakeToSafePointIfManagedCode(CONTEXT *context);
+
 namespace CorUnix
 {
 #ifdef _DEBUG
@@ -93,6 +96,12 @@ namespace CorUnix
         HANDLE hTarget,
         DWORD *pdwSuspendCount
     );
+
+    PAL_ERROR
+    InternalRaiseGcSuspSignal(
+        CPalThread *pthrSuspender,
+        HANDLE hTarget
+        );
 
     PAL_ERROR
     InternalResumeThread(
@@ -109,6 +118,7 @@ namespace CorUnix
         HandleResumeSignal. */
         friend void suspend_handler(int code, siginfo_t *siginfo, void *context);
         friend void resume_handler(int code, siginfo_t *siginfo, void *context);
+        friend void check_state_and_hijack_handler(int code, siginfo_t *siginfo, void *context); //// remove if not needed here.
 #endif    
 
         public:
@@ -520,6 +530,12 @@ namespace CorUnix
             InternalSuspendNewThreadFromData(
                 CPalThread *pThread
             );  
+
+            PAL_ERROR
+            InternalRaiseGcSuspSignalFromData(
+                CPalThread *pthrSuspender,
+                CPalThread *pthrTarget
+            );
 
             PAL_ERROR
             InternalSuspendThreadFromData(

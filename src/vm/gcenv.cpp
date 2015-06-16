@@ -237,6 +237,11 @@ StackWalkAction GcStackCrawlCallBack(CrawlFrame* pCF, VOID* pData)
 
     MethodDesc *pMD = pCF->GetFunction();
 
+    if(pMD == NULL)
+    {
+        //// is this normal?
+    }
+
 #ifdef GC_PROFILING
     gcctx->sc->pMD = pMD;
 #endif //GC_PROFILING
