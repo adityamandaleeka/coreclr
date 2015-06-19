@@ -682,7 +682,7 @@ void InitThreadManager();
 // When we want to take control of a thread at a safe point, the thread will
 // eventually come back to us in one of the following trip functions:
 
-#ifdef FEATURE_HIJACK
+#ifdef FEATURE_HIJACK //// maybe new stuff should go here too?
 EXTERN_C void __stdcall OnHijackObjectTripThread();    // hijacked JIT code is returning an objectref
 EXTERN_C void __stdcall OnHijackInteriorPointerTripThread();    // hijacked JIT code is returning a byref
 EXTERN_C void __stdcall OnHijackScalarTripThread();    // hijacked JIT code is returning a non-objectref, non-FP

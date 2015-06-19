@@ -6858,7 +6858,7 @@ void Thread::WaitSuspendEvents(BOOL fDoWait)
     }
 }
 
-#ifdef FEATURE_HIJACK
+// #ifdef FEATURE_HIJACK
 // For the PAL, we poll so we don't need to hijack //////////////////////////// update this.
 
 //                      Hijacking JITted calls
@@ -6879,6 +6879,7 @@ struct ExecutionState
     ExecutionState() : m_FirstPass(TRUE) {LIMITED_METHOD_CONTRACT;  }
 };
 
+#ifdef FEATURE_HIJACK
 // Client is responsible for suspending the thread before calling
 void Thread::HijackThread(VOID *pvHijackAddr, ExecutionState *esb)
 {
@@ -7188,6 +7189,8 @@ BOOL ThreadCaughtInKernelModeExceptionHandling(Thread *pThread, CONTEXT *ctx)
 #endif //WORKAROUND_RACES_WITH_KERNEL_MODE_EXCEPTION_HANDLING
 #endif //_TARGET_X86_
 
+
+#endif ///// FEATURE_HIJACK
 // Get the ExecutionState for the specified *SUSPENDED* thread.  Note that this is
 // a 'StackWalk' call back (PSTACKWALKFRAMESCALLBACK).
 StackWalkAction SWCB_GetExecutionState(CrawlFrame *pCF, VOID *pData)
@@ -7357,6 +7360,7 @@ StackWalkAction SWCB_GetExecutionState(CrawlFrame *pCF, VOID *pData)
     return action;
 }
 
+#ifdef FEATURE_HIJACK
 // Get the ExecutionState for the specified SwitchIn thread.  Note that this is
 // a 'StackWalk' call back (PSTACKWALKFRAMESCALLBACK).
 StackWalkAction SWCB_GetExecutionStateForSwitchIn(CrawlFrame *pCF, VOID *pData)
@@ -7712,9 +7716,11 @@ void STDCALL OnHijackObjectWorker(HijackArgs * pArgs)
     CONTRACT_VIOLATION(SOToleranceViolation);
 #ifdef HIJACK_NONINTERRUPTIBLE_THREADS
 
-    if(pArgs->ReturnValue < 100)
+    if(pArgs->ReturnValue < 100 && pArgs->ReturnValue != 0)
     {
-        //// something is wrong.
+        printf("Foo!");
+        DWORD currThreadId = thread->GetThreadId();
+        int asdf = 123; //// something is wrong.
     }
 
     OBJECTREF       oref(ObjectToOBJECTREF(*(Object **) &pArgs->ReturnValue));
@@ -8286,7 +8292,13 @@ retry_for_debugger:
 
 #ifdef FEATURE_PAL
 
-
+static DWORD threadId;
+static SString methodInfo;
+static MetaSig::RETURNTYPE methodRetType;
+static PCODE interruptedIp;
+static PCODE codeInfoStartAddr;
+static PCODE retAddrFromStackWalk;
+static PCODE retAddrFromBp;
 
 // Three main cases:
 //     This is native code or preemptive GC is not disabled: Nothing to do.
@@ -8336,6 +8348,31 @@ bool PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context)
         // non-interruptible
         /////////// maybe just modify HijackThread to be able to call it from here instead of doing all this stuff?
 
+
+
+
+    ExecutionState  esb;
+    StackWalkAction action;
+    REGDISPLAY rd;
+    pThread->InitRegDisplay(&rd, context, true);
+
+    action = pThread->StackWalkFramesEx(&rd, SWCB_GetExecutionState, &esb,
+                                   QUICKUNWIND | DISABLE_MISSING_FRAME_DETECTION |
+                                   /* THREAD_IS_SUSPENDED | */ ALLOW_ASYNC_STACK_WALK, NULL);
+
+
+
+
+
+
+
+
+
+        ENABLE_FORBID_GC_LOADER_USE_IN_THIS_SCOPE();
+        // Mark that we are performing a stackwalker like operation on the current thread.
+        // This is necessary to allow the signature parsing functions to work without triggering any loads
+        ClrFlsValueSwitch _threadStackWalking(TlsIdx_StackWalkerWalkingThread, pThread);
+
         void *pvHijackAddr = OnHijackScalarTripThread_Foo;
         MethodDesc * pMD = codeInfo.GetMethodDesc();
         MetaSig::RETURNTYPE type = pMD->ReturnsObject();
@@ -8348,10 +8385,14 @@ bool PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context)
             pvHijackAddr = OnHijackInteriorPointerTripThread_Foo;
         }
 
-        ENABLE_FORBID_GC_LOADER_USE_IN_THIS_SCOPE();
-        // Mark that we are performing a stackwalker like operation on the current thread.
-        // This is necessary to allow the signature parsing functions to work without triggering any loads
-        ClrFlsValueSwitch _threadStackWalking(TlsIdx_StackWalkerWalkingThread, pThread);
+threadId = pThread->GetThreadId();
+methodInfo.Clear();
+pMD->GetFullMethodInfo(methodInfo);
+methodRetType = type;
+interruptedIp = ip;
+codeInfoStartAddr = startAddr;
+
+        
 
         // Don't hijack if are in the first level of running a filter/finally/catch.
         // This is because they share ebp with their containing function further down the
@@ -8380,10 +8421,34 @@ bool PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context)
 
         _ASSERTE(pvHijackAddr != NULL);
 
-        PCODE bp = context->Rbp;
-        pThread->m_ppvHJRetAddrPtr = (void**)(bp+8);
+
+
+// PVOID handlerData;
+// ULONG64 establisherFrame = NULL;
+
+//         RtlVirtualUnwind(UNW_FLAG_NHANDLER, ////////not sure if this is the right one
+//             codeInfo.GetModuleBase(),
+//             ip, ///dispatcherContext.ControlPc,
+//             codeInfo.GetFunctionEntry(),
+//             *context,
+//             &handlerData,
+//             &establisherFrame,
+//             NULL);
+
+
+
+if(esb.m_ppvRetAddrPtr == NULL)
+{
+    //SOMETHING WRONG
+    int asdf = 123;
+}
+retAddrFromStackWalk = (PCODE) esb.m_ppvRetAddrPtr;
+retAddrFromBp = (context->Rbp) + 8;
+
+        ////PCODE bp = context->Rbp;
+        pThread->m_ppvHJRetAddrPtr = esb.m_ppvRetAddrPtr;////(void**)(bp+8);
         pThread->m_pvHJRetAddr = *(pThread->m_ppvHJRetAddrPtr);
-        *(void**)(bp+8) = pvHijackAddr;
+        *(void**)esb.m_ppvRetAddrPtr /*(bp+8)*/ = pvHijackAddr;
 
         pThread->SetThreadState(Thread::TS_Hijacked);
     }
