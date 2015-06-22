@@ -1161,10 +1161,6 @@ void EEStartupHelper(COINITIEE fFlags)
 
         InitializeExceptionHandling();
 
-#ifdef FEATURE_PAL
-        ThreadSuspend::InitializeGCSuspensionHandler();
-#endif // FEATURE_PAL
-    
         //
         // Install our global exception filter
         //

@@ -81,9 +81,6 @@ Abstract:
 
 #include <stdarg.h>
 
-bool
-TakeToSafePointIfManagedCode(CONTEXT *context);
-
 namespace CorUnix
 {
 #ifdef _DEBUG
@@ -98,12 +95,6 @@ namespace CorUnix
     );
 
     PAL_ERROR
-    InternalRaiseGcSuspSignal(
-        CPalThread *pthrSuspender,
-        HANDLE hTarget
-        );
-
-    PAL_ERROR
     InternalResumeThread(
         CPalThread *pthrResumer,
         HANDLE hTarget,
@@ -111,16 +102,14 @@ namespace CorUnix
     );
 
     class CThreadSuspensionInfo : public CThreadInfoInitializer
-    {    
+    {
 #if USE_SIGNALS_FOR_THREAD_SUSPENSION
         /* suspend_handler and resume_handler are friends of CThreadSuspensionInfo,
         which allows them to call private functions: HandleSuspendSignal and 
-        HandleResumeSignal. */
+        HandleResumeSignal. */ 
         friend void suspend_handler(int code, siginfo_t *siginfo, void *context);
         friend void resume_handler(int code, siginfo_t *siginfo, void *context);
-        friend void check_state_and_hijack_handler(int code, siginfo_t *siginfo, void *context); //// remove if not needed here.
-#endif    
-
+#endif  
         public:
             BOOL
             IsSuspensionStateSafe()
@@ -529,12 +518,6 @@ namespace CorUnix
             PAL_ERROR
             InternalSuspendNewThreadFromData(
                 CPalThread *pThread
-            );  
-
-            PAL_ERROR
-            InternalRaiseGcSuspSignalFromData(
-                CPalThread *pthrSuspender,
-                CPalThread *pthrTarget
             );
 
             PAL_ERROR

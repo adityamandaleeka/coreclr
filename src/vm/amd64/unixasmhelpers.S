@@ -173,7 +173,7 @@ NESTED_ENTRY JIT_RareDisableHelper, _TEXT, NoHandler
 NESTED_END JIT_RareDisableHelper, _TEXT
 
 
-
+#ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
 //------------------------------------------------
 // OnHijackScalarTripThread_Foo
 //
@@ -204,7 +204,7 @@ NESTED_ENTRY OnHijackScalarTripThread_Foo, _TEXT, NoHandler
 
     END_PROLOGUE
 
-    call                C_FUNC(OnHijackScalarWorker)  
+    call                C_FUNC(OnHijackScalarWorker)
 
     movdqa              xmm0, [rsp]
     movdqa              xmm1, [rsp+0x10]
@@ -282,7 +282,7 @@ NESTED_ENTRY OnHijackInteriorPointerTripThread_Foo, _TEXT, NoHandler
 
 NESTED_END OnHijackInteriorPointerTripThread_Foo, _TEXT
 
-
+#endif // FEATURE_UNIX_GC_REDIRECT_HIJACK
 
 
 

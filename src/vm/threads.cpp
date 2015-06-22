@@ -8243,9 +8243,9 @@ void CommonTripThread()
     if (thread->CatchAtSafePoint())
     {
         _ASSERTE(!ThreadStore::HoldingThreadStore(thread));
-//#ifdef FEATURE_HIJACK
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
         thread->UnhijackThread();
-//#endif // FEATURE_HIJACK
+#endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
 
         // Trap
         thread->PulseGCMode();

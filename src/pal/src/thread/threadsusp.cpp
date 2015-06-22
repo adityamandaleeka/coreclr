@@ -85,50 +85,6 @@ static sigset_t smSuspmask; // used when a thread is suspended via signals; bloc
 static sigset_t smContmask; // used when a thread is in sigsuspend on a suspension retry, waiting to receive a SIGUSR1
 #endif // USE_SIGNALS_FOR_THREAD_SUSPENSION
 
-
-DWORD
-PALAPI
-RaiseGcSuspensionSignal(
-          IN HANDLE hThread)
-{
-    PAL_ERROR palError;
-    CPalThread *pthrSuspender;
-    pthrSuspender = InternalGetCurrentThread();
-    palError = InternalRaiseGcSuspSignal(
-        pthrSuspender,
-        hThread
-        );
-
-    return palError;
-}
-
-PSUSPEND_MANAGED_CODE_HANDLER g_takeManagedCodeToSafePointHandler = NULL;
-
-VOID
-PALAPI 
-PAL_SetTakeManagedThreadToSafePointHandler(
-    IN PSUSPEND_MANAGED_CODE_HANDLER handler)
-
-{
-    g_takeManagedCodeToSafePointHandler = handler;
-}
-
-
-
-/// signal handler calls this
-/// returns whether context has been modified and should be reapplied.
-bool
-TakeToSafePointIfManagedCode(CONTEXT *context)
-{
-    bool needToUpdateContext = false;
-    if (g_takeManagedCodeToSafePointHandler != NULL)
-    {
-        needToUpdateContext = g_takeManagedCodeToSafePointHandler(context);
-    }
-
-    return needToUpdateContext;
-}
-
 /*++
 Function:
   SuspendThread
@@ -168,44 +124,6 @@ SuspendThread(
     PERF_EXIT(SuspendThread);
     return dwSuspendCount;
 }
-
-
-
-PAL_ERROR
-CorUnix::InternalRaiseGcSuspSignal(
-    CPalThread *pthrSuspender,
-    HANDLE hTargetThread
-    )
-{
-    PAL_ERROR palError = NO_ERROR;
-    CPalThread *pthrTarget = NULL;
-    IPalObject *pobjThread = NULL;
-
-    palError = InternalGetThreadDataFromHandle(
-        pthrSuspender,
-        hTargetThread,
-        0, // THREAD_SUSPEND_RESUME
-        &pthrTarget,
-        &pobjThread
-        );
-
-    if (NO_ERROR == palError)
-    {
-        palError = pthrSuspender->suspensionInfo.InternalRaiseGcSuspSignalFromData(
-            pthrSuspender,
-            pthrTarget
-            );
-    } 
-
-    if (NULL != pobjThread)
-    {
-        pobjThread->ReleaseReference(pthrSuspender);
-    }
-
-    return palError;
-}
-
-
 
 /*++
 Function:
@@ -313,24 +231,6 @@ CThreadSuspensionInfo::InternalSuspendNewThreadFromData(
 
     return palError;
 }
-
-
-PAL_ERROR
-CThreadSuspensionInfo::InternalRaiseGcSuspSignalFromData(
-    CPalThread *pthrSuspender,
-    CPalThread *pthrTarget
-    )
-{
-    PAL_ERROR palError = NO_ERROR;
-    pthrSuspender->suspensionInfo.SetPerformingSuspension(TRUE);
-
-    int nPthreadRet = pthread_kill(pthrTarget->GetPThreadSelf(), SIGRTMIN);
-    (void)nPthreadRet;
-
-    pthrSuspender->suspensionInfo.SetPerformingSuspension(FALSE);
-    return palError;
-}
-
 
 /*++
 Function:
@@ -450,7 +350,7 @@ CThreadSuspensionInfo::InternalSuspendThreadFromData(
                 {
                     if (!fSelfSuspend)
                     {
-                        pthrTarget->suspensionInfo.WaitOnSuspendSemaphore();                        
+                        pthrTarget->suspensionInfo.WaitOnSuspendSemaphore();
                     }
                 }
                 else
@@ -567,7 +467,7 @@ CThreadSuspensionInfo::InternalSuspendThreadFromData(
     }
 
     pthrSuspender->suspensionInfo.SetPerformingSuspension(FALSE);
-    
+
     return palError;
 }
 
@@ -1916,6 +1816,7 @@ CThreadSuspensionInfo::HandleResumeSignal()
 
     return true;
 }
+
 #else // USE_SIGNALS_FOR_THREAD_SUSPENSION
 
 /*++

@@ -682,14 +682,21 @@ void InitThreadManager();
 // When we want to take control of a thread at a safe point, the thread will
 // eventually come back to us in one of the following trip functions:
 
-#ifdef FEATURE_HIJACK //// maybe new stuff should go here too?
-EXTERN_C void __stdcall OnHijackObjectTripThread();    // hijacked JIT code is returning an objectref
-EXTERN_C void __stdcall OnHijackInteriorPointerTripThread();    // hijacked JIT code is returning a byref
-EXTERN_C void __stdcall OnHijackScalarTripThread();    // hijacked JIT code is returning a non-objectref, non-FP
+#ifdef FEATURE_HIJACK
+EXTERN_C void __stdcall OnHijackObjectTripThread();                 // hijacked JIT code is returning an objectref
+EXTERN_C void __stdcall OnHijackInteriorPointerTripThread();        // hijacked JIT code is returning a byref
+EXTERN_C void __stdcall OnHijackScalarTripThread();                 // hijacked JIT code is returning a non-objectref, non-FP
 #ifdef _TARGET_X86_
-EXTERN_C void __stdcall OnHijackFloatingPointTripThread();  // hijacked JIT code is returning an FP value
+EXTERN_C void __stdcall OnHijackFloatingPointTripThread();          // hijacked JIT code is returning an FP value
 #endif // _TARGET_X86_
 #endif // FEATURE_HIJACK
+
+/////////////rename these Foo things
+#ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
+EXTERN_C void         OnHijackObjectTripThread_Foo();             // hijacked JIT code is returning an objectref
+EXTERN_C void         OnHijackInteriorPointerTripThread_Foo();    // hijacked JIT code is returning a byref
+EXTERN_C void         OnHijackScalarTripThread_Foo();             // hijacked JIT code is returning a non-objectref, non-FP
+#endif // FEATURE_UNIX_GC_REDIRECT_HIJACK
 
 void CommonTripThread();
 
@@ -1010,13 +1017,11 @@ typedef DWORD (*AppropriateWaitFunc) (void *args, DWORD timeout, DWORD option);
 // unstarted System.Thread), then this instance can be found in the TLS
 // of that physical thread.
 
-
-///#ifdef FEATURE_HIJACK
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
 EXTERN_C void STDCALL OnHijackObjectWorker(HijackArgs * pArgs);
 EXTERN_C void STDCALL OnHijackInteriorPointerWorker(HijackArgs * pArgs);
 EXTERN_C void STDCALL OnHijackScalarWorker(HijackArgs * pArgs);
-///#endif // FEATURE_HIJACK
-
+#endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
 
 // This is the code we pass around for Thread.Interrupt, mainly for assertions
 #define APC_Code    0xEECEECEE
@@ -1060,13 +1065,17 @@ class Thread: public IUnknown
 
     friend void CommonTripThread();
 
-//#ifdef FEATURE_HIJACK
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
     // MapWin32FaultToCOMPlusException needs access to Thread::IsAddrOfRedirectFunc()
     friend DWORD MapWin32FaultToCOMPlusException(EXCEPTION_RECORD *pExceptionRecord);
-    friend void STDCALL OnHijackObjectWorker(HijackArgs * pArgs);
-    friend void STDCALL OnHijackInteriorPointerWorker(HijackArgs * pArgs);
-    friend void STDCALL OnHijackScalarWorker(HijackArgs * pArgs);
-//#endif
+    friend void STDCALL OnHijackObjectWorker(HijackArgs *pArgs);
+    friend void STDCALL OnHijackInteriorPointerWorker(HijackArgs *pArgs);
+    friend void STDCALL OnHijackScalarWorker(HijackArgs *pArgs);
+#endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
+
+#ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
+    friend void PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context);
+#endif // FEATURE_UNIX_GC_REDIRECT_HIJACK
 
     friend void         InitThreadManager();
     friend void         ThreadBaseObject::SetDelegate(OBJECTREF delegate);
@@ -1143,9 +1152,10 @@ public:
 
         TS_YieldRequested         = 0x00000040,    // The task should yield
 
-//#ifdef FEATURE_HIJACK
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
         TS_Hijacked               = 0x00000080,    // Return address has been hijacked
-///#endif // FEATURE_HIJACK
+#endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
+
         TS_BlockGCForSO           = 0x00000100,    // If a thread does not have enough stack, WaitUntilGCComplete may fail.
                                                    // Either GC suspension will wait until the thread has cleared this bit,
                                                    // Or the current thread is going to spin if GC has suspended all threads.
@@ -2842,7 +2852,9 @@ public:
         STR_SwitchedOut,
     };
 
-    int RaiseGcSuspensionSignal();
+#ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
+    bool RaiseGcSuspensionSignal();
+#endif // FEATURE_UNIX_GC_REDIRECT_HIJACK
 
 #ifndef DISABLE_THREADSUSPEND
     // SuspendThread
@@ -3982,24 +3994,23 @@ public:
     // register context.
     BOOL GetSafelyRedirectableThreadContext(DWORD dwOptions, T_CONTEXT * pCtx, REGDISPLAY * pRD);
 
-//private:
+private:
 #ifdef FEATURE_HIJACK
     // Add and remove hijacks for JITted calls.
     void    HijackThread(VOID *pvHijackAddr, ExecutionState *esb);
     BOOL    HandledJITCase(BOOL ForTaskSwitchIn = FALSE);
 
-#endif // FEATURE_HIJACK
-    VOID          *m_pvHJRetAddr;             // original return address (before hijack)
-    VOID         **m_ppvHJRetAddrPtr;         // place we bashed a new return address
-    MethodDesc  *m_HijackedFunction;        // remember what we hijacked
-
 #ifdef _TARGET_X86_
     PCODE       m_LastRedirectIP;
     ULONG       m_SpinCount;
 #endif // _TARGET_X86_
-// #endif // FEATURE_HIJACK
+#endif // FEATURE_HIJACK
 
-private: /// moved from above
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
+    VOID        *m_pvHJRetAddr;           // original return address (before hijack)
+    VOID       **m_ppvHJRetAddrPtr;       // place we bashed a new return address
+    MethodDesc  *m_HijackedFunction;      // remember what we hijacked
+#endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
 
     DWORD       m_Win32FaultAddress;
     DWORD       m_Win32FaultCode;

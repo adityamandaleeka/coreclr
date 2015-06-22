@@ -1958,12 +1958,6 @@ GetExitCodeThread(
 PALIMPORT
 DWORD
 PALAPI
-RaiseGcSuspensionSignal(
-          IN HANDLE hThread);
-
-PALIMPORT
-DWORD
-PALAPI
 SuspendThread(
           IN HANDLE hThread);
 
@@ -5419,6 +5413,16 @@ VOID
 PALAPI 
 FlushProcessWriteBuffers();
 
+typedef void (*PAL_ActivationFunction)(CONTEXT *context);
+
+PALIMPORT
+BOOL
+PALAPI
+PAL_InjectActivation(
+    IN HANDLE hThread,
+    IN PAL_ActivationFunction pActivationFunction
+);
+
 #define VER_PLATFORM_WIN32_WINDOWS        1
 #define VER_PLATFORM_WIN32_NT        2
 #define VER_PLATFORM_UNIX            10
@@ -6347,19 +6351,12 @@ public:
 };
 
 typedef VOID (PALAPI *PHARDWARE_EXCEPTION_HANDLER)(PAL_SEHException* ex);
-typedef bool (PALAPI *PSUSPEND_MANAGED_CODE_HANDLER)(CONTEXT *context);
 
 PALIMPORT
 VOID
 PALAPI
 PAL_SetHardwareExceptionHandler(
     IN PHARDWARE_EXCEPTION_HANDLER exceptionHandler);
-
-PALIMPORT
-VOID
-PALAPI
-PAL_SetTakeManagedThreadToSafePointHandler(
-    IN PSUSPEND_MANAGED_CODE_HANDLER handler);
 
 class PAL_CatchHardwareExceptionHolder
 {
