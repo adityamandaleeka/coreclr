@@ -4993,7 +4993,6 @@ HRESULT ThreadSuspend::SuspendRuntime(ThreadSuspend::SUSPEND_REASON reason)
                 countThreads++;
 
 #ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
-                ///// Handle return value somehow?
                 bool gcSuspensionSignalSuccess = thread->RaiseGcSuspensionSignal();
                 if (!gcSuspensionSignalSuccess)
                 {
@@ -8275,9 +8274,6 @@ void PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context)
     ICodeManager *pEECM = codeInfo.GetCodeManager();
     _ASSERTE(pEECM != NULL);
 
-    // Indicates whether the context passed in might have been modified.
-    ////bool contextModified = false;
-
     bool isAtSafePoint = pEECM->IsGcSafe(&codeInfo, addrOffset);
     if(isAtSafePoint)
     {
@@ -8289,7 +8285,6 @@ void PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context)
         pThread->PulseGCMode(); ///// update the comment on PulseGCMode if we keep this
 
         frame.Pop(pThread);
-        ///contextModified = true;
     }
     else
     {
