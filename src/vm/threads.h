@@ -682,24 +682,17 @@ void InitThreadManager();
 // When we want to take control of a thread at a safe point, the thread will
 // eventually come back to us in one of the following trip functions:
 
-#ifdef FEATURE_HIJACK
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
 EXTERN_C void __stdcall OnHijackObjectTripThread();                 // hijacked JIT code is returning an objectref
 EXTERN_C void __stdcall OnHijackInteriorPointerTripThread();        // hijacked JIT code is returning a byref
 EXTERN_C void __stdcall OnHijackScalarTripThread();                 // hijacked JIT code is returning a non-objectref, non-FP
-#ifdef _TARGET_X86_
-EXTERN_C void __stdcall OnHijackFloatingPointTripThread();          // hijacked JIT code is returning an FP value
-#endif // _TARGET_X86_
-#endif // FEATURE_HIJACK
+#endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
 
-/////////////rename these Foo things
-#ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
-EXTERN_C void         OnHijackObjectTripThread_Foo();             // hijacked JIT code is returning an objectref
-EXTERN_C void         OnHijackInteriorPointerTripThread_Foo();    // hijacked JIT code is returning a byref
-EXTERN_C void         OnHijackScalarTripThread_Foo();             // hijacked JIT code is returning a non-objectref, non-FP
-#endif // FEATURE_UNIX_GC_REDIRECT_HIJACK
+#if defined(FEATURE_HIJACK) && defined(_TARGET_X86_)
+EXTERN_C void __stdcall OnHijackFloatingPointTripThread();          // hijacked JIT code is returning an FP value
+#endif // FEATURE_HIJACK && _TARGET_X86_
 
 void CommonTripThread();
-
 
 // When we resume a thread at a new location, to get an exception thrown, we have to
 // pretend the exception originated elsewhere.
@@ -708,7 +701,6 @@ EXTERN_C void ThrowControlForThread(
         FaultingExceptionFrame *pfef
 #endif // WIN64EXCEPTIONS
         );
-
 
 // RWLock state inside TLS
 struct LockEntry
@@ -1074,7 +1066,7 @@ class Thread: public IUnknown
 #endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
 
 #ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
-    friend void PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context);
+    friend void PALAPI HandleGCSuspensionForInterruptedThread(CONTEXT *interruptedContext);
 #endif // FEATURE_UNIX_GC_REDIRECT_HIJACK
 
     friend void         InitThreadManager();
@@ -2853,7 +2845,7 @@ public:
     };
 
 #ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
-    bool RaiseGcSuspensionSignal();
+    bool InjectGcSuspension();
 #endif // FEATURE_UNIX_GC_REDIRECT_HIJACK
 
 #ifndef DISABLE_THREADSUSPEND
@@ -4014,7 +4006,6 @@ private:
 
     DWORD       m_Win32FaultAddress;
     DWORD       m_Win32FaultCode;
-
 
     // Support for Wait/Notify
     BOOL        Block(INT32 timeOut, PendingSync *syncInfo);

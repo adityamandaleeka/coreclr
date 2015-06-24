@@ -3854,10 +3854,10 @@ void Thread::RareEnablePreemptiveGC()
     STRESS_LOG0(LF_SYNC, LL_INFO100000, " RareEnablePreemptiveGC: leaving.\n");
 }
 
-
-// Called out of CommonTripThread, we are passing through a Safe spot.  Do the right
-// thing with this thread.  This may involve waiting for the GC to complete, or
-// performing a pending suspension.
+// Called when we are passing through a safe point in CommonTripThread or 
+// HandleGCSuspensionForInterruptedThread. Do the right thing with this thread,
+// which can either mean waiting for the GC to complete, or performing a 
+// pending suspension.
 void Thread::PulseGCMode()
 {
     CONTRACTL {
@@ -3874,7 +3874,6 @@ void Thread::PulseGCMode()
         DisablePreemptiveGC();
     }
 }
-
 
 // Indicate whether threads should be trapped when returning to the EE (i.e. disabling
 // preemptive GC mode)
@@ -4993,7 +4992,7 @@ HRESULT ThreadSuspend::SuspendRuntime(ThreadSuspend::SUSPEND_REASON reason)
                 countThreads++;
 
 #ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
-                bool gcSuspensionSignalSuccess = thread->RaiseGcSuspensionSignal();
+                bool gcSuspensionSignalSuccess = thread->InjectGcSuspension();
                 if (!gcSuspensionSignalSuccess)
                 {
                     STRESS_LOG1(LF_SYNC, LL_INFO1000, "Thread::SuspendRuntime() -   Failed to raise GC suspension signal for thread %p.\n", thread);
@@ -6835,8 +6834,6 @@ void Thread::WaitSuspendEvents(BOOL fDoWait)
 }
 
 #if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
-// For the PAL, we poll so we don't need to hijack //////////////////////////// update this.
-
 //                      Hijacking JITted calls
 //                      ======================
 
@@ -8256,14 +8253,14 @@ retry_for_debugger:
 //     This is native code or preemptive GC is not disabled: Nothing to do.
 //     Interruptible managed code: We should pulse GC mode so GC can proceed.
 //     Managed and not interruptible: Patch return address.
-void PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context)
+void PALAPI HandleGCSuspensionForInterruptedThread(CONTEXT *interruptedContext)
 {
     Thread *pThread = GetThread();
 
     if (pThread->PreemptiveGCDisabled() != TRUE)
         return;
 
-    PCODE ip = GetIP(context);
+    PCODE ip = GetIP(interruptedContext);
 
     if (ExecutionManager::IsManagedCode(ip) != TRUE)
         return;
@@ -8277,12 +8274,12 @@ void PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context)
     bool isAtSafePoint = pEECM->IsGcSafe(&codeInfo, addrOffset);
     if(isAtSafePoint)
     {
-        FrameWithCookie<RedirectedThreadFrame> frame(context);
+        FrameWithCookie<RedirectedThreadFrame> frame(interruptedContext);
 
         pThread->SetSavedRedirectContext(NULL);
         frame.Push(pThread);
 
-        pThread->PulseGCMode(); ///// update the comment on PulseGCMode if we keep this
+        pThread->PulseGCMode();
 
         frame.Pop(pThread);
     }
@@ -8298,7 +8295,7 @@ void PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context)
         ExecutionState executionState;
         StackWalkAction action;
         REGDISPLAY regDisplay;
-        pThread->InitRegDisplay(&regDisplay, context, true /* validContext */);
+        pThread->InitRegDisplay(&regDisplay, interruptedContext, true /* validContext */);
         action = pThread->StackWalkFramesEx(
             &regDisplay,
             SWCB_GetExecutionState,
@@ -8317,16 +8314,16 @@ void PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context)
         ClrFlsValueSwitch _threadStackWalking(TlsIdx_StackWalkerWalkingThread, pThread);
 
         // Hijack the return address to point to the appropriate routine based on the method's return type.
-        void *pvHijackAddr = OnHijackScalarTripThread_Foo;
+        void *pvHijackAddr = OnHijackScalarTripThread;
         MethodDesc *pMethodDesc = codeInfo.GetMethodDesc();
         MetaSig::RETURNTYPE type = pMethodDesc->ReturnsObject();
         if (type == MetaSig::RETOBJ)
         {
-            pvHijackAddr = OnHijackObjectTripThread_Foo;
+            pvHijackAddr = OnHijackObjectTripThread;
         }
         else if (type == MetaSig::RETBYREF)
         {
-            pvHijackAddr = OnHijackInteriorPointerTripThread_Foo;
+            pvHijackAddr = OnHijackInteriorPointerTripThread;
         }
 
         // Don't hijack if we are in the first level of running a filter/finally/catch.
@@ -8362,13 +8359,13 @@ void PALAPI HandleGCSuspensionForThreadWithContext(CONTEXT *context)
     }
 }
 
-bool Thread::RaiseGcSuspensionSignal()
+bool Thread::InjectGcSuspension()
 {
     Volatile<HANDLE> hThread;
     hThread = GetThreadHandle();
     if (hThread != INVALID_HANDLE_VALUE && hThread != SWITCHOUT_HANDLE_VALUE)
     {
-        ::PAL_InjectActivation(hThread, HandleGCSuspensionForThreadWithContext);
+        ::PAL_InjectActivation(hThread, HandleGCSuspensionForInterruptedThread);
         return true;
     }
 

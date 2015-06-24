@@ -34,7 +34,7 @@
 //    +- FaultingExceptionFrame - this frame was placed on a method which faulted
 //    |                           to save additional state information
 //    |
-#ifdef FEATURE_HIJACK
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
 //    |
 //    +-HijackFrame             - if a method's return address is hijacked, we
 //    |                           construct one of these to allow crawling back
@@ -47,7 +47,7 @@
 //    | |
 //    | +-RedirectedThreadFrame - this frame is used for redirecting threads during suspension
 //    |
-#endif // FEATURE_HIJACK
+#endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
 //    |
 //    |
 #ifdef FEATURE_REMOTING

@@ -175,9 +175,9 @@ NESTED_END JIT_RareDisableHelper, _TEXT
 #ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
 
 //------------------------------------------------
-// OnHijackScalarTripThread_Foo
+// OnHijackScalarTripThread
 //
-NESTED_ENTRY OnHijackScalarTripThread_Foo, _TEXT, NoHandler
+NESTED_ENTRY OnHijackScalarTripThread, _TEXT, NoHandler
 
     // Make room for the real return address (rip)
     push_register rax
@@ -208,12 +208,12 @@ NESTED_ENTRY OnHijackScalarTripThread_Foo, _TEXT, NoHandler
     POP_CALLEE_SAVED_REGISTERS
     ret
 
-NESTED_END OnHijackScalarTripThread_Foo, _TEXT
+NESTED_END OnHijackScalarTripThread, _TEXT
 
 //------------------------------------------------
-// OnHijackObjectTripThread_Foo
+// OnHijackObjectTripThread
 //
-NESTED_ENTRY OnHijackObjectTripThread_Foo, _TEXT, NoHandler 
+NESTED_ENTRY OnHijackObjectTripThread, _TEXT, NoHandler 
 
     // Make room for the real return address (rip)
     push_register rax
@@ -234,12 +234,12 @@ NESTED_ENTRY OnHijackObjectTripThread_Foo, _TEXT, NoHandler
     POP_CALLEE_SAVED_REGISTERS
     ret
 
-NESTED_END OnHijackObjectTripThread_Foo, _TEXT
+NESTED_END OnHijackObjectTripThread, _TEXT
 
 //------------------------------------------------
-// OnHijackInteriorPointerTripThread_Foo
+// OnHijackInteriorPointerTripThread
 //
-NESTED_ENTRY OnHijackInteriorPointerTripThread_Foo, _TEXT, NoHandler 
+NESTED_ENTRY OnHijackInteriorPointerTripThread, _TEXT, NoHandler 
 
     // Make room for the real return address (rip)
     push_register rax
@@ -260,7 +260,7 @@ NESTED_ENTRY OnHijackInteriorPointerTripThread_Foo, _TEXT, NoHandler
     POP_CALLEE_SAVED_REGISTERS
     ret
 
-NESTED_END OnHijackInteriorPointerTripThread_Foo, _TEXT
+NESTED_END OnHijackInteriorPointerTripThread, _TEXT
 
 #endif // FEATURE_UNIX_GC_REDIRECT_HIJACK
 
