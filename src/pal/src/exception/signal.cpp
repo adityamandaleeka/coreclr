@@ -607,7 +607,7 @@ Function :
     Interrupt the specified thread and have it call the passed in activationFunction 
 
 Parameters :
-    pThread -            target PAL thread
+    pThread            - target PAL thread
     activationFunction - function to call 
 
 (no return value)
@@ -633,7 +633,7 @@ PAL_InjectActivation
 Interrupt the specified thread and have it call the passed in activation function 
 
 Parameters:
-hThread -            handle of the target PAL thread
+hThread            - handle of the target thread
 activationFunction - function to call 
 
 Return: 

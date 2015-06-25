@@ -551,15 +551,16 @@ EXTERN_C void LeaveSyncHelper    (UINT_PTR caller, void *pAwareLock);
 
 #endif  // TRACK_SYNC
 
-#ifdef FEATURE_HIJACK
-//****************************************************************************************
-// This is the type of the start function of a redirected thread pulled from a
-// HandledJITCase during runtime suspension
-typedef void (__stdcall *PFN_REDIRECTTARGET)();
-
-// Used to capture information about the state of execution of a *SUSPENDED*
-// thread.
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
+// Used to capture information about the state of execution of a *SUSPENDED* thread.
 struct ExecutionState;
+#endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
+
+#ifdef FEATURE_HIJACK
+//***************************************************************************
+// This is the type of the start function of a redirected thread pulled from
+// a HandledJITCase during runtime suspension
+typedef void (__stdcall *PFN_REDIRECTTARGET)();
 
 // Describes the weird argument sets during hijacking
 struct HijackArgs;
@@ -3987,22 +3988,21 @@ public:
     BOOL GetSafelyRedirectableThreadContext(DWORD dwOptions, T_CONTEXT * pCtx, REGDISPLAY * pRD);
 
 private:
-#ifdef FEATURE_HIJACK
-    // Add and remove hijacks for JITted calls.
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
     void    HijackThread(VOID *pvHijackAddr, ExecutionState *esb);
-    BOOL    HandledJITCase(BOOL ForTaskSwitchIn = FALSE);
 
+    VOID        *m_pvHJRetAddr;           // original return address (before hijack)
+    VOID       **m_ppvHJRetAddrPtr;       // place we bashed a new return address
+    MethodDesc  *m_HijackedFunction;      // remember what we hijacked
+#endif
+
+#ifdef FEATURE_HIJACK
+    BOOL    HandledJITCase(BOOL ForTaskSwitchIn = FALSE);
 #ifdef _TARGET_X86_
     PCODE       m_LastRedirectIP;
     ULONG       m_SpinCount;
 #endif // _TARGET_X86_
 #endif // FEATURE_HIJACK
-
-#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
-    VOID        *m_pvHJRetAddr;           // original return address (before hijack)
-    VOID       **m_ppvHJRetAddrPtr;       // place we bashed a new return address
-    MethodDesc  *m_HijackedFunction;      // remember what we hijacked
-#endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
 
     DWORD       m_Win32FaultAddress;
     DWORD       m_Win32FaultCode;
