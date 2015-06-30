@@ -2734,6 +2734,11 @@ typedef struct _M128U {
 // Same as _M128U but aligned to a 16-byte boundary
 typedef DECLSPEC_ALIGN(16) M128U M128A, *PM128A;
 
+typedef struct _M128sa {
+    ULONGLONG Low;
+    LONGLONG High;
+} M128SA;
+
 typedef struct _XMM_SAVE_AREA32 {
     WORD   ControlWord;
     WORD   StatusWord;
