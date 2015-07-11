@@ -4529,6 +4529,17 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex)
     memset(&dispatcherContext, 0, sizeof(DISPATCHER_CONTEXT));
     disposition = ExceptionContinueSearch;
 
+    ULONG64 Rip1 = 0xAABBCCDDEEFFAABB;
+    ULONG64 Rip2 = 0xAABBCCDDEEFFAABB;
+    ULONG64 Rip3 = 0xAABBCCDDEEFFAABB;
+
+    ULONG64 Rsp1 = 0xAABBCCDDEEFFAABB;
+    ULONG64 Rsp2 = 0xAABBCCDDEEFFAABB;
+    ULONG64 Rsp3 = 0xAABBCCDDEEFFAABB;
+
+    ULONG64 Rbp1 = 0xAABBCCDDEEFFAABB;
+    ULONG64 Rbp2 = 0xAABBCCDDEEFFAABB;
+    ULONG64 Rbp3 = 0xAABBCCDDEEFFAABB;
     do
     {
         codeInfo.Init(controlPc);
@@ -4637,6 +4648,33 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex)
                 ExceptionTracker* pTracker = GetThread()->GetExceptionState()->GetCurrentExceptionTracker();
                 pTracker->ResetUnwoundExplicitFramesRange();
             }
+
+            if (!IsSpInStackLimits(frameContext.Rbp, stackLowAddress, stackHighAddress))
+            {
+                printf("\n ======= RBP outside of stack limits! ======= \n Stack low:  %p \n Stack high: %p \n RBP:        %p \n RIP:        %p \n RSP:        %p \n",
+                    stackLowAddress, stackHighAddress, frameContext.Rbp, frameContext.Rip, frameContext.Rsp);
+                ///DebugBreak();
+            }
+
+            if (frameContext.Rip < 0x1234)
+            {
+                DebugBreak();
+            }
+
+            Rip3 = Rip2;
+            Rbp3 = Rbp2;
+            Rsp3 = Rsp2;
+
+            Rip2 = Rip1;
+            Rbp2 = Rbp1;
+            Rsp2 = Rsp1;
+
+            Rip1 = frameContext.Rip;
+            Rbp1 = frameContext.Rbp;
+            Rsp1 = frameContext.Rsp;
+
+            printf("\n RIP1: %p RBP1: %p RSP1: %p RIP2: %p RBP2: %p RSP2: %p RIP3: %p RBP3: %p RSP3: %p \n",
+                    Rip1, Rbp1, Rsp1, Rip2, Rbp2, Rsp2, Rip3, Rbp3, Rsp3);
 
             // Now we need to unwind the native frames until we reach managed frames again or the exception is
             // handled in the native code.

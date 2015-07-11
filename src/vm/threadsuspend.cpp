@@ -3796,10 +3796,10 @@ void Thread::RareEnablePreemptiveGC()
     STRESS_LOG1(LF_SYNC, LL_INFO100000, "RareEnablePreemptiveGC: entering. Thread state = %x\n", m_State.Load());
     if (!ThreadStore::HoldingThreadStore(this))
     {
-#ifdef FEATURE_HIJACK
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
         // Remove any hijacks we might have.
         UnhijackThread();
-#endif // FEATURE_HIJACK
+#endif // FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
 
         // wake up any threads waiting to suspend us, like the GC thread.
         SetSafeEvent();
@@ -6862,7 +6862,7 @@ void Thread::HijackThread(VOID *pvHijackAddr, ExecutionState *esb)
 
 #ifdef _DEBUG
     static int  EnterCount = 0;
-    _ASSERTE(EnterCount++ == 0);
+    _ASSERTE(EnterCount++ == 0); ////// this can be fired if multiple threads are in here at once right?
 #endif
 
     // Don't hijack if are in the first level of running a filter/finally/catch.
@@ -7582,31 +7582,31 @@ BOOL Thread::HandledJITCase(BOOL ForTaskSwitchIn)
                 // not the main method (it would probably be Scalar).
 #endif // _WIN64
 
-                    ENABLE_FORBID_GC_LOADER_USE_IN_THIS_SCOPE();
-                    // Mark that we are performing a stackwalker like operation on the current thread.
-                    // This is necessary to allow the signature parsing functions to work without triggering any loads
-                    ClrFlsValueSwitch _threadStackWalking(TlsIdx_StackWalkerWalkingThread, this);
+                ENABLE_FORBID_GC_LOADER_USE_IN_THIS_SCOPE();
+                // Mark that we are performing a stackwalker like operation on the current thread.
+                // This is necessary to allow the signature parsing functions to work without triggering any loads
+                ClrFlsValueSwitch _threadStackWalking(TlsIdx_StackWalkerWalkingThread, this);
 
 #ifdef _TARGET_X86_
-                    MetaSig msig(esb.m_pFD);
-                    if (msig.HasFPReturn())
-                    {
-                        // Figuring out whether the function returns FP or not is hard to do
-                        // on-the-fly, so we use a different callback helper on x86 where this
-                        // piece of information is needed in order to perform the right save &
-                        // restore of the return value around the call to OnHijackScalarWorker.
-                        pvHijackAddr = OnHijackFloatingPointTripThread;
-                    }
-                    else
-#endif // _TARGET_X86_
-                    {
-                        MetaSig::RETURNTYPE type = esb.m_pFD->ReturnsObject();
-                        if (type == MetaSig::RETOBJ)
-                            pvHijackAddr = OnHijackObjectTripThread;
-                        else if (type == MetaSig::RETBYREF)
-                            pvHijackAddr = OnHijackInteriorPointerTripThread;
-                    }
+                MetaSig msig(esb.m_pFD);
+                if (msig.HasFPReturn())
+                {
+                    // Figuring out whether the function returns FP or not is hard to do
+                    // on-the-fly, so we use a different callback helper on x86 where this
+                    // piece of information is needed in order to perform the right save &
+                    // restore of the return value around the call to OnHijackScalarWorker.
+                    pvHijackAddr = OnHijackFloatingPointTripThread;
                 }
+                else
+#endif // _TARGET_X86_
+                {
+                    MetaSig::RETURNTYPE type = esb.m_pFD->ReturnsObject();
+                    if (type == MetaSig::RETOBJ)
+                        pvHijackAddr = OnHijackObjectTripThread;
+                    else if (type == MetaSig::RETBYREF)
+                        pvHijackAddr = OnHijackInteriorPointerTripThread;
+                }
+            }
 
 #ifdef FEATURE_ENABLE_GCPOLL
             // On platforms that support both hijacking and GC polling
@@ -8264,7 +8264,7 @@ void PALAPI HandleGCSuspensionForInterruptedThread(CONTEXT *interruptedContext)
     _ASSERTE(pEECM != NULL);
 
     bool isAtSafePoint = pEECM->IsGcSafe(&codeInfo, addrOffset);
-    if(isAtSafePoint)
+    if (isAtSafePoint)
     {
         FrameWithCookie<RedirectedThreadFrame> frame(interruptedContext);
 
@@ -8286,11 +8286,31 @@ void PALAPI HandleGCSuspensionForInterruptedThread(CONTEXT *interruptedContext)
         StackWalkAction action;
         REGDISPLAY regDisplay;
         pThread->InitRegDisplay(&regDisplay, interruptedContext, true /* validContext */);
+
+
+
+
+if(interruptedContext->Rbp < GetSP(interruptedContext))
+{
+    DebugBreak();
+}
+
+
+
+
+
+
+
         action = pThread->StackWalkFramesEx(
             &regDisplay,
             SWCB_GetExecutionState,
             &executionState,
             QUICKUNWIND | DISABLE_MISSING_FRAME_DETECTION | ALLOW_ASYNC_STACK_WALK);
+
+        if (action != SWA_ABORT || !executionState.m_IsJIT)
+        {
+            return;
+        }
 
         _ASSERTE(executionState.m_ppvRetAddrPtr != NULL);
         if (executionState.m_ppvRetAddrPtr == NULL)

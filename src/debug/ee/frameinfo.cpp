@@ -1956,7 +1956,6 @@ bool ShouldSendUMLeafChain(Thread * pThread)
     }
 
 #ifdef FEATURE_HIJACK
-    // Hijacked is only on non-pal.
     if ((ts & Thread::TS_Hijacked) != 0)
     {
         return false;
