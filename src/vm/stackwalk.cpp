@@ -690,6 +690,10 @@ PCODE Thread::VirtualUnwindLeafCallFrame(T_CONTEXT* pContext)
 #if defined(_TARGET_AMD64_)
 
     uControlPc = *(ULONGLONG*)pContext->Rsp;
+
+    if(uControlPc == 0)
+        DebugBreak();
+    
     pContext->Rsp += sizeof(ULONGLONG);
 
 #elif defined(_TARGET_ARM_) || defined(_TARGET_ARM64_)
@@ -1046,6 +1050,12 @@ StackWalkAction Thread::StackWalkFrames(PSTACKWALKFRAMESCALLBACK pCallback,
     if (flags & POPFRAMES)
         rd.pContextForUnwind = &ctx;
 #endif
+
+    if (ISREDIRECTEDTHREAD(this))
+    {
+        // printf("\nShould we be updating the regdisplay for redirected thread?????????\n");
+        ////this->GetFrame()->UpdateRegDisplay(&rd);
+    }
 
     return StackWalkFramesEx(&rd, pCallback, pData, flags, pStartFrame);
 }

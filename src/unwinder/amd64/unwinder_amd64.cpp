@@ -614,6 +614,10 @@ HRESULT.
 
             ContextRecord->Rip = MemoryRead64(ReturnAddress);
             ContextRecord->Rsp = MemoryRead64(StackAddress);
+
+            if(ContextRecord->Rip == 0)
+                DebugBreak();
+
             return S_OK;
         }
 
@@ -631,6 +635,10 @@ HRESULT.
     IntegerAddress = (PULONG64)(ContextRecord->Rsp);
 
     ContextRecord->Rip = MemoryRead64(IntegerAddress);
+    if(ContextRecord->Rip == 0)
+                DebugBreak();
+
+
     ContextRecord->Rsp += 8;
     return S_OK;
 }
@@ -917,6 +925,9 @@ Return Value:
     
                     ContextRecord->Rip = MemoryRead64(ReturnAddress);
                     ContextRecord->Rsp = MemoryRead64(StackAddress);
+
+                    if(ContextRecord->Rip == 0)
+                        DebugBreak();
     
                     break;
     
@@ -969,6 +980,9 @@ Return Value:
             if (MachineFrame == FALSE) {
                 ContextRecord->Rip = MemoryRead64((PULONG64)ContextRecord->Rsp);
                 ContextRecord->Rsp += 8;
+
+                if(ContextRecord->Rip == 0)
+                    DebugBreak();
             }
             
             break;
@@ -1468,6 +1482,9 @@ Arguments:
 
             ContextRecord->Rip = MemoryRead64((PULONG64)ContextRecord->Rsp);
             ContextRecord->Rsp += 8;
+
+            if(ContextRecord->Rip == 0)
+                DebugBreak();
             goto ExitSetHandler;
         }
 

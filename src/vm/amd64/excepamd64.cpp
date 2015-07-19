@@ -47,6 +47,8 @@ LONG CLRNoCatchHandler(EXCEPTION_POINTERS* pExceptionInfo, PVOID pv)
 inline PTR_CONTEXT GetCONTEXTFromRedirectedStubStackFrameWorker(UINT_PTR establisherFrame)
 {
     LIMITED_METHOD_DAC_CONTRACT;
+
+    printf("\nqqqqqqqqqqqq In GetCONTEXTFromRedirectedStubStackFrameWorker!!!!!!!!!!!!!!\n");
     
     SIZE_T rbp = establisherFrame + REDIRECTSTUB_ESTABLISHER_OFFSET_RBP;
     PTR_PTR_CONTEXT ppContext = dac_cast<PTR_PTR_CONTEXT>((TADDR)rbp + REDIRECTSTUB_RBP_OFFSET_CONTEXT);

@@ -1297,7 +1297,7 @@ BOOL Thread::IsWithinCer(CrawlFrame *pCf)
 }
 
 
-#if defined(_TARGET_AMD64_) && defined(FEATURE_HIJACK)
+/////#if defined(_TARGET_AMD64_) && defined(FEATURE_HIJACK) add new ifdef
 BOOL Thread::IsSafeToInjectThreadAbort(PTR_CONTEXT pContextToCheck)
 {
     CONTRACTL
@@ -1331,7 +1331,7 @@ BOOL Thread::IsSafeToInjectThreadAbort(PTR_CONTEXT pContextToCheck)
         return TRUE;
     }
 }
-#endif // defined(_TARGET_AMD64_) && defined(FEATURE_HIJACK)
+//////#endif // defined(_TARGET_AMD64_) && defined(FEATURE_HIJACK)
 
 
 #ifdef _TARGET_AMD64_
@@ -1430,7 +1430,7 @@ BOOL Thread::ReadyForAsyncException(ThreadInterruptMode mode)
                 pStartFrame = pFrameAddr;
             }
         }
-#if defined(_TARGET_AMD64_) && defined(FEATURE_HIJACK)
+/////#if defined(_TARGET_AMD64_) && defined(FEATURE_HIJACK)
         else if (ThrewControlForThread() == Thread::InducedThreadRedirect)
         {
             if (!IsSafeToInjectThreadAbort(m_OSContext))
@@ -1439,7 +1439,7 @@ BOOL Thread::ReadyForAsyncException(ThreadInterruptMode mode)
                 return FALSE;
             }
         }
-#endif // defined(_TARGET_AMD64_) && defined(FEATURE_HIJACK)
+//////#endif // defined(_TARGET_AMD64_) && defined(FEATURE_HIJACK)
     }
     else
     {
@@ -8241,12 +8241,46 @@ retry_for_debugger:
 }
 
 #ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
+
+struct PreemptionInfo
+{
+    UINT64 threadId;
+    PCODE action;
+    PCODE rip;
+    PCODE rbp;
+    PCODE rsp;
+    char reserved[24];
+};
+
+static const PCODE s_EnterHandleGCSuspension =                           0xFFFFFFFF00001111;
+static const PCODE s_BeforePulseGcMode =                                 0xFFFFFFFF00002222;
+static const PCODE s_AfterPulseGcMode =                                  0xFFFFFFFF00003333;
+
+static const int s_count = 64;
+__thread PreemptionInfo s_infos[s_count];
+__thread static int s_preemptionInfoIdx = 0;
+
+
+void AddPreempContext(PCODE action, CONTEXT currContext)
+{
+    int index = s_preemptionInfoIdx % s_count;
+    s_infos[index].threadId = GetThread()->GetOSThreadId();
+    s_infos[index].action = action;
+    s_infos[index].rip = currContext.Rip;
+    s_infos[index].rbp = currContext.Rbp;
+    s_infos[index].rsp = currContext.Rsp;
+
+    FastInterlockIncrement(&s_preemptionInfoIdx);
+}
+
 // Three main cases:
 //     This is native code or preemptive GC is not disabled: Nothing to do.
 //     Interruptible managed code: We should pulse GC mode so GC can proceed.
 //     Managed and not interruptible: Patch return address.
 void PALAPI HandleGCSuspensionForInterruptedThread(CONTEXT *interruptedContext)
 {
+
+AddPreempContext(s_EnterHandleGCSuspension, *interruptedContext);
     Thread *pThread = GetThread();
 
     if (pThread->PreemptiveGCDisabled() != TRUE)
@@ -8257,86 +8291,125 @@ void PALAPI HandleGCSuspensionForInterruptedThread(CONTEXT *interruptedContext)
     if (ExecutionManager::IsManagedCode(ip) != TRUE)
         return;
 
+Thread::WorkingOnThreadContextHolder workingOnThreadContext(pThread);
+if (!workingOnThreadContext.Acquired())
+{
+    printf("\nFailed to acquire WorkingOnThreadContextHolder!!!\n");
+    return;
+}
+
     EECodeInfo codeInfo(ip);
     DWORD addrOffset = ip - codeInfo.GetStartAddress();
+
+if(!codeInfo.IsValid())
+{
+    printf("\nZZZZZZZZZZZZZZZZZZZ Code info invalid for ip: %p", ip);
+    return;
+}
 
     ICodeManager *pEECM = codeInfo.GetCodeManager();
     _ASSERTE(pEECM != NULL);
 
+// printf("\nIn HandleGCSuspensionForInterruptedThread.\n");
+// #undef Sleep
+//     for(int i = 0; i < 99; ++i)
+//     {
+//         int iSecret = GetRandomInt(100);
+//         if(iSecret > 90)
+//         {
+//             ::Sleep(10);
+//         }
+//         else
+//         {
+//             ::Sleep(5);
+//         }
+//     }
+// #define Sleep(a) Dont_Use_Sleep(a)
+// printf("\nAbout to leave HandleGCSuspensionForInterruptedThread\n");
+
     bool isAtSafePoint = pEECM->IsGcSafe(&codeInfo, addrOffset);
     if (isAtSafePoint)
     {
-        FrameWithCookie<RedirectedThreadFrame> frame(interruptedContext);
 
-        pThread->SetSavedRedirectContext(NULL);
-        frame.Push(pThread);
+        AddPreempContext(s_BeforePulseGcMode, *interruptedContext);
 
-        pThread->PulseGCMode();
+        {
+            FrameWithCookie<RedirectedThreadFrame> frame(interruptedContext);
 
-        frame.Pop(pThread);
+            pThread->SetSavedRedirectContext(NULL);
+            frame.Push(pThread);
+
+            pThread->PulseGCMode();
+
+            frame.Pop(pThread);
+        }
+
+        AddPreempContext(s_AfterPulseGcMode, *interruptedContext);
     }
     else
     {
-        // non-interruptible
-        // Use StackWalkFramesEx to find the location of the return address. This will locate the
-        // return address by checking relative to the caller frame's SP, which is preferable to
-        // checking next to the current RBP because we may have interrupted the function prior to
-        // the point where RBP is updated.
-        ExecutionState executionState;
-        StackWalkAction action;
-        REGDISPLAY regDisplay;
-        pThread->InitRegDisplay(&regDisplay, interruptedContext, true /* validContext */);
+//         // non-interruptible
+//         // Use StackWalkFramesEx to find the location of the return address. This will locate the
+//         // return address by checking relative to the caller frame's SP, which is preferable to
+//         // checking next to the current RBP because we may have interrupted the function prior to
+//         // the point where RBP is updated.
+//         ExecutionState executionState;
+//         StackWalkAction action;
+//         REGDISPLAY regDisplay;
+//         pThread->InitRegDisplay(&regDisplay, interruptedContext, true /* validContext */);
 
 
 
 
-if(interruptedContext->Rbp < GetSP(interruptedContext))
-{
-    DebugBreak();
-}
+// if(!pThread->IsSafeToInjectThreadAbort(interruptedContext))
+// {
+//     printf("\nGOT UNINTERRUPTIBLE CONTEXT!!!!!!!!!!!!!!!!!\n");
+//     return;
+// }
+
+// if(interruptedContext->Rbp < GetSP(interruptedContext))
+// {
+//     printf("\n****threadsuspend.cpp: RBP is less than SP in interrupted context!\n");
+//     return;
+// }
 
 
+//         action = pThread->StackWalkFramesEx(
+//             &regDisplay,
+//             SWCB_GetExecutionState,
+//             &executionState,
+//             QUICKUNWIND | DISABLE_MISSING_FRAME_DETECTION | ALLOW_ASYNC_STACK_WALK);
 
+//         if (action != SWA_ABORT || !executionState.m_IsJIT)
+//         {
+//             return;
+//         }
 
+//         _ASSERTE(executionState.m_ppvRetAddrPtr != NULL);
+//         if (executionState.m_ppvRetAddrPtr == NULL)
+//         {
+//             return;
+//         }
 
+//         ENABLE_FORBID_GC_LOADER_USE_IN_THIS_SCOPE();
+//         // Mark that we are performing a stackwalker like operation on the current thread.
+//         // This is necessary to allow the signature parsing functions to work without triggering any loads
+//         ClrFlsValueSwitch _threadStackWalking(TlsIdx_StackWalkerWalkingThread, pThread);
 
+//         // Hijack the return address to point to the appropriate routine based on the method's return type.
+//         void *pvHijackAddr = OnHijackScalarTripThread;
+//         MethodDesc *pMethodDesc = codeInfo.GetMethodDesc();
+//         MetaSig::RETURNTYPE type = pMethodDesc->ReturnsObject();
+//         if (type == MetaSig::RETOBJ)
+//         {
+//             pvHijackAddr = OnHijackObjectTripThread;
+//         }
+//         else if (type == MetaSig::RETBYREF)
+//         {
+//             pvHijackAddr = OnHijackInteriorPointerTripThread;
+//         }
 
-        action = pThread->StackWalkFramesEx(
-            &regDisplay,
-            SWCB_GetExecutionState,
-            &executionState,
-            QUICKUNWIND | DISABLE_MISSING_FRAME_DETECTION | ALLOW_ASYNC_STACK_WALK);
-
-        if (action != SWA_ABORT || !executionState.m_IsJIT)
-        {
-            return;
-        }
-
-        _ASSERTE(executionState.m_ppvRetAddrPtr != NULL);
-        if (executionState.m_ppvRetAddrPtr == NULL)
-        {
-            return;
-        }
-
-        ENABLE_FORBID_GC_LOADER_USE_IN_THIS_SCOPE();
-        // Mark that we are performing a stackwalker like operation on the current thread.
-        // This is necessary to allow the signature parsing functions to work without triggering any loads
-        ClrFlsValueSwitch _threadStackWalking(TlsIdx_StackWalkerWalkingThread, pThread);
-
-        // Hijack the return address to point to the appropriate routine based on the method's return type.
-        void *pvHijackAddr = OnHijackScalarTripThread;
-        MethodDesc *pMethodDesc = codeInfo.GetMethodDesc();
-        MetaSig::RETURNTYPE type = pMethodDesc->ReturnsObject();
-        if (type == MetaSig::RETOBJ)
-        {
-            pvHijackAddr = OnHijackObjectTripThread;
-        }
-        else if (type == MetaSig::RETBYREF)
-        {
-            pvHijackAddr = OnHijackInteriorPointerTripThread;
-        }
-
-        pThread->HijackThread(pvHijackAddr, &executionState);
+//         pThread->HijackThread(pvHijackAddr, &executionState);
     }
 }
 

@@ -1206,7 +1206,8 @@ bool FixNonvolatileRegisters(UINT_PTR  uOriginalSP,
     REGDISPLAY regdisp;
 #endif // _TARGET_AMD64_
 
-    pThread->FillRegDisplay(&regdisp, &_ctx);
+    pThread->FillRegDisplay(&regdisp, &_ctx); /// original
+    //////SetUpRegdisplayForStackWalk(pThread, &_ctx, &regdisp);
 
     bool fFound = ExceptionTracker::FindNonvolatileRegisterPointers(pThread, uOriginalSP, &regdisp, GetFP(pContextRecord));
     if (!fFound)
@@ -4407,6 +4408,19 @@ VOID UnwindManagedExceptionPass2(EXCEPTION_RECORD* exceptionRecord, CONTEXT* unw
         controlPc = GetIP(currentFrameContext);
 
         codeInfo.Init(controlPc);
+
+        if(!codeInfo.IsValid())
+        {
+            printf("Invalid EECodeInfo initialized with address %p", controlPc);
+            volatile int asdf = 0xABCD;
+            if(asdf > 0xABD)
+            {
+                printf("Got here");
+            }
+
+            fflush(stdout);
+        }
+
         dispatcherContext.FunctionEntry = codeInfo.GetFunctionEntry();
         dispatcherContext.ControlPc = controlPc;
         dispatcherContext.ImageBase = codeInfo.GetModuleBase();
@@ -4484,6 +4498,39 @@ VOID UnwindManagedExceptionPass2(EXCEPTION_RECORD* exceptionRecord, CONTEXT* unw
     EEPOLICY_HANDLE_FATAL_ERROR(COR_E_EXECUTIONENGINE);
 }
 
+struct PreemptionInfo
+{
+    UINT64 threadId;
+    PCODE action;
+    PCODE rip;
+    PCODE rbp;
+    PCODE rsp;
+    char reserved[24];
+};
+
+static const PCODE s_RtlCaptureOnEntryPass1 =                           0xAAAAAAAA00001111;
+static const PCODE s_AfterVirtualUnwindToFirstManagedCallFramePass1 =   0xAAAAAAAA00002222;
+static const PCODE s_AfterRtlVirtualUnwindPass1 =                       0xAAAAAAAA00003333;
+static const PCODE s_AfterVirtualUnwindLeafCallFramePass1 =             0xAAAAAAAA00004444;
+static const PCODE s_CallingStartUnwindingNativeFramesPass1 =           0xAAAAAAAA00005555;
+
+static const int s_count = 64;
+__thread PreemptionInfo s_exInfos[s_count];
+__thread static int s_exInfoIdx = 0;
+
+
+void AddContext(PCODE action, CONTEXT currContext)
+{
+    int index = s_exInfoIdx % s_count;
+    s_exInfos[index].threadId = GetThread()->GetOSThreadId();
+    s_exInfos[index].action = action;
+    s_exInfos[index].rip = currContext.Rip;
+    s_exInfos[index].rbp = currContext.Rbp;
+    s_exInfos[index].rsp = currContext.Rsp;
+
+    FastInterlockIncrement(&s_exInfoIdx);
+}
+
 //---------------------------------------------------------------------------------------
 //
 // This functions performs dispatching of a managed exception.
@@ -4510,9 +4557,19 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex)
     ULONG64 stackHighAddress = (ULONG64)PAL_GetStackBase();
     ULONG64 stackLowAddress = (ULONG64)PAL_GetStackLimit();
 
+GetThread()->UnhijackThread(); //////////////
+
+
+
     RtlCaptureContext(&frameContext);
 
+
+AddContext(s_RtlCaptureOnEntryPass1, frameContext);
+
+
     controlPc = Thread::VirtualUnwindToFirstManagedCallFrame(&frameContext);
+
+AddContext(s_AfterVirtualUnwindToFirstManagedCallFramePass1, frameContext);
     
     unwindStartContext = frameContext;
 
@@ -4529,17 +4586,6 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex)
     memset(&dispatcherContext, 0, sizeof(DISPATCHER_CONTEXT));
     disposition = ExceptionContinueSearch;
 
-    ULONG64 Rip1 = 0xAABBCCDDEEFFAABB;
-    ULONG64 Rip2 = 0xAABBCCDDEEFFAABB;
-    ULONG64 Rip3 = 0xAABBCCDDEEFFAABB;
-
-    ULONG64 Rsp1 = 0xAABBCCDDEEFFAABB;
-    ULONG64 Rsp2 = 0xAABBCCDDEEFFAABB;
-    ULONG64 Rsp3 = 0xAABBCCDDEEFFAABB;
-
-    ULONG64 Rbp1 = 0xAABBCCDDEEFFAABB;
-    ULONG64 Rbp2 = 0xAABBCCDDEEFFAABB;
-    ULONG64 Rbp3 = 0xAABBCCDDEEFFAABB;
     do
     {
         codeInfo.Init(controlPc);
@@ -4560,6 +4606,8 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex)
                 &handlerData,
                 &establisherFrame,
                 NULL);
+
+AddContext(s_AfterRtlVirtualUnwindPass1, frameContext);
 
             // Make sure that the establisher frame pointer is within stack boundaries.
             // TODO: make sure the establisher frame is properly aligned.
@@ -4598,6 +4646,7 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex)
         else
         {
             controlPc = Thread::VirtualUnwindLeafCallFrame(&frameContext);
+AddContext(s_AfterVirtualUnwindLeafCallFramePass1, frameContext);
         }
 
         // Check whether we are crossing managed-to-native boundary
@@ -4606,6 +4655,14 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex)
             // Save the exception flags of the first pass so that we can restore them after
             // the partial second pass.
             ExceptionFlags* currentFlags = GetThread()->GetExceptionState()->GetFlags();
+
+            if(currentFlags == NULL)
+            {
+                printf("\nException flags null! controlPc %p\n", controlPc);
+                DebugBreak();
+            }
+
+
             ExceptionFlags firstPassFlags = *currentFlags;
 
             // The second pass needs this flag to be reset
@@ -4651,30 +4708,49 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex)
 
             if (!IsSpInStackLimits(frameContext.Rbp, stackLowAddress, stackHighAddress))
             {
-                printf("\n ======= RBP outside of stack limits! ======= \n Stack low:  %p \n Stack high: %p \n RBP:        %p \n RIP:        %p \n RSP:        %p \n",
-                    stackLowAddress, stackHighAddress, frameContext.Rbp, frameContext.Rip, frameContext.Rsp);
+                // printf("\n ======= RBP outside of stack limits! ======= \n Stack low:  %p \n Stack high: %p \n RBP:        %p \n RIP:        %p \n RSP:        %p \n",
+                //     stackLowAddress, stackHighAddress, frameContext.Rbp, frameContext.Rip, frameContext.Rsp);
                 ///DebugBreak();
             }
 
             if (frameContext.Rip < 0x1234)
             {
-                DebugBreak();
+                printf("\nRIP is low!!! It's %p \n", frameContext.Rip);
+                ////DebugBreak();
             }
 
-            Rip3 = Rip2;
-            Rbp3 = Rbp2;
-            Rsp3 = Rsp2;
+            // Rip3 = Rip2;
+            // Rbp3 = Rbp2;
+            // Rsp3 = Rsp2;
 
-            Rip2 = Rip1;
-            Rbp2 = Rbp1;
-            Rsp2 = Rsp1;
+            // Rip2 = Rip1;
+            // Rbp2 = Rbp1;
+            // Rsp2 = Rsp1;
 
-            Rip1 = frameContext.Rip;
-            Rbp1 = frameContext.Rbp;
-            Rsp1 = frameContext.Rsp;
+            // Rip1 = frameContext.Rip;
+            // Rbp1 = frameContext.Rbp;
+            // Rsp1 = frameContext.Rsp;
 
-            printf("\n RIP1: %p RBP1: %p RSP1: %p RIP2: %p RBP2: %p RSP2: %p RIP3: %p RBP3: %p RSP3: %p \n",
-                    Rip1, Rbp1, Rsp1, Rip2, Rbp2, Rsp2, Rip3, Rbp3, Rsp3);
+            // int index = FastInterlockIncrement(&s_exInfoIdx) - 1;
+            // index = index % s_count;
+
+
+
+            // s_exInfos[index].threadId = GetThread()->GetOSThreadId();
+            // s_exInfos[index].rip = unwindStartContext.Rip;
+            // s_exInfos[index].rbp = unwindStartContext.Rbp;
+            // s_exInfos[index].rsp = unwindStartContext.Rsp;
+
+            // s_exInfos[index].rip2 = frameContext.Rip;
+            // s_exInfos[index].rbp2 = frameContext.Rbp;
+            // s_exInfos[index].rsp2 = frameContext.Rsp;
+
+            // printf("\n RIP1: %p RBP1: %p RSP1: %p RIP2: %p RBP2: %p RSP2: %p RIP3: %p RBP3: %p RSP3: %p \n",
+            //         Rip1, Rbp1, Rsp1, Rip2, Rbp2, Rsp2, Rip3, Rbp3, Rsp3);
+
+
+AddContext(s_CallingStartUnwindingNativeFramesPass1, frameContext);
+
 
             // Now we need to unwind the native frames until we reach managed frames again or the exception is
             // handled in the native code.
@@ -5894,6 +5970,8 @@ FixRedirectContextHandler(
         pDispatcherContext->ContextRecord);
 
     VALIDATE_BACKOUT_STACK_CONSUMPTION;
+
+    printf("\nIs this really happening????\n");
 
     CONTEXT *pRedirectedContext = GetCONTEXTFromRedirectedStubStackFrame(pDispatcherContext);
 
