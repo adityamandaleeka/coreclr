@@ -5333,6 +5333,33 @@ HRESULT ThreadSuspend::SuspendRuntime(ThreadSuspend::SUSPEND_REASON reason)
             }
 #endif
 
+#ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
+            _ASSERTE (thread == NULL);
+            while ((thread = ThreadStore::GetThreadList(thread)) != NULL)
+            {
+                if (thread == pCurThread)
+                    continue;
+
+                if ((thread->m_State & Thread::TS_GCSuspendPending) == 0)
+                    continue;
+
+                if (!thread->m_fPreemptiveGCDisabled)
+                {
+                    continue;
+                }
+
+        RetryInjectSuspension:
+
+                bool gcSuspensionSignalSuccess = thread->InjectGcSuspension();
+                if (!gcSuspensionSignalSuccess)
+                {
+                    STRESS_LOG1(LF_SYNC, LL_INFO1000, "Thread::SuspendRuntime() -   Failed to raise GC suspension signal for thread %p.\n", thread);
+                    printf("\nGOT HERE. InjectGcSuspension About to RetryInjectSuspension\n");
+                    goto RetryInjectSuspension;
+                }
+            }
+#endif ////////
+
 #ifndef DISABLE_THREADSUSPEND
             // all these threads should be in cooperative mode unless they have
             // set their SafeEvent on the way out.  But there's a race between
@@ -8279,7 +8306,6 @@ void AddPreempContext(PCODE action, CONTEXT currContext)
 //     Managed and not interruptible: Patch return address.
 void PALAPI HandleGCSuspensionForInterruptedThread(CONTEXT *interruptedContext)
 {
-
 AddPreempContext(s_EnterHandleGCSuspension, *interruptedContext);
     Thread *pThread = GetThread();
 
@@ -8291,48 +8317,23 @@ AddPreempContext(s_EnterHandleGCSuspension, *interruptedContext);
     if (ExecutionManager::IsManagedCode(ip) != TRUE)
         return;
 
-Thread::WorkingOnThreadContextHolder workingOnThreadContext(pThread);
-if (!workingOnThreadContext.Acquired())
-{
-    printf("\nFailed to acquire WorkingOnThreadContextHolder!!!\n");
-    return;
-}
+    Thread::WorkingOnThreadContextHolder workingOnThreadContext(pThread);
+    if (!workingOnThreadContext.Acquired())
+        return;
 
     EECodeInfo codeInfo(ip);
-    DWORD addrOffset = ip - codeInfo.GetStartAddress();
+    if(!codeInfo.IsValid())
+        return;
 
-if(!codeInfo.IsValid())
-{
-    printf("\nZZZZZZZZZZZZZZZZZZZ Code info invalid for ip: %p", ip);
-    return;
-}
+    DWORD addrOffset = ip - codeInfo.GetStartAddress();
 
     ICodeManager *pEECM = codeInfo.GetCodeManager();
     _ASSERTE(pEECM != NULL);
 
-// printf("\nIn HandleGCSuspensionForInterruptedThread.\n");
-// #undef Sleep
-//     for(int i = 0; i < 99; ++i)
-//     {
-//         int iSecret = GetRandomInt(100);
-//         if(iSecret > 90)
-//         {
-//             ::Sleep(10);
-//         }
-//         else
-//         {
-//             ::Sleep(5);
-//         }
-//     }
-// #define Sleep(a) Dont_Use_Sleep(a)
-// printf("\nAbout to leave HandleGCSuspensionForInterruptedThread\n");
-
     bool isAtSafePoint = pEECM->IsGcSafe(&codeInfo, addrOffset);
     if (isAtSafePoint)
     {
-
-        AddPreempContext(s_BeforePulseGcMode, *interruptedContext);
-
+AddPreempContext(s_BeforePulseGcMode, *interruptedContext);
         {
             FrameWithCookie<RedirectedThreadFrame> frame(interruptedContext);
 
@@ -8343,8 +8344,7 @@ if(!codeInfo.IsValid())
 
             frame.Pop(pThread);
         }
-
-        AddPreempContext(s_AfterPulseGcMode, *interruptedContext);
+AddPreempContext(s_AfterPulseGcMode, *interruptedContext);
     }
     else
     {
@@ -8422,6 +8422,12 @@ bool Thread::InjectGcSuspension()
         ::PAL_InjectActivation(hThread, HandleGCSuspensionForInterruptedThread);
         return true;
     }
+
+if(hThread == INVALID_HANDLE_VALUE)
+    printf("\nin InjectGcSuspension. hThread is INVALID_HANDLE_VALUE\n");
+
+if(hThread == SWITCHOUT_HANDLE_VALUE)
+    printf("\nin InjectGcSuspension. hThread is SWITCHOUT_HANDLE_VALUE\n");
 
     return false;
 }

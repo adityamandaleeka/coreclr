@@ -982,7 +982,10 @@ Return Value:
                 ContextRecord->Rsp += 8;
 
                 if(ContextRecord->Rip == 0)
-                    DebugBreak();
+                {
+                    printf("\nqqqqqqqqqqqqqUnwindPrologue: line 986. ContextRecord->Rip == 0\n");
+                    //DebugBreak();
+                }
             }
             
             break;
