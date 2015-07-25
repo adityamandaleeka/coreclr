@@ -17705,7 +17705,7 @@ gc_heap::mark_object_simple (BYTE** po THREAD_NUMBER_DCL)
         if (gc_mark1 (o))
         {
             m_boundary (o);
-            size_t s = size (o);   /////////////size of o is 
+            size_t s = size (o);
             promoted_bytes (thread) += s;
             {
                 go_through_object_cl (method_table(o), o, s, poo,
