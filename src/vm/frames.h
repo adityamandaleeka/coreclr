@@ -433,7 +433,6 @@ public:
         FRAME_ATTR_CAPTURE_DEPTH_2 = 0x10,  // This is a helperMethodFrame and the capture occured at depth 2
         FRAME_ATTR_EXACT_DEPTH = 0x20,      // This is a helperMethodFrame and a jit helper, but only crawl to the given depth
         FRAME_ATTR_NO_THREAD_ABORT = 0x40,  // This is a helperMethodFrame that should not trigger thread aborts on entry
-        FRAME_ATTR_MEOW = 0x80,             // Meow
     };
     virtual unsigned GetFrameAttribs()
     {
@@ -888,7 +887,7 @@ public:
 
     virtual unsigned GetFrameAttribs() {
         LIMITED_METHOD_DAC_CONTRACT;
-        return FRAME_ATTR_MEOW | FRAME_ATTR_RESUMABLE;    // Treat the next frame as the top frame.
+        return FRAME_ATTR_RESUMABLE;    // Treat the next frame as the top frame.
     }
 
     T_CONTEXT *GetContext() {
@@ -2141,8 +2140,6 @@ public:
         LIMITED_METHOD_CONTRACT;
         return TRUE;
     }
-
-    ///////get attribs meow
 
     virtual void UpdateRegDisplay(const PREGDISPLAY);
 

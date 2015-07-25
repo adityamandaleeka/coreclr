@@ -8608,18 +8608,7 @@ retry:
 
 inline size_t my_get_size (Object* ob)
 {
-    if(ob == NULL)
-    {
-        printf("object is null!");
-        DebugBreak();
-    }
-
     MethodTable* mT = header(ob)->GetMethodTable();
-    if(mT == NULL)
-    {
-        printf("method table is null!");
-        DebugBreak();
-    }
     return (mT->GetBaseSize() +
             (mT->HasComponentSize() ?
              ((size_t)((CObjectHeader*)ob)->GetNumComponents() * mT->RawGetComponentSize()) : 0));

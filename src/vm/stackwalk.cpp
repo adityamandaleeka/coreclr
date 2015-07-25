@@ -1051,11 +1051,11 @@ StackWalkAction Thread::StackWalkFrames(PSTACKWALKFRAMESCALLBACK pCallback,
         rd.pContextForUnwind = &ctx;
 #endif
 
-    if (ISREDIRECTEDTHREAD(this))
-    {
-        // printf("\nShould we be updating the regdisplay for redirected thread?????????\n");
-        ////this->GetFrame()->UpdateRegDisplay(&rd);
-    }
+    // if (ISREDIRECTEDTHREAD(this))
+    // {
+    //     // printf("\nShould we be updating the regdisplay for redirected thread?????????\n");
+    //     ////this->GetFrame()->UpdateRegDisplay(&rd);
+    // }
 
     return StackWalkFramesEx(&rd, pCallback, pData, flags, pStartFrame);
 }

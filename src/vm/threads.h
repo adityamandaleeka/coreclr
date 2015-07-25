@@ -3163,9 +3163,9 @@ public:
     BOOL           IsRudeUnload();
     BOOL           IsFuncEvalAbort();
 
-/////#if defined(_TARGET_AMD64_) && defined(FEATURE_HIJACK)
+#if defined(_TARGET_AMD64_) && (defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK))
     BOOL           IsSafeToInjectThreadAbort(PTR_CONTEXT pContextToCheck);
-/////#endif // defined(_TARGET_AMD64_) && defined(FEATURE_HIJACK)
+#endif // defined(_TARGET_AMD64_) && (defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK))
 
     inline BOOL IsAbortRequested()
     {
@@ -3944,22 +3944,20 @@ private:
     // For getting a thread to a safe point.  A client waits on the event, which is
     // set by the thread when it reaches a safe spot.
 #ifndef FEATURE_CORECLR
-void    FinishSuspendingThread();
+    void    FinishSuspendingThread();
 #endif // FEATURE_CORECLR
     void    SetSafeEvent();
 
 public:
     FORCEINLINE void UnhijackThreadNoAlloc()
     {
-/////#if defined(FEATURE_HIJACK) && !defined(DACCESS_COMPILE)
+#if (defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)) && !defined(DACCESS_COMPILE)
         if (m_State & TS_Hijacked)
         {
-            printf("\nMOOOOOOOOOOOOOOOOOOOOOOOOOOOOO \n");
-
             *m_ppvHJRetAddrPtr = m_pvHJRetAddr;
             FastInterlockAnd((ULONG *) &m_State, ~TS_Hijacked);
         }
-/////#endif
+#endif
     }
 
     void    UnhijackThread();
@@ -4563,13 +4561,13 @@ public:
     {
         WRAPPER_NO_CONTRACT;
 
-////#ifdef FEATURE_HIJACK
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
         // Only unhijack the thread if the suspend succeeded.  If it failed, 
         // the target thread may currently be using the original stack
         // location of the return address for something else.
         if (SuspendSucceeded)
             UnhijackThread();
-/////#endif // FEATURE_HIJACK
+#endif // defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
 
         ResetThreadState(TS_GCSuspendPending);
     }
@@ -5287,15 +5285,17 @@ public:
     void PrepareThreadForSOWork()
     {
         WRAPPER_NO_CONTRACT;
-////#ifdef FEATURE_HIJACK
-            UnhijackThread();
-////#endif // FEATURE_HIJACK
-            ResetThrowControlForThread();
 
-            // Since this Thread has taken an SO, there may be state left-over after we
-            //  short-circuited exception or other error handling, and so we don't want
-            //  to risk recycling it.
-            SetThreadStateNC(TSNC_CannotRecycle);
+#if defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
+        UnhijackThread();
+#endif // defined(FEATURE_HIJACK) || defined(FEATURE_UNIX_GC_REDIRECT_HIJACK)
+
+        ResetThrowControlForThread();
+
+        // Since this Thread has taken an SO, there may be state left-over after we
+        //  short-circuited exception or other error handling, and so we don't want
+        //  to risk recycling it.
+        SetThreadStateNC(TSNC_CannotRecycle);
     }
 
     void SetSOWorkNeeded()

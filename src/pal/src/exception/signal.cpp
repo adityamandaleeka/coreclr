@@ -587,31 +587,16 @@ static void inject_activation_handler(int code, siginfo_t *siginfo, void *contex
         {
             native_context_t *ucontext = (native_context_t *)context;
 
-ucontext_t oldContext = *(ucontext_t*)context;
-
             CONTEXT winContext;
             CONTEXTFromNativeContext(
                 ucontext, 
                 &winContext, 
                 CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_FLOATING_POINT);
 
-UINT64 ripBefore = winContext.Rip;
-UINT64 rbpBefore = winContext.Rbp;
-UINT64 rspBefore = winContext.Rsp;
-
             activation(&winContext);
-
-if(ripBefore != winContext.Rip || rbpBefore != winContext.Rbp || rspBefore != winContext.Rsp)
-{
-    printf("\n Register that shouldn't change has changed! IP1: %p IP2: %p BP1: %p BP2: %p SP1: %p SP2: %p \n", ripBefore, winContext.Rip, rbpBefore, winContext.Rbp, rspBefore, winContext.Rsp);
-    DebugBreak();
-}
 
             // Activation function may have modified the context, so update it.
             CONTEXTToNativeContext(&winContext, ucontext);
-
-ucontext_t newContext = *(ucontext_t*)ucontext;
-
         }
     }
 }

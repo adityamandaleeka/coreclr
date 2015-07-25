@@ -1206,8 +1206,7 @@ bool FixNonvolatileRegisters(UINT_PTR  uOriginalSP,
     REGDISPLAY regdisp;
 #endif // _TARGET_AMD64_
 
-    pThread->FillRegDisplay(&regdisp, &_ctx); /// original
-    //////SetUpRegdisplayForStackWalk(pThread, &_ctx, &regdisp);
+    pThread->FillRegDisplay(&regdisp, &_ctx);
 
     bool fFound = ExceptionTracker::FindNonvolatileRegisterPointers(pThread, uOriginalSP, &regdisp, GetFP(pContextRecord));
     if (!fFound)
@@ -4662,11 +4661,11 @@ AddContext(s_AfterVirtualUnwindLeafCallFramePass1, frameContext);
             // the partial second pass.
             ExceptionFlags* currentFlags = GetThread()->GetExceptionState()->GetFlags();
 
-            if(currentFlags == NULL)
-            {
-                printf("\nException flags null! controlPc %p\n", controlPc);
-                DebugBreak();
-            }
+            // if(currentFlags == NULL)
+            // {
+            //     printf("\nException flags null! controlPc %p\n", controlPc);
+            //     DebugBreak();
+            // }
 
 
             ExceptionFlags firstPassFlags = *currentFlags;
@@ -4712,18 +4711,18 @@ AddContext(s_AfterVirtualUnwindLeafCallFramePass1, frameContext);
                 pTracker->ResetUnwoundExplicitFramesRange();
             }
 
-            if (!IsSpInStackLimits(frameContext.Rbp, stackLowAddress, stackHighAddress))
-            {
-                // printf("\n ======= RBP outside of stack limits! ======= \n Stack low:  %p \n Stack high: %p \n RBP:        %p \n RIP:        %p \n RSP:        %p \n",
-                //     stackLowAddress, stackHighAddress, frameContext.Rbp, frameContext.Rip, frameContext.Rsp);
-                ///DebugBreak();
-            }
+            // if (!IsSpInStackLimits(frameContext.Rbp, stackLowAddress, stackHighAddress))
+            // {
+            //     // printf("\n ======= RBP outside of stack limits! ======= \n Stack low:  %p \n Stack high: %p \n RBP:        %p \n RIP:        %p \n RSP:        %p \n",
+            //     //     stackLowAddress, stackHighAddress, frameContext.Rbp, frameContext.Rip, frameContext.Rsp);
+            //     ///DebugBreak();
+            // }
 
-            if (frameContext.Rip < 0x1234)
-            {
-                printf("\nRIP is low!!! It's %p \n", frameContext.Rip);
-                ////DebugBreak();
-            }
+            // if (frameContext.Rip < 0x1234)
+            // {
+            //     printf("\nRIP is low!!! It's %p \n", frameContext.Rip);
+            //     ////DebugBreak();
+            // }
 
             // Rip3 = Rip2;
             // Rbp3 = Rbp2;

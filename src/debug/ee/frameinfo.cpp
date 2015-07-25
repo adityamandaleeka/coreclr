@@ -1955,12 +1955,12 @@ bool ShouldSendUMLeafChain(Thread * pThread)
         return false;
     }
 
-///#ifdef FEATURE_HIJACK
+#ifdef FEATURE_HIJACK || FEATURE_UNIX_GC_REDIRECT_HIJACK
     if ((ts & Thread::TS_Hijacked) != 0)
     {
         return false;
     }
-////#endif
+#endif
 
     // This is pretty subjective. If we have a thread stopped in a managed sleep,
     // managed wait, or managed join, then don't bother showing the native end of the
