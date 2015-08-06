@@ -5331,7 +5331,6 @@ HRESULT ThreadSuspend::SuspendRuntime(ThreadSuspend::SUSPEND_REASON reason)
             }
 #endif
 
-//////////// go through this logic again and see if this is needed
 #ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
             _ASSERTE (thread == NULL);
             while ((thread = ThreadStore::GetThreadList(thread)) != NULL)
@@ -5343,21 +5342,18 @@ HRESULT ThreadSuspend::SuspendRuntime(ThreadSuspend::SUSPEND_REASON reason)
                     continue;
 
                 if (!thread->m_fPreemptiveGCDisabled)
-                {
                     continue;
-                }
 
-        RetryInjectSuspension:
-
+                // When we tried to inject the suspension before, we may have been in a place
+                // where it wasn't possible. Try one more time.
                 bool gcSuspensionSignalSuccess = thread->InjectGcSuspension();
                 if (!gcSuspensionSignalSuccess)
                 {
+                    // If we failed to raise the signal for some reason, just log it and move on.
                     STRESS_LOG1(LF_SYNC, LL_INFO1000, "Thread::SuspendRuntime() -   Failed to raise GC suspension signal for thread %p.\n", thread);
-                    printf("\nGOT HERE. InjectGcSuspension About to RetryInjectSuspension\n");
-                    goto RetryInjectSuspension;
                 }
             }
-#endif ////////
+#endif
 
 #ifndef DISABLE_THREADSUSPEND
             // all these threads should be in cooperative mode unless they have
@@ -5374,9 +5370,7 @@ HRESULT ThreadSuspend::SuspendRuntime(ThreadSuspend::SUSPEND_REASON reason)
                     continue;
 
                 if (!thread->m_fPreemptiveGCDisabled)
-                {
                     continue;
-                }
 
 #ifdef FEATURE_HIJACK
             RetrySuspension2:
@@ -8267,43 +8261,23 @@ retry_for_debugger:
 
 #ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
 
-struct PreemptionInfo
-{
-    UINT64 threadId;
-    PCODE action;
-    PCODE rip;
-    PCODE rbp;
-    PCODE rsp;
-    char reserved[24];
-};
-
-static const PCODE s_EnterHandleGCSuspension =                           0xFFFFFFFF00001111;
-static const PCODE s_BeforePulseGcMode =                                 0xFFFFFFFF00002222;
-static const PCODE s_AfterPulseGcMode =                                  0xFFFFFFFF00003333;
-
-static const int s_count = 64;
-__thread PreemptionInfo s_infos[s_count];
-__thread static int s_preemptionInfoIdx = 0;
-
-void AddPreempContext(PCODE action, CONTEXT currContext)
-{
-    int index = s_preemptionInfoIdx % s_count;
-    s_infos[index].threadId = GetThread()->GetOSThreadId();
-    s_infos[index].action = action;
-    s_infos[index].rip = currContext.Rip;
-    s_infos[index].rbp = currContext.Rbp;
-    s_infos[index].rsp = currContext.Rsp;
-
-    FastInterlockIncrement(&s_preemptionInfoIdx);
-}
-
-// Three main cases:
-//     This is native code or preemptive GC is not disabled: Nothing to do.
-//     Interruptible managed code: We should pulse GC mode so GC can proceed.
-//     Managed and not interruptible: Patch return address.
+// This function is called when a GC is pending. It tries to ensure that the current
+// thread is taken to a GC-safe place as quickly as possible. It does this by doing 
+// one of the following:
+//
+//     - If the thread is in native code or preemptive GC is not disabled, there's
+//       nothing to do, so we return.
+//
+//     - If the thread is in interruptible managed code, we will push a frame that
+//       has information about the context that was interrupted and then switch to
+//       premptive GC mode so that the pending GC can proceed, and then switch back.
+//
+//     - If the thread is in uninterruptible managed code, we will patch the return
+//       address to take the thread to the appropriate stub (based on the return 
+//       type of the method) which will then handle preparing the thread for GC.
+//
 void PALAPI HandleGCSuspensionForInterruptedThread(CONTEXT *interruptedContext)
 {
-AddPreempContext(s_EnterHandleGCSuspension, *interruptedContext);
     Thread *pThread = GetThread();
 
     if (pThread->PreemptiveGCDisabled() != TRUE)
@@ -8319,7 +8293,7 @@ AddPreempContext(s_EnterHandleGCSuspension, *interruptedContext);
         return;
 
     EECodeInfo codeInfo(ip);
-    if(!codeInfo.IsValid())
+    if (!codeInfo.IsValid())
         return;
 
     DWORD addrOffset = ip - codeInfo.GetStartAddress();
@@ -8330,34 +8304,32 @@ AddPreempContext(s_EnterHandleGCSuspension, *interruptedContext);
     bool isAtSafePoint = pEECM->IsGcSafe(&codeInfo, addrOffset);
     if (isAtSafePoint)
     {
-AddPreempContext(s_BeforePulseGcMode, *interruptedContext);
-        {
-            FrameWithCookie<RedirectedThreadFrame> frame(interruptedContext);
+        // If the thread is at a GC safe point, push a RedirectedThreadFrame with
+        // the interrupted context and pulse the GC mode so that GC can proceed.
+        FrameWithCookie<RedirectedThreadFrame> frame(interruptedContext);
+        pThread->SetSavedRedirectContext(NULL);
 
-            pThread->SetSavedRedirectContext(NULL);
-            frame.Push(pThread);
+        frame.Push(pThread);
 
-            pThread->PulseGCMode();
+        pThread->PulseGCMode();
 
-            frame.Pop(pThread);
-        }
-AddPreempContext(s_AfterPulseGcMode, *interruptedContext);
+        frame.Pop(pThread);
     }
     else
     {
-        // non-interruptible
-        // Use StackWalkFramesEx to find the location of the return address. This will locate the
-        // return address by checking relative to the caller frame's SP, which is preferable to
-        // checking next to the current RBP because we may have interrupted the function prior to
-        // the point where RBP is updated.
+        // The thread is in non-interruptible code.
         ExecutionState executionState;
         StackWalkAction action;
         REGDISPLAY regDisplay;
         pThread->InitRegDisplay(&regDisplay, interruptedContext, true /* validContext */);
 
-        if(!pThread->IsSafeToInjectThreadAbort(interruptedContext))
+        if (!pThread->IsSafeToInjectThreadAbort(interruptedContext))
             return;
 
+        // Use StackWalkFramesEx to find the location of the return address. This will locate the
+        // return address by checking relative to the caller frame's SP, which is preferable to
+        // checking next to the current RBP because we may have interrupted the function prior to
+        // the point where RBP is updated.
         action = pThread->StackWalkFramesEx(
             &regDisplay,
             SWCB_GetExecutionState,
@@ -8373,7 +8345,7 @@ AddPreempContext(s_AfterPulseGcMode, *interruptedContext);
 
         ENABLE_FORBID_GC_LOADER_USE_IN_THIS_SCOPE();
         // Mark that we are performing a stackwalker like operation on the current thread.
-        // This is necessary to allow the signature parsing functions to work without triggering any loads
+        // This is necessary to allow the signature parsing functions to work without triggering any loads.
         ClrFlsValueSwitch _threadStackWalking(TlsIdx_StackWalkerWalkingThread, pThread);
 
         // Hijack the return address to point to the appropriate routine based on the method's return type.
@@ -8402,12 +8374,6 @@ bool Thread::InjectGcSuspension()
         ::PAL_InjectActivation(hThread, HandleGCSuspensionForInterruptedThread);
         return true;
     }
-
-if(hThread == INVALID_HANDLE_VALUE)
-    printf("\nin InjectGcSuspension. hThread is INVALID_HANDLE_VALUE\n");
-
-if(hThread == SWITCHOUT_HANDLE_VALUE)
-    printf("\nin InjectGcSuspension. hThread is SWITCHOUT_HANDLE_VALUE\n");
 
     return false;
 }

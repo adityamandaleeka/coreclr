@@ -7707,18 +7707,6 @@ LONG WINAPI CLRVectoredExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo)
     // already occured.
     //
 
-
-#ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK ////////
-    Thread *pThread;
-    pThread = GetThread();
-    
-    if (pThread != NULL)
-    {
-        pThread->UnhijackThreadNoAlloc();
-    }
-#endif
-
-
 #ifndef FEATURE_PAL
     Thread *pThread;
 
@@ -7795,10 +7783,18 @@ LONG WINAPI CLRVectoredExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo)
     //
     return retVal;
 #else // !FEATURE_PAL
+
+#ifdef FEATURE_UNIX_GC_REDIRECT_HIJACK
+    Thread *pThread = GetThread();
+    if (pThread != NULL)
+    {
+        pThread->UnhijackThreadNoAlloc();
+    }
+#endif
+
     return CLRVectoredExceptionHandlerPhase2(pExceptionInfo);
 #endif // !FEATURE_PAL
 }
-
 
 LONG WINAPI CLRVectoredExceptionHandlerPhase2(PEXCEPTION_POINTERS pExceptionInfo)
 {

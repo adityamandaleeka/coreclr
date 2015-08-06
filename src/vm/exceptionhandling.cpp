@@ -4366,38 +4366,6 @@ bool IsSpInStackLimits(ULONG64 sp, ULONG64 stackLowAddress, ULONG64 stackHighAdd
 //      context - context at which to start the native unwinding
 extern "C" void StartUnwindingNativeFrames(CONTEXT* context);
 
-
-struct PreemptionInfo
-{
-    UINT64 threadId;
-    PCODE action;
-    PCODE rip;
-    PCODE rbp;
-    PCODE rsp;
-    char reserved[24];
-};
-
-static const int s_count = 64;
-__thread PreemptionInfo s_exInfos[s_count];
-__thread static int s_exInfoIdx = 0;
-
-
-void AddContext(PCODE action, CONTEXT currContext)
-{
-    int index = s_exInfoIdx % s_count;
-    s_exInfos[index].threadId = GetThread()->GetOSThreadId();
-    s_exInfos[index].action = action;
-    s_exInfos[index].rip = currContext.Rip;
-    s_exInfos[index].rbp = currContext.Rbp;
-    s_exInfos[index].rsp = currContext.Rsp;
-
-    FastInterlockIncrement(&s_exInfoIdx);
-}
-
-static const PCODE s_EnterPass2 =                                       0xBBBBBBBB00001111;
-static const PCODE s_AfterRtlVirtualUnwindPass2 =                       0xBBBBBBBB00002222;
-static const PCODE s_AfterVirtualUnwindLeafCallFramePass2 =             0xBBBBBBBB00003333;
-
 //---------------------------------------------------------------------------------------
 //
 // This functions performs an unwind procedure for a managed exception. The stack is unwound
@@ -4425,8 +4393,6 @@ VOID UnwindManagedExceptionPass2(EXCEPTION_RECORD* exceptionRecord, CONTEXT* unw
     ULONG64 stackHighAddress = (ULONG64)PAL_GetStackBase();
     ULONG64 stackLowAddress = (ULONG64)PAL_GetStackLimit();
 
-AddContext(s_EnterPass2, *unwindStartContext);
-
     // Indicate that we are performing second pass.
     exceptionRecord->ExceptionFlags = EXCEPTION_UNWINDING;
 
@@ -4441,11 +4407,6 @@ AddContext(s_EnterPass2, *unwindStartContext);
         controlPc = GetIP(currentFrameContext);
 
         codeInfo.Init(controlPc);
-
-        if(!codeInfo.IsValid())
-        {
-            printf("\n Invalid EECodeInfo initialized with address %p \n", controlPc);
-        }
 
         dispatcherContext.FunctionEntry = codeInfo.GetFunctionEntry();
         dispatcherContext.ControlPc = controlPc;
@@ -4466,8 +4427,6 @@ AddContext(s_EnterPass2, *unwindStartContext);
                 &handlerData,
                 &establisherFrame,
                 NULL);
-
-AddContext(s_AfterRtlVirtualUnwindPass2, *callerFrameContext);
 
             // Make sure that the establisher frame pointer is within stack boundaries
             // and we did not go below that target frame.
@@ -4510,7 +4469,6 @@ AddContext(s_AfterRtlVirtualUnwindPass2, *callerFrameContext);
         else
         {
             Thread::VirtualUnwindLeafCallFrame(currentFrameContext);
-AddContext(s_AfterVirtualUnwindLeafCallFramePass2, *currentFrameContext);
         }
 
         // Check whether we are crossing managed-to-native boundary
@@ -4526,15 +4484,6 @@ AddContext(s_AfterVirtualUnwindLeafCallFramePass2, *currentFrameContext);
     _ASSERTE(!"UnwindManagedExceptionPass2: Unwinding failed. Reached the end of the stack");
     EEPOLICY_HANDLE_FATAL_ERROR(COR_E_EXECUTIONENGINE);
 }
-
-
-static const PCODE s_RtlCaptureOnEntryPass1 =                           0xAAAAAAAA00001111;
-static const PCODE s_AfterVirtualUnwindToFirstManagedCallFramePass1 =   0xAAAAAAAA00002222;
-static const PCODE s_AfterRtlVirtualUnwindPass1 =                       0xAAAAAAAA00003333;
-static const PCODE s_AfterVirtualUnwindLeafCallFramePass1 =             0xAAAAAAAA00004444;
-static const PCODE s_CallingStartUnwindingNativeFramesPass1 =           0xAAAAAAAA00005555;
-
-
 
 //---------------------------------------------------------------------------------------
 //
@@ -4568,14 +4517,8 @@ GetThread()->UnhijackThread(); //////////////
 
     RtlCaptureContext(&frameContext);
 
-
-AddContext(s_RtlCaptureOnEntryPass1, frameContext);
-
-
     controlPc = Thread::VirtualUnwindToFirstManagedCallFrame(&frameContext);
 
-AddContext(s_AfterVirtualUnwindToFirstManagedCallFramePass1, frameContext);
-    
     unwindStartContext = frameContext;
 
     if (!ExecutionManager::IsManagedCode(GetIP(&ex.ContextRecord)))
@@ -4611,8 +4554,6 @@ AddContext(s_AfterVirtualUnwindToFirstManagedCallFramePass1, frameContext);
                 &handlerData,
                 &establisherFrame,
                 NULL);
-
-AddContext(s_AfterRtlVirtualUnwindPass1, frameContext);
 
             // Make sure that the establisher frame pointer is within stack boundaries.
             // TODO: make sure the establisher frame is properly aligned.
@@ -4651,7 +4592,6 @@ AddContext(s_AfterRtlVirtualUnwindPass1, frameContext);
         else
         {
             controlPc = Thread::VirtualUnwindLeafCallFrame(&frameContext);
-AddContext(s_AfterVirtualUnwindLeafCallFramePass1, frameContext);
         }
 
         // Check whether we are crossing managed-to-native boundary
@@ -4660,13 +4600,6 @@ AddContext(s_AfterVirtualUnwindLeafCallFramePass1, frameContext);
             // Save the exception flags of the first pass so that we can restore them after
             // the partial second pass.
             ExceptionFlags* currentFlags = GetThread()->GetExceptionState()->GetFlags();
-
-            // if(currentFlags == NULL)
-            // {
-            //     printf("\nException flags null! controlPc %p\n", controlPc);
-            //     DebugBreak();
-            // }
-
 
             ExceptionFlags firstPassFlags = *currentFlags;
 
@@ -4710,52 +4643,6 @@ AddContext(s_AfterVirtualUnwindLeafCallFramePass1, frameContext);
                 ExceptionTracker* pTracker = GetThread()->GetExceptionState()->GetCurrentExceptionTracker();
                 pTracker->ResetUnwoundExplicitFramesRange();
             }
-
-            // if (!IsSpInStackLimits(frameContext.Rbp, stackLowAddress, stackHighAddress))
-            // {
-            //     // printf("\n ======= RBP outside of stack limits! ======= \n Stack low:  %p \n Stack high: %p \n RBP:        %p \n RIP:        %p \n RSP:        %p \n",
-            //     //     stackLowAddress, stackHighAddress, frameContext.Rbp, frameContext.Rip, frameContext.Rsp);
-            //     ///DebugBreak();
-            // }
-
-            // if (frameContext.Rip < 0x1234)
-            // {
-            //     printf("\nRIP is low!!! It's %p \n", frameContext.Rip);
-            //     ////DebugBreak();
-            // }
-
-            // Rip3 = Rip2;
-            // Rbp3 = Rbp2;
-            // Rsp3 = Rsp2;
-
-            // Rip2 = Rip1;
-            // Rbp2 = Rbp1;
-            // Rsp2 = Rsp1;
-
-            // Rip1 = frameContext.Rip;
-            // Rbp1 = frameContext.Rbp;
-            // Rsp1 = frameContext.Rsp;
-
-            // int index = FastInterlockIncrement(&s_exInfoIdx) - 1;
-            // index = index % s_count;
-
-
-
-            // s_exInfos[index].threadId = GetThread()->GetOSThreadId();
-            // s_exInfos[index].rip = unwindStartContext.Rip;
-            // s_exInfos[index].rbp = unwindStartContext.Rbp;
-            // s_exInfos[index].rsp = unwindStartContext.Rsp;
-
-            // s_exInfos[index].rip2 = frameContext.Rip;
-            // s_exInfos[index].rbp2 = frameContext.Rbp;
-            // s_exInfos[index].rsp2 = frameContext.Rsp;
-
-            // printf("\n RIP1: %p RBP1: %p RSP1: %p RIP2: %p RBP2: %p RSP2: %p RIP3: %p RBP3: %p RSP3: %p \n",
-            //         Rip1, Rbp1, Rsp1, Rip2, Rbp2, Rsp2, Rip3, Rbp3, Rsp3);
-
-
-AddContext(s_CallingStartUnwindingNativeFramesPass1, frameContext);
-
 
             // Now we need to unwind the native frames until we reach managed frames again or the exception is
             // handled in the native code.
@@ -5975,8 +5862,6 @@ FixRedirectContextHandler(
         pDispatcherContext->ContextRecord);
 
     VALIDATE_BACKOUT_STACK_CONSUMPTION;
-
-    printf("\nIs this really happening????\n");
 
     CONTEXT *pRedirectedContext = GetCONTEXTFromRedirectedStubStackFrame(pDispatcherContext);
 
