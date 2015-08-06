@@ -605,7 +605,7 @@ static void inject_activation_handler(int code, siginfo_t *siginfo, void *contex
 Function :
     InjectActivationInternal
 
-    Interrupt the specified thread and have it call the passed in activationFunction 
+    Interrupt the specified thread and have it call the activationFunction passed in
 
 Parameters :
     pThread            - target PAL thread
@@ -621,7 +621,7 @@ void InjectActivationInternal(CorUnix::CPalThread* pThread, PAL_ActivationFuncti
     if (status != 0)
     {
         // Failure to send the signal is fatal. There are only two cases when sending
-        // the signal can fail. First, if the signal id is invalid and second, 
+        // the signal can fail. First, if the signal ID is invalid and second, 
         // if the thread doesn't exist anymore.
         abort();
     }
@@ -631,7 +631,7 @@ void InjectActivationInternal(CorUnix::CPalThread* pThread, PAL_ActivationFuncti
 Function:
 PAL_InjectActivation
 
-Interrupt the specified thread and have it call the passed in activation function 
+Interrupt the specified thread and have it call the activation function passed in
 
 Parameters:
 hThread            - handle of the target thread
