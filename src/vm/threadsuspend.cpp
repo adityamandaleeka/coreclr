@@ -6878,16 +6878,11 @@ void Thread::HijackThread(VOID *pvHijackAddr, ExecutionState *esb)
     }
     CONTRACTL_END;
 
-#ifdef _DEBUG
-    static int  EnterCount = 0;
-#endif
-
     // Don't hijack if are in the first level of running a filter/finally/catch.
     // This is because they share ebp with their containing function further down the
     // stack and we will hijack their containing function incorrectly
     if (IsInFirstFrameOfHandler(this, esb->m_pJitManager, esb->m_MethodToken, esb->m_RelOffset))
     {
-        _ASSERTE(--EnterCount == 0);
         STRESS_LOG3(LF_SYNC, LL_INFO100, "Thread::HijackThread(%p to %p): Early out - IsInFirstFrameOfHandler. State=%x.\n", this, pvHijackAddr, (ThreadState)m_State);
         return;
     }
@@ -6896,7 +6891,6 @@ void Thread::HijackThread(VOID *pvHijackAddr, ExecutionState *esb)
     HijackLockHolder hijackLockHolder(this);
     if (!hijackLockHolder.Acquired())
     {
-        _ASSERTE(--EnterCount == 0);
         STRESS_LOG3(LF_SYNC, LL_INFO100, "Thread::HijackThread(%p to %p): Early out - !hijackLockHolder.Acquired. State=%x.\n", this, pvHijackAddr, (ThreadState)m_State);
         return;
     }
@@ -6928,10 +6922,6 @@ void Thread::HijackThread(VOID *pvHijackAddr, ExecutionState *esb)
     // Bash the stack to return to one of our stubs
     *esb->m_ppvRetAddrPtr = pvHijackAddr;
     FastInterlockOr((ULONG *) &m_State, TS_Hijacked);
-
-#ifdef _DEBUG
-    _ASSERTE(--EnterCount == 0);
-#endif
 }
 
 // If we are unhijacking another thread (not the current thread), then the caller is responsible for
@@ -8294,7 +8284,7 @@ void PALAPI HandleGCSuspensionForInterruptedThread(CONTEXT *interruptedContext)
     if (!codeInfo.IsValid())
         return;
 
-    DWORD addrOffset = ip - codeInfo.GetStartAddress();
+    DWORD addrOffset = codeInfo.GetRelOffset();
 
     ICodeManager *pEECM = codeInfo.GetCodeManager();
     _ASSERTE(pEECM != NULL);
@@ -8337,7 +8327,6 @@ void PALAPI HandleGCSuspensionForInterruptedThread(CONTEXT *interruptedContext)
         if (action != SWA_ABORT || !executionState.m_IsJIT)
             return;
 
-        _ASSERTE(executionState.m_ppvRetAddrPtr != NULL);
         if (executionState.m_ppvRetAddrPtr == NULL)
             return;
 
