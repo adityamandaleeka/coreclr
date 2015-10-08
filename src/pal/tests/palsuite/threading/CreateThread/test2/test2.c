@@ -113,7 +113,7 @@ int __cdecl main(int argc, char **argv)
         /* Resume suspended threads */
         if (testCases[i].dwCreationFlags == CREATE_SUSPENDED)
         {   
-            dwRetRT = ResumeThread (hThread[i]);
+            dwRetRT = ResumeThread_____ThisIsOkay (hThread[i]);
             if (dwRetRT != 1)
             {
                 Trace ("PALSUITE ERROR: ResumeThread(%p) "

@@ -2208,7 +2208,7 @@ BOOL ThreadpoolMgr::CreateWorkerThread()
         }
         else {
             DWORD status;
-            status = ResumeThread((HANDLE)pThread);
+            status = ResumeThread_____ThisIsOkay((HANDLE)pThread);
             _ASSERTE(status != (DWORD) (-1));
             CloseHandle((HANDLE)pThread);          // we don't need this anymore
         }
@@ -2766,7 +2766,7 @@ BOOL ThreadpoolMgr::CreateWaitThread()
 
     waitThreadInfo->threadCB = threadCB;
 
-    DWORD status = ResumeThread(threadHandle);
+    DWORD status = ResumeThread_____ThisIsOkay(threadHandle);
 
     {
         // We will QueueUserAPC on the newly created thread.

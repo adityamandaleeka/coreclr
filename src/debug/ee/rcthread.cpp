@@ -1713,7 +1713,7 @@ HRESULT DebuggerRCThread::Start(void)
 
         if (m_thread != NULL)
         {
-            ResumeThread(m_thread);
+            ResumeThread_____ThisIsOkay(m_thread);
         }
 
     }

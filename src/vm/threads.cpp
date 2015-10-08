@@ -712,7 +712,7 @@ DWORD Thread::StartThread()
     {
         _ASSERTE (GetThreadHandle() != INVALID_HANDLE_VALUE &&
                   GetThreadHandle() != SWITCHOUT_HANDLE_VALUE);
-        dwRetVal = ::ResumeThread(GetThreadHandle());
+        dwRetVal = ::ResumeThread_____ThisIsOkay(GetThreadHandle());
     }
 
     return dwRetVal;

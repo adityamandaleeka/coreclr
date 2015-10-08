@@ -5092,7 +5092,7 @@ HANDLE gc_heap::create_gc_thread ()
     else
         set_thread_affinity_mask_for_heap(gc_thread, heap_number);
 
-    ResumeThread(gc_thread);
+    ResumeThread_____ThisIsOkay(gc_thread);
     return gc_thread;
 }
 

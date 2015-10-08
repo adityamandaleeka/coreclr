@@ -131,7 +131,7 @@ int __cdecl main( int argc, char **argv )
     }
 
     /* Resume the suspended thread */
-    ResumeThread( hThread );
+    ResumeThread_____ThisIsOkay( hThread );
 
     /* do another wait on the resumed thread */
     ret = WaitForSingleObject( hThread, 2000 );

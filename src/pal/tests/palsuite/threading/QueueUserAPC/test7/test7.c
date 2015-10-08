@@ -163,7 +163,7 @@ int __cdecl main( int argc, char **argv )
     }
 
     /* Resume the suspended thread */
-    ResumeThread( hThread );
+    ResumeThread_____ThisIsOkay( hThread );
 
     /* wait until the other thread is ready to proceed */
     ret = WaitForSingleObject( hSyncEvent, 10000 );

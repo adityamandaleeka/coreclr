@@ -107,13 +107,13 @@ int __cdecl main(int argc, char **argv)
              (LPVOID) 0, CREATE_SUSPENDED, &dwThreadId[1], GetLastError());
         LeaveCriticalSection(&CriticalSection);
 
-        dwRet = ResumeThread(hThread[0]);
-        if (-1 == dwRet)
-        {
-            Trace("PALSUITE ERROR: ResumeThread(%p) call failed.\n"
-                  "GetLastError returned '%d'.\n", hThread[0],
-             GetLastError());
-    }
+        //dwRet = ResumeThread_____ThisIsOkay(hThread[0]);
+        // if (-1 == dwRet)
+        // {
+        //     Trace("PALSUITE ERROR: ResumeThread(%p) call failed.\n"
+        //           "GetLastError returned '%d'.\n", hThread[0],
+        //      GetLastError());
+        // }
 
         dwRet = WaitForSingleObject(hThread[0], 10000);
         if (WAIT_OBJECT_0 == dwRet)
@@ -157,7 +157,7 @@ int __cdecl main(int argc, char **argv)
               THREAD_PRIORITY_ABOVE_NORMAL, GetLastError());
     }
 
-    dwRet = ResumeThread(hThread[0]);
+    //dwRet = ResumeThread_____ThisIsOkay(hThread[0]);
     if (-1 == dwRet)
     {
         Trace("PALSUITE ERROR: ResumeThread(%p, %d) call failed.\n"
@@ -165,7 +165,7 @@ int __cdecl main(int argc, char **argv)
               GetLastError() );
     }
    
-    dwRet = ResumeThread(hThread[1]); 
+    //dwRet = ResumeThread_____ThisIsOkay(hThread[1]); 
     if (-1 == dwRet)
     {
         Trace("PALSUITE ERROR: ResumeThread(%p, %d) call failed.\n"

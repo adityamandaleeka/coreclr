@@ -115,7 +115,7 @@ INT __cdecl main( INT argc, CHAR **argv )
     }
 
     /* let the child thread run now */    
-    ResumeThread( hThread );
+    ResumeThread_____ThisIsOkay( hThread );
 
 
     /* wait for the thread to finish */

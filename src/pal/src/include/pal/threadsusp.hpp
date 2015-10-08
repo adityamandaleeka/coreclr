@@ -80,19 +80,19 @@ Abstract:
 #endif // HAS_POSIX_SEMAPHORES
 
 #include <stdarg.h>
-	
+
 namespace CorUnix
 {
 #ifdef _DEBUG
 #define MAX_TRACKED_CRITSECS 8
 #endif
 
-    PAL_ERROR
-    InternalSuspendThread(
-        CPalThread *pthrSuspender,
-        HANDLE hTarget,
-        DWORD *pdwSuspendCount
-    );
+    // PAL_ERROR
+    // InternalSuspendThread(
+    //     CPalThread *pthrSuspender,
+    //     HANDLE hTarget,
+    //     DWORD *pdwSuspendCount
+    // );
 
     PAL_ERROR
     InternalResumeThread(
@@ -102,7 +102,7 @@ namespace CorUnix
     );
 
     class CThreadSuspensionInfo : public CThreadInfoInitializer
-    {    
+    {
 #if USE_SIGNALS_FOR_THREAD_SUSPENSION
         /* suspend_handler and resume_handler are friends of CThreadSuspensionInfo,
         which allows them to call private functions: HandleSuspendSignal and 

@@ -98,164 +98,164 @@ DWORD PALAPI SuspendThreadTestThread( LPVOID lpParameter)
     return dwRet;
 }
 
-BOOL SuspendThreadTest()
-{
-    BOOL bRet = FALSE;
-    DWORD dwRet = 0;
+// BOOL SuspendThreadTest()
+// {
+//     BOOL bRet = FALSE;
+//     DWORD dwRet = 0;
 
-    LPSECURITY_ATTRIBUTES lpThreadAttributes = NULL;
-    DWORD dwStackSize = 0; 
-    LPTHREAD_START_ROUTINE lpStartAddress =  &SuspendThreadTestThread;
-    LPVOID lpParameter = (LPVOID)1;
-    DWORD dwCreationFlags = 0;  /* run immediately */
-    DWORD dwThreadId = 0;
-    CONTEXT savedContext;
-    CONTEXT modifiedContext;
-    CONTEXT verifyContext;
+//     LPSECURITY_ATTRIBUTES lpThreadAttributes = NULL;
+//     DWORD dwStackSize = 0; 
+//     LPTHREAD_START_ROUTINE lpStartAddress =  &SuspendThreadTestThread;
+//     LPVOID lpParameter = (LPVOID)1;
+//     DWORD dwCreationFlags = 0;  /* run immediately */
+//     DWORD dwThreadId = 0;
+//     CONTEXT savedContext;
+//     CONTEXT modifiedContext;
+//     CONTEXT verifyContext;
 
 
-    HANDLE hThread = 0;
+//     HANDLE hThread = 0;
 
-    dwSuspendThreadTestParameter = 0;
+//     dwSuspendThreadTestParameter = 0;
 
-    /* Create a thread and ensure it returned a valid handle */
+//     /* Create a thread and ensure it returned a valid handle */
 
-    hThread = CreateThread( lpThreadAttributes, 
-                            dwStackSize, lpStartAddress, lpParameter, 
-                            dwCreationFlags, &dwThreadId ); 
+//     hThread = CreateThread( lpThreadAttributes, 
+//                             dwStackSize, lpStartAddress, lpParameter, 
+//                             dwCreationFlags, &dwThreadId ); 
 
-    if (hThread != INVALID_HANDLE_VALUE)
-    {
-        /* Wait and ensure that WAIT_TIMEOUT is returned */
-        dwRet = WaitForSingleObject(hThread,1000);
+//     if (hThread != INVALID_HANDLE_VALUE)
+//     {
+//         /* Wait and ensure that WAIT_TIMEOUT is returned */
+//         dwRet = WaitForSingleObject(hThread,1000);
         
-        if (dwRet != WAIT_TIMEOUT)
-        {
-            Trace("SuspendThreadTest:WaitForSingleObject "
-                   "failed (%x)\n",GetLastError());
-        }
-        else
-        {
-            /* Suspend the thread */
-            dwRet = SuspendThread(hThread);
+//         if (dwRet != WAIT_TIMEOUT)
+//         {
+//             Trace("SuspendThreadTest:WaitForSingleObject "
+//                    "failed (%x)\n",GetLastError());
+//         }
+//         else
+//         {
+//             /* Suspend the thread */
+//             dwRet = SuspendThread(hThread);
 
-            if (dwRet != 0)
-            {
-                Trace("SuspendThreadTest:SuspendThread "
-                       "failed (%x)\n",GetLastError());
-            }
-            else
-            {
-                /* now check parameter, it should be greater than 0 */
-                if (dwSuspendThreadTestCounter == 0)
-                {
-                    Trace("SuspendThreadTest:parameter error\n");
-                }
-                else
-                {   
+//             if (dwRet != 0)
+//             {
+//                 Trace("SuspendThreadTest:SuspendThread "
+//                        "failed (%x)\n",GetLastError());
+//             }
+//             else
+//             {
+//                 /* now check parameter, it should be greater than 0 */
+//                 if (dwSuspendThreadTestCounter == 0)
+//                 {
+//                     Trace("SuspendThreadTest:parameter error\n");
+//                 }
+//                 else
+//                 {   
 
-                    /* Initialize CONTEXT variables before testing */
-                    memset(&savedContext, 0, sizeof(CONTEXT));
-                    savedContext.ContextFlags = CONTEXT_FULL;
-                    memset(&verifyContext, 0, sizeof(CONTEXT));
-                    verifyContext.ContextFlags = CONTEXT_FULL;
+//                     /* Initialize CONTEXT variables before testing */
+//                     memset(&savedContext, 0, sizeof(CONTEXT));
+//                     savedContext.ContextFlags = CONTEXT_FULL;
+//                     memset(&verifyContext, 0, sizeof(CONTEXT));
+//                     verifyContext.ContextFlags = CONTEXT_FULL;
                     
-                    /* Read the suspended thread's context using saveContext. */
-                    dwRet = GetThreadContext(hThread, &savedContext);
-                    if (dwRet != 1)
-                    {
-                        Fail("GetThreadContext failed for savedContext: %d (%d)\n", dwRet, GetLastError());
-                    }
+//                     /* Read the suspended thread's context using saveContext. */
+//                     dwRet = GetThreadContext(hThread, &savedContext);
+//                     if (dwRet != 1)
+//                     {
+//                         Fail("GetThreadContext failed for savedContext: %d (%d)\n", dwRet, GetLastError());
+//                     }
 
-                    /* Make sure GeThreadContext dose get some non-zero values in registers */
-                    dwRet = memcmp(&savedContext, &verifyContext, sizeof(CONTEXT));
-                    if (dwRet == 0)
-                        Fail("GetThreadContext for savedContext do not return meaningful values: (%d)\n", dwRet);
+//                     /* Make sure GeThreadContext dose get some non-zero values in registers */
+//                     dwRet = memcmp(&savedContext, &verifyContext, sizeof(CONTEXT));
+//                     if (dwRet == 0)
+//                         Fail("GetThreadContext for savedContext do not return meaningful values: (%d)\n", dwRet);
                     
-                    /* Copy savedContext to modifiedContext before modification */
-                    memcpy(&modifiedContext, &savedContext, sizeof(CONTEXT));
+//                     /* Copy savedContext to modifiedContext before modification */
+//                     memcpy(&modifiedContext, &savedContext, sizeof(CONTEXT));
                     
-                    ModifyContext(&modifiedContext);
+//                     ModifyContext(&modifiedContext);
 
-                    /* Modify the suspended thread's context using modifiedContext. */
-                    dwRet = SetThreadContext(hThread, &modifiedContext);
-                    if (dwRet != 1)
-                    {
-                        Fail("SetThreadContext failed for modifiedContext: %d (%d)\n", dwRet, GetLastError());
-                    }
+//                     /* Modify the suspended thread's context using modifiedContext. */
+//                     dwRet = SetThreadContext(hThread, &modifiedContext);
+//                     if (dwRet != 1)
+//                     {
+//                         Fail("SetThreadContext failed for modifiedContext: %d (%d)\n", dwRet, GetLastError());
+//                     }
 
-                    /* Read the suspended thread's context again using verifyContext. */
-                    dwRet = GetThreadContext(hThread, &verifyContext);
-                    if (dwRet != 1)
-                    {
-                        Fail("GetThreadContext failed for verifyContext: %d (%d)\n", dwRet, GetLastError());
-                    }
+//                     /* Read the suspended thread's context again using verifyContext. */
+//                     dwRet = GetThreadContext(hThread, &verifyContext);
+//                     if (dwRet != 1)
+//                     {
+//                         Fail("GetThreadContext failed for verifyContext: %d (%d)\n", dwRet, GetLastError());
+//                     }
 
-                    /* modifiedContext and verifyContext should be the same for suspended thread. */
-                    dwRet = memcmp(&modifiedContext, &verifyContext, sizeof(CONTEXT));
-                    if (dwRet != 0)
-                        Fail("modifiedContext and verifyContext do not match: (%d)\n", dwRet);
+//                     /* modifiedContext and verifyContext should be the same for suspended thread. */
+//                     dwRet = memcmp(&modifiedContext, &verifyContext, sizeof(CONTEXT));
+//                     if (dwRet != 0)
+//                         Fail("modifiedContext and verifyContext do not match: (%d)\n", dwRet);
 
-                    /* Restore the suspended thread's context. */
-                    dwRet = SetThreadContext(hThread, &savedContext);
-                    if (dwRet != 1)
-                    {
-                        Fail("SetThreadContext failed for savedContext: %d (%d)\n", dwRet, GetLastError());
-                    }
+//                     /* Restore the suspended thread's context. */
+//                     dwRet = SetThreadContext(hThread, &savedContext);
+//                     if (dwRet != 1)
+//                     {
+//                         Fail("SetThreadContext failed for savedContext: %d (%d)\n", dwRet, GetLastError());
+//                     }
 
-                    /* Save the counter */
-                    dwRet = dwSuspendThreadTestCounter;
+//                     /* Save the counter */
+//                     dwRet = dwSuspendThreadTestCounter;
                     
-                    /* Wait a second */
-                    Sleep(1000);
+//                     /* Wait a second */
+//                     Sleep(1000);
 
-                    /* Ensure the counter hasn't changed becuase the
-                       thread was suspended.
-                    */
+//                     /* Ensure the counter hasn't changed becuase the
+//                        thread was suspended.
+//                     */
                     
-                    if (dwSuspendThreadTestCounter != dwRet)
-                    {
-                        Trace("1SuspendThreadTest:parameter error\n");
-                    }
-                    else
-                    {
-                        /* Resume the thread */
-                        dwRet = ResumeThread(hThread);
+//                     if (dwSuspendThreadTestCounter != dwRet)
+//                     {
+//                         Trace("1SuspendThreadTest:parameter error\n");
+//                     }
+//                     else
+//                     {
+//                         /* Resume the thread */
+//                         dwRet = ResumeThread(hThread);
 
-                        if (dwRet != 1)
-                        {
-                            Trace("SuspendThreadTest:ResumeThread "
-                                   "failed (%x)\n",GetLastError());
-                        }
-                        else
-                        {
-                            dwSuspendThreadTestParameter = 0;
+//                         if (dwRet != 1)
+//                         {
+//                             Trace("SuspendThreadTest:ResumeThread "
+//                                    "failed (%x)\n",GetLastError());
+//                         }
+//                         else
+//                         {
+//                             dwSuspendThreadTestParameter = 0;
 
-                            /* set thread to exit and wait */
-                            dwRet = WaitForSingleObject(hThread,INFINITE);
+//                             /* set thread to exit and wait */
+//                             dwRet = WaitForSingleObject(hThread,INFINITE);
 
-                            if (dwRet != WAIT_OBJECT_0)
-                            {
-                                Trace("SuspendThreadTest:WaitForSingleObject"
-                                       " failed (%x)\n",GetLastError());
-                            }
-                            else
-                            {
-                                bRet = TRUE;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        Trace("SuspendThreadTest:CreateThread failed (%x)\n",GetLastError());
-    }
+//                             if (dwRet != WAIT_OBJECT_0)
+//                             {
+//                                 Trace("SuspendThreadTest:WaitForSingleObject"
+//                                        " failed (%x)\n",GetLastError());
+//                             }
+//                             else
+//                             {
+//                                 bRet = TRUE;
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     else
+//     {
+//         Trace("SuspendThreadTest:CreateThread failed (%x)\n",GetLastError());
+//     }
 
-    return bRet; 
-}
+//     return bRet; 
+// }
 
 int __cdecl main(int argc, char **argv)
 {
@@ -270,10 +270,10 @@ int __cdecl main(int argc, char **argv)
        SetThreadContext is disabled on Solaris due to a threading library issue
        on Solaris 8. See VSWhidbey 343949 for details.*/
 #else
-    if(!SuspendThreadTest())
-    {
-        Fail ("Test failed\n");
-    }
+    // if(!SuspendThreadTest())
+    // {
+    //     Fail ("Test failed\n");
+    // }
 #endif
     
     PAL_Terminate();

@@ -1970,16 +1970,16 @@ GetExitCodeThread(
            IN HANDLE hThread,
            IN LPDWORD lpExitCode);
 
-PALIMPORT
-DWORD
-PALAPI
-SuspendThread(
-          IN HANDLE hThread);
+// PALIMPORT
+// DWORD
+// PALAPI
+// SuspendThread(
+//           IN HANDLE hThread);
 
 PALIMPORT
 DWORD
 PALAPI
-ResumeThread(
+ResumeThread_____ThisIsOkay(
          IN HANDLE hThread);
 
 typedef VOID (PALAPI *PAPCFUNC)(ULONG_PTR dwParam);

@@ -78,7 +78,7 @@ BOOL ResumeThreadTest()
                    correct.
                 */
                 
-                dwRet = ResumeThread(hThread);
+                dwRet = ResumeThread_____ThisIsOkay(hThread);
 
                 if (dwRet != 1)
                 {

@@ -141,7 +141,7 @@ BOOL APIThreadStress::DoThreadStress()
 
         while (p < pEnd)
         {
-            ::ResumeThread(*p);
+            //////////::ResumeThread(*p); why is this being done?
             p++;
         }
 

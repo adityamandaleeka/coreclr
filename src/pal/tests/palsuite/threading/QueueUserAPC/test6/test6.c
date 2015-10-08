@@ -82,7 +82,7 @@ int __cdecl main( int argc, char **argv )
     }
 
     /* Resume the suspended thread */
-    ResumeThread( hThread );
+    ResumeThread_____ThisIsOkay( hThread );
 
     /* wait on the other thread to complete */
     ret = WaitForSingleObject( hThread, INFINITE );

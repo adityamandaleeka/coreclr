@@ -97,7 +97,7 @@ int __cdecl main (int argc, char **argv)
         Fail("");
     }
 
-    dwRet = ResumeThread(hThread);
+    dwRet = ResumeThread_____ThisIsOkay(hThread);
      
     if (-1 == dwRet)
     {

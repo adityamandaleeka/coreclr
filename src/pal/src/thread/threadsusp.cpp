@@ -92,39 +92,39 @@ Function:
 
 See MSDN doc.
 --*/
-DWORD
-PALAPI
-SuspendThread(
-          IN HANDLE hThread)
-{
-    PAL_ERROR palError;
-    CPalThread *pthrSuspender;
-    DWORD dwSuspendCount = (DWORD)-1;
+// DWORD
+// PALAPI
+// SuspendThread(
+//           IN HANDLE hThread)
+// {
+//     PAL_ERROR palError;
+//     CPalThread *pthrSuspender;
+//     DWORD dwSuspendCount = (DWORD)-1;
 
-    PERF_ENTRY(SuspendThread);
-    ENTRY("SuspendThread(hThread=%p)\n", hThread);
+//     PERF_ENTRY(SuspendThread);
+//     ENTRY("SuspendThread(hThread=%p)\n", hThread);
 
-    pthrSuspender = InternalGetCurrentThread();
-    palError = InternalSuspendThread(
-        pthrSuspender,
-        hThread,
-        &dwSuspendCount
-        );
+//     pthrSuspender = InternalGetCurrentThread();
+//     palError = InternalSuspendThread(
+//         pthrSuspender,
+//         hThread,
+//         &dwSuspendCount
+//         );
 
-    if (NO_ERROR != palError)
-    {
-        pthrSuspender->SetLastError(palError);
-        dwSuspendCount = (DWORD) -1;
-    }
-    else
-    {
-        _ASSERT_MSG(dwSuspendCount != static_cast<DWORD>(-1), "InternalSuspendThread returned success but dwSuspendCount did not change.\n");
-    }
+//     if (NO_ERROR != palError)
+//     {
+//         pthrSuspender->SetLastError(palError);
+//         dwSuspendCount = (DWORD) -1;
+//     }
+//     else
+//     {
+//         _ASSERT_MSG(dwSuspendCount != static_cast<DWORD>(-1), "InternalSuspendThread returned success but dwSuspendCount did not change.\n");
+//     }
 
-    LOGEXIT("SuspendThread returns DWORD %u\n", dwSuspendCount);
-    PERF_EXIT(SuspendThread);
-    return dwSuspendCount;
-}
+//     LOGEXIT("SuspendThread returns DWORD %u\n", dwSuspendCount);
+//     PERF_EXIT(SuspendThread);
+//     return dwSuspendCount;
+// }
 
 /*++
 Function:
@@ -135,41 +135,41 @@ CPalThread, and passes both the suspender and target thread references
 to InternalSuspendThreadFromData. A reference to the suspend count from
 the suspension attempt is passed back to the caller of this function.
 --*/
-PAL_ERROR
-CorUnix::InternalSuspendThread(
-    CPalThread *pthrSuspender,
-    HANDLE hTargetThread,
-    DWORD *pdwSuspendCount
-    )
-{
-    PAL_ERROR palError = NO_ERROR;
-    CPalThread *pthrTarget = NULL;
-    IPalObject *pobjThread = NULL;
+// PAL_ERROR
+// CorUnix::InternalSuspendThread(
+//     CPalThread *pthrSuspender,
+//     HANDLE hTargetThread,
+//     DWORD *pdwSuspendCount
+//     )
+// {
+//     PAL_ERROR palError = NO_ERROR;
+//     CPalThread *pthrTarget = NULL;
+//     IPalObject *pobjThread = NULL;
 
-    palError = InternalGetThreadDataFromHandle(
-        pthrSuspender,
-        hTargetThread,
-        0, // THREAD_SUSPEND_RESUME
-        &pthrTarget,
-        &pobjThread
-        );
+//     palError = InternalGetThreadDataFromHandle(
+//         pthrSuspender,
+//         hTargetThread,
+//         0, // THREAD_SUSPEND_RESUME
+//         &pthrTarget,
+//         &pobjThread
+//         );
 
-    if (NO_ERROR == palError)
-    {
-        palError = pthrSuspender->suspensionInfo.InternalSuspendThreadFromData(
-            pthrSuspender,
-            pthrTarget,
-            pdwSuspendCount
-            );
-    } 
+//     if (NO_ERROR == palError)
+//     {
+//         palError = pthrSuspender->suspensionInfo.InternalSuspendThreadFromData(
+//             pthrSuspender,
+//             pthrTarget,
+//             pdwSuspendCount
+//             );
+//     } 
 
-    if (NULL != pobjThread)
-    {
-        pobjThread->ReleaseReference(pthrSuspender);
-    }
+//     if (NULL != pobjThread)
+//     {
+//         pobjThread->ReleaseReference(pthrSuspender);
+//     }
 
-    return palError;
-}
+//     return palError;
+// }
 
 /*++
 Function:
@@ -489,7 +489,7 @@ See MSDN doc.
 --*/
 DWORD
 PALAPI
-ResumeThread(
+ResumeThread_____ThisIsOkay(
          IN HANDLE hThread
          )
 {
@@ -643,7 +643,7 @@ CThreadSuspensionInfo::InternalResumeThreadFromData(
         palError = ERROR_INVALID_HANDLE;
         ERROR("Tried to wake up dummy thread without a blocking pipe.\n");
         ReleaseSuspensionLocks(pthrResumer, pthrTarget);
-        goto InternalResumeThreadFromDataExit;            
+        goto InternalResumeThreadFromDataExit;
     }
 
     dwPrevSuspendCount = pthrTarget->suspensionInfo.GetSuspCount();
@@ -721,7 +721,7 @@ CThreadSuspensionInfo::InternalResumeThreadFromData(
             // No error is set here since this is not a logic error.
             ReleaseSuspensionLocks(pthrResumer, pthrTarget);
             ASSERT("SUSPENSION DIAGNOSTIC FAILURE: Resuming thread hasn't suspended a thread\n");
-            goto InternalResumeThreadFromDataExit;      
+            goto InternalResumeThreadFromDataExit;
         }
         else
         {
@@ -769,7 +769,7 @@ CThreadSuspensionInfo::InternalResumeThreadFromData(
 
     ReleaseSuspensionLocks(pthrResumer, pthrTarget);
 
-    InternalResumeThreadFromDataExit:
+InternalResumeThreadFromDataExit:
 
     if (NO_ERROR == palError)
     {
@@ -787,9 +787,9 @@ CThreadSuspensionInfo::InternalResumeThreadFromData(
 
     pthrResumer->suspensionInfo.SetPerformingSuspension(FALSE);
     
-    return palError;    
+    return palError;
 }
-  
+
 /*++
 Function:
   TryAcquireSuspensionLock

@@ -165,7 +165,7 @@ void HelperCanary::Init()
     _ASSERTE(g_pRCThread != NULL);
     g_pRCThread->GetDCB()->m_CanaryThreadId = m_CanaryThreadId;
 
-    ResumeThread(m_hCanaryThread);
+    ResumeThread_____ThisIsOkay(m_hCanaryThread);
 }
 
 
