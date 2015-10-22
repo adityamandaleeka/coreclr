@@ -188,7 +188,6 @@ CThreadSuspensionInfo::InternalSuspendThreadFromData(
 
     BOOL fSelfSuspend = FALSE;
 
-    pthrSuspender->suspensionInfo.SetPerformingSuspension(TRUE);
 
     if (!pthrSuspender->suspensionInfo.IsSuspensionStateSafe())
     {
@@ -390,7 +389,6 @@ CThreadSuspensionInfo::InternalSuspendThreadFromData(
 #endif
     }
 
-    pthrSuspender->suspensionInfo.SetPerformingSuspension(FALSE);
 
     return palError;
 }
@@ -508,10 +506,6 @@ CThreadSuspensionInfo::InternalResumeThreadFromData(
     PAL_ERROR palError = NO_ERROR;
     DWORD dwPrevSuspendCount = 0;
 
-#if USE_SIGNALS_FOR_THREAD_SUSPENSION
-    DWORD dwPthreadRet = 0;
-#endif // USE_SIGNALS_FOR_THREAD_SUSPENSION
-
     int nWrittenBytes = -1;
 
 #ifdef _DEBUG
@@ -521,7 +515,6 @@ CThreadSuspensionInfo::InternalResumeThreadFromData(
     BOOL fDecrementSuspenderCount = FALSE;
  #endif
     
-    pthrResumer->suspensionInfo.SetPerformingSuspension(TRUE);
 
     if (!pthrResumer->suspensionInfo.IsSuspensionStateSafe())
     {
@@ -605,103 +598,19 @@ CThreadSuspensionInfo::InternalResumeThreadFromData(
         ReleaseSuspensionLocks(pthrResumer, pthrTarget);
         goto InternalResumeThreadFromDataExit;
     }
-
-    // Check if the target thread was actually suspended.
-    // Note that calling ResumeThread on an executing thread
-    // is not an error; palError remains NO_ERROR and
-    // dwPrevSuspendCount is still 0.
-    if (pthrTarget->suspensionInfo.GetSuspCount() == 0)
+    else
     {
-        ReleaseSuspensionLocks(pthrResumer, pthrTarget);
-        goto InternalResumeThreadFromDataExit;
+        _ASSERT_MSG(false, "zzzzzzzzzzzzzzzzzzz who's resuming?\n");
+        /////////////////////do something here if there's no pipe. just assert?
     }
-
-    // Notice that the suspension count is decremented after setting dwPrevSuspendCount above.
-    pthrTarget->suspensionInfo.DecrSuspCount();
-
-#ifdef _DEBUG
-    // The selfsusp flag is checked after acquiring the suspension locks and
-    // making sure the thread was suspended. This prevents the selfsusp flag
-    // from being FALSE if the resume call occurs before the target sets its
-    // selfsusp field to TRUE. Note that a self suspending thread resets 
-    // its selfsusp field to FALSE after being resumed from suspension.
-
-    // If the target thread was not self suspended and the resuming thread
-    // has suspended other threads, then this resume attempt allows the
-    // resuming thread to decrement its count of threads it suspended.
-    if (!pthrTarget->suspensionInfo.GetSelfSusp())
-    {
-        if (pthrResumer->suspensionInfo.GetNumThreadsSuspendedByThisThread() <= 0)
-        {
-            // No error is set here since this is not a logic error.
-            ReleaseSuspensionLocks(pthrResumer, pthrTarget);
-            ASSERT("SUSPENSION DIAGNOSTIC FAILURE: Resuming thread hasn't suspended a thread\n");
-            goto InternalResumeThreadFromDataExit;
-        }
-        else
-        {
-            fDecrementSuspenderCount = TRUE;
-        }
-    }
-#endif // _DEBUG
-
-    // If the target's suspension count is now zero, it's ready to be resumed.
-    if (pthrTarget->suspensionInfo.GetSuspCount() == 0)
-    {
-#if USE_PTHREAD_CONDVARS
-        // We must initialize the flag indicating the target has acknowledged the resumption
-        // before they could possibly have set it.
-        m_fResumed = FALSE;
-#endif
-
-#if USE_SIGNALS_FOR_THREAD_SUSPENSION
-        pthrTarget->suspensionInfo.SetResumeSignalSent(TRUE);
-        dwPthreadRet = pthread_kill(pthrTarget->GetPThreadSelf(), SIGUSR2);
-        if (dwPthreadRet == 0)
-        {
-            pthrTarget->suspensionInfo.WaitOnResumeSemaphore();
-        }
-        else
-        {
-            // Resuming the thread failed so increment the suspension count.
-            palError = ERROR_INVALID_HANDLE;    
-            pthrTarget->suspensionInfo.IncrSuspCount();
-            ReleaseSuspensionLocks(pthrResumer, pthrTarget);      
-            ASSERT("pthread_kill failed with error %d\n", dwPthreadRet);    
-            goto InternalResumeThreadFromDataExit;
-        }   
-#else //USE_SIGNALS_FOR_THREAD_SUSPENSION
-        if(!THREADHandleResumeNative(pthrTarget))
-        {
-            palError = ERROR_INVALID_HANDLE;
-            pthrTarget->suspensionInfo.IncrSuspCount();
-            ReleaseSuspensionLocks(pthrResumer, pthrTarget);
-            ASSERT("Native resumption actually failed!\n");
-            goto InternalResumeThreadFromDataExit;
-        }
-#endif //USE_SIGNALS_FOR_THREAD_SUSPENSION
-    }
-
-    ReleaseSuspensionLocks(pthrResumer, pthrTarget);
 
 InternalResumeThreadFromDataExit:
 
     if (NO_ERROR == palError)
     {
         *pdwSuspendCount = dwPrevSuspendCount;
-
-#ifdef _DEBUG
-        // Decrementing the resumer thread's count of threads it suspended
-        // if it's not resuming a self suspended thread.
-        if (fDecrementSuspenderCount)
-        {
-            pthrResumer->suspensionInfo.DecrNumThreadsSuspendedByThisThread();
-        }
-#endif
     }
 
-    pthrResumer->suspensionInfo.SetPerformingSuspension(FALSE);
-    
     return palError;
 }
 
@@ -1150,36 +1059,36 @@ suspension semaphore and wait for the suspending thread to
 suspend it. LeaveUnsafeRegion should only be called after
 the thread called EnterUnsafeRegion. 
 --*/
-VOID
-CThreadSuspensionInfo::LeaveUnsafeRegion()
-{
-    if (PALIsThreadDataInitialized())
-    {
-        _ASSERT_MSG(GetUnsafeRegionCount() > 0, "When entering LeaveUnsafeRegion, a thread's unsafe region count should always be greater than zero.\n");
+// VOID
+// CThreadSuspensionInfo::LeaveUnsafeRegion()
+// {
+//     if (PALIsThreadDataInitialized())
+//     {
+//         _ASSERT_MSG(GetUnsafeRegionCount() > 0, "When entering LeaveUnsafeRegion, a thread's unsafe region count should always be greater than zero.\n");
 
-        // Predecrement the unsafe region count
-        DecrUnsafeRegionCount();
-        if (GetUnsafeRegionCount() == 0) 
-        {
-            if (GetSuspPending())
-            {
-#if USE_SIGNALS_FOR_THREAD_SUSPENSION
-                pthread_sigmask(SIG_BLOCK, &smWaitmask, &this->m_smOrigmask);
-                PostOnSuspendSemaphore();
-                sigsuspend(&smContmask);
-                // Set the signal mask that came before this sigsuspend.
-                pthread_sigmask(SIG_SETMASK, &this->m_smOrigmask, NULL);
-#else // USE_SIGNALS_FOR_THREAD_SUSPENSION
-                PostOnSuspendSemaphore();
-                while (GetSuspPending())
-                {
-                    sched_yield();
-                }
-#endif // USE_SIGNALS_FOR_THREAD_SUSPENSION
-            }
-        }
-    }
-}
+//         // Predecrement the unsafe region count
+//         DecrUnsafeRegionCount();
+//         if (GetUnsafeRegionCount() == 0) 
+//         {
+//             if (GetSuspPending())
+//             {
+// #if USE_SIGNALS_FOR_THREAD_SUSPENSION
+//                 pthread_sigmask(SIG_BLOCK, &smWaitmask, &this->m_smOrigmask);
+//                 PostOnSuspendSemaphore();
+//                 sigsuspend(&smContmask);
+//                 // Set the signal mask that came before this sigsuspend.
+//                 pthread_sigmask(SIG_SETMASK, &this->m_smOrigmask, NULL);
+// #else // USE_SIGNALS_FOR_THREAD_SUSPENSION
+//                 PostOnSuspendSemaphore();
+//                 while (GetSuspPending())
+//                 {
+//                     sched_yield();
+//                 }
+// #endif // USE_SIGNALS_FOR_THREAD_SUSPENSION
+//             }
+//         }
+//     }
+// }
 
 /*++
 Function:
@@ -1192,14 +1101,14 @@ very carefully since thread suspension is required during
 PAL cleanup. LeaveUnsafeRegion is used to decrement a thread's
 suspension count.
 --*/
-VOID
-CThreadSuspensionInfo::EnterUnsafeRegion()
-{
-    if (PALIsThreadDataInitialized())
-    {
-        IncrUnsafeRegionCount();
-    }
-}
+// VOID
+// CThreadSuspensionInfo::EnterUnsafeRegion()
+// {
+//     if (PALIsThreadDataInitialized())
+//     {
+//         IncrUnsafeRegionCount();
+//     }
+// }
 
 #if !HAVE_MACH_EXCEPTIONS || USE_SIGNALS_FOR_THREAD_SUSPENSION
 /*++
@@ -1591,21 +1500,6 @@ CThreadSuspensionInfo::DestroySemaphoreIds()
     }
 }
 #endif // USE_SYSV_SEMAPHORES
-
-/*++
-Function:
-  IsAssertShutdownSafe
-  
-IsAssertShutdownSafe returns TRUE if a thread is in an unsafe region or in the
-middle of a suspension attempt.
---*/
-BOOL 
-CThreadSuspensionInfo::IsAssertShutdownSafe()
-{
-    // returns TRUE if the thread is in a suspension safe region and not 
-    // asserting from within InternalSuspend/ResumeThreadFromData.
-    return (IsSuspensionStateSafe() && !IsPerformingSuspension());
-}
 
 /*++
 Function:

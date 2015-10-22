@@ -132,7 +132,6 @@ namespace CorUnix
 #ifdef _DEBUG
             Volatile<LONG> m_lNumThreadsSuspendedByThisThread; // number of threads that this thread has suspended; used for suspension diagnostics
 #endif
-            BOOL m_fPerformingSuspension; // TRUE when performing suspension operations; FALSE otherwise
 #if DEADLOCK_WHEN_THREAD_IS_SUSPENDED_WHILE_BLOCKED_ON_MUTEX
             int m_nSpinlock; // thread's suspension spinlock, which is used to synchronize suspension and resumption attempts
 #else // DEADLOCK_WHEN_THREAD_IS_SUSPENDED_WHILE_BLOCKED_ON_MUTEX
@@ -182,9 +181,8 @@ namespace CorUnix
             m_fSelfsusp is set to TRUE only by its own thread but may be later 
             accessed by other threads. 
 
-            m_lNumThreadsSuspendedByThisThread and m_fPerformingSuspension are
-            only accessed by their owning thread and therefore do not
-            require synchronization. */
+            m_lNumThreadsSuspendedByThisThread is accessed by its owning 
+            thread and therefore does not require synchronization. */
 
             DWORD
             GetUnsafeRegionCount(
@@ -446,7 +444,6 @@ namespace CorUnix
 #ifdef _DEBUG
                 m_lNumThreadsSuspendedByThisThread(0),
 #endif // _DEBUG
-                m_fPerformingSuspension(FALSE)
 #if !DEADLOCK_WHEN_THREAD_IS_SUSPENDED_WHILE_BLOCKED_ON_MUTEX
                 ,m_fSuspmutexInitialized(FALSE)
 #endif
@@ -475,20 +472,6 @@ namespace CorUnix
                 void
             );
 #endif
-
-            void
-            SetPerformingSuspension(
-                BOOL fPerformingSuspension
-                )
-            {
-                m_fPerformingSuspension = fPerformingSuspension;
-            };
-
-            BOOL
-            IsPerformingSuspension()
-            {
-                return m_fPerformingSuspension;
-            };
 
             void
             SetSuspendedForShutdown(
@@ -546,8 +529,6 @@ namespace CorUnix
 
             VOID InitializeSuspensionLock();
 
-            BOOL IsAssertShutdownSafe();
-            
             void SetBlockingPipe(
                 int nBlockingPipe
                 )

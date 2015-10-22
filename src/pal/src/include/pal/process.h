@@ -100,7 +100,6 @@ Abstract
 VOID PROCCleanupThreadSemIds(VOID);
 #endif
 
-
 /*++
 Function:
   PROCProcessLock
@@ -109,7 +108,6 @@ Abstract
   Enter the critical section associated to the current process
 --*/
 VOID PROCProcessLock(VOID);
-
 
 /*++
 Function:
