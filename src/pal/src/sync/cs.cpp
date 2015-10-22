@@ -1004,7 +1004,7 @@ namespace CorUnix
             // when releasing for the M-th time a CS recursively acquired N 
             // times, with N > M. 
 
-            pThread->suspensionInfo.LeaveUnsafeRegion();
+            // pThread->suspensionInfo.LeaveUnsafeRegion();
         }
         
     ILCS_cs_exit:
@@ -1075,7 +1075,7 @@ namespace CorUnix
             // failed to acquire the CS or it was already owning it and it is
             // just re-entering it. In both the case the previous unsafe marking 
             // needs to be undone here. 
-            pThread->suspensionInfo.LeaveUnsafeRegion();
+            // pThread->suspensionInfo.LeaveUnsafeRegion();
         }
 
         // check if the current thread already owns the criticalSection
