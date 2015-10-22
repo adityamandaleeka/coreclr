@@ -6901,6 +6901,7 @@ HMODULE NDirect::LoadFromPInvokeAssemblyDirectory(NDirectMethodDesc *pMD, LPCWST
     return hmod;
 }
 
+#ifdef FEATURE_CORECLR
 // Try to load the module from the native DLL search directories
 HMODULE NDirect::LoadFromNativeDllSearchDirectories(AppDomain* pDomain, LPCWSTR libName, DWORD flags, LoadLibErrorTracker *pErrorTracker)
 {
@@ -6924,6 +6925,7 @@ HMODULE NDirect::LoadFromNativeDllSearchDirectories(AppDomain* pDomain, LPCWSTR 
 
     return hmod;
 }
+#endif // FEATURE_CORECLR
 
 HINSTANCE NDirect::LoadLibraryModule(NDirectMethodDesc * pMD, LoadLibErrorTracker * pErrorTracker)
 {
