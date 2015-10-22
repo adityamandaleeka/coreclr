@@ -8099,7 +8099,7 @@ HRESULT CordbProcess::ResumeUnmanagedThreads()
         {
             LOG((LF_CORDB, LL_INFO1000, "CP::RUT: resuming unmanaged thread 0x%x\n", ut->m_id));
 
-            DWORD succ = ResumeThread(ut->m_handle);
+            DWORD succ = ResumeThread_____ThisIsOkay(ut->m_handle);
 
             if (succ == 0xFFFFFFFF)
             {
