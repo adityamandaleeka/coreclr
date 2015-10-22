@@ -403,7 +403,7 @@ CorUnix::InternalGetpwuid_r(
 {
     int iError = 0;
 
-    pPalThread->suspensionInfo.EnterUnsafeRegion();
+    // pPalThread->suspensionInfo.EnterUnsafeRegion();
     iError = getpwuid_r(uid, pPasswd, pchBuffer, nBufSize, ppResult);
 
 #if GETPWUID_R_SETS_ERRNO
@@ -413,7 +413,7 @@ CorUnix::InternalGetpwuid_r(
     }
 #endif // GETPWUID_R_SETS_ERRNO
 
-    pPalThread->suspensionInfo.LeaveUnsafeRegion();
+    // pPalThread->suspensionInfo.LeaveUnsafeRegion();
     return iError;
 }
 #endif // HAVE_GETPWUID_R

@@ -744,7 +744,7 @@ namespace CorUnix
             // for suspension only at the first acquisition of a CS, and not when 
             // recursively reacquiring an already owned CS. 
 
-            pThread->suspensionInfo.EnterUnsafeRegion();
+            // pThread->suspensionInfo.EnterUnsafeRegion();
         }
 
         // Set bits to change and waiter increment for an incoming thread
@@ -1037,7 +1037,7 @@ namespace CorUnix
         {
             // Acquiring an internal critical section: mark the current 
             // thread as unsafe for suspension.
-            pThread->suspensionInfo.EnterUnsafeRegion();
+            // pThread->suspensionInfo.EnterUnsafeRegion();
         }
 
         lNewVal = InterlockedCompareExchange (&pPalCriticalSection->LockCount, 
@@ -1563,7 +1563,7 @@ namespace CorUnix
             // Acquiring an internal critical section: mark the current 
             // thread as unsafe for suspension (it may already be
             // marked as unsafe by a previous call)
-            pThread->suspensionInfo.EnterUnsafeRegion();
+            // pThread->suspensionInfo.EnterUnsafeRegion();
         }
 
         iRet = pthread_mutex_lock(&pPalCriticalSection->csndNativeData.mutex);        
@@ -1621,7 +1621,7 @@ namespace CorUnix
             // back to safe for suspension. N.B.: after this call the state 
             // may still be unsafe if EnterUnsafeRegion has been called more 
             // times (e.g. the thread owns more internal CSs)
-            pThread->suspensionInfo.LeaveUnsafeRegion();
+            // pThread->suspensionInfo.LeaveUnsafeRegion();
         }
 
     }
@@ -1662,7 +1662,7 @@ namespace CorUnix
 
         if (pPalCriticalSection->fInternal && NULL != pThread)
         {
-            pThread->suspensionInfo.EnterUnsafeRegion();
+            // pThread->suspensionInfo.EnterUnsafeRegion();
         }
 
         fRet = (0 == pthread_mutex_trylock(&pPalCriticalSection->csndNativeData.mutex));
@@ -1674,7 +1674,7 @@ namespace CorUnix
         }
         else if (pPalCriticalSection->fInternal && NULL != pThread)
         {
-            pThread->suspensionInfo.LeaveUnsafeRegion();
+            // pThread->suspensionInfo.LeaveUnsafeRegion();
         }
 
     ITECS_exit:

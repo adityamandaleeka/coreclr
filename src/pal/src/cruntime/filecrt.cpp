@@ -183,9 +183,9 @@ CorUnix::InternalFflush(
     )
 {
     int nRet = 0;
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
     nRet = fflush(stream);
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return nRet;
 }
 
@@ -242,9 +242,9 @@ CorUnix::InternalGetcwd(
     if (szBuf == NULL)
     {
         // malloc is used to allocate space to store the pathname when szBuf is NULL.
-        pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+        // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
         szBufCopy = (char *)getcwd(szBuf, nSize);
-        pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+        // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     }
     else
     {
@@ -297,13 +297,13 @@ CorUnix::InternalMkstemp(
     )
 {
     int nRet = -1;
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
 #if MKSTEMP64_IS_USED_INSTEAD_OF_MKSTEMP
     nRet = mkstemp64(szNameTemplate);
 #else
     nRet = mkstemp(szNameTemplate);
 #endif
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return nRet;
 }
 
@@ -384,13 +384,13 @@ CorUnix::InternalOpen(
         va_end(ap);
     }
 
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+//    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
 #if OPEN64_IS_USED_INSTEAD_OF_OPEN
         nRet = open64(szPath, nFlags, mode);
 #else
         nRet = open(szPath, nFlags, mode);
 #endif
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return nRet;
 }
 
@@ -437,9 +437,9 @@ CorUnix::InternalUnlink(
     )
 {
     int nRet = -1;
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
     nRet = unlink(szPath);
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return nRet;   
 }
 
@@ -465,13 +465,13 @@ CorUnix::InternalDeleteFile(
     )
 {
     int nRet = -1;
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
 #if defined(__APPLE__) && defined(SYS_delete)
     nRet = syscall(SYS_delete, szPath);
 #else
     nRet = unlink(szPath);
 #endif // defined(__APPLE__) && defined(SYS_delete)
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return nRet;   
 }
 
@@ -524,9 +524,9 @@ CorUnix::InternalRename(
     )
 {
     int nRet = -1;
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
     nRet = rename(szOldName, szNewName);
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return nRet;
 }
 
@@ -618,9 +618,9 @@ CorUnix::InternalFgets(
 
     do
     {
-        pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+        // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
         retval =  fgets(sz, nSize, f);
-        pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+        // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
         if (NULL==retval)
         {
             if (feof(f))
@@ -730,9 +730,9 @@ CorUnix::InternalFwrite(
     clearerr(f);
 #endif
 
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
     nWrittenBytes = fwrite(pvBuffer, nSize, nCount, f);
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
 
     // Make sure no error ocurred. 
     if ( nWrittenBytes < nCount )
@@ -808,9 +808,9 @@ CorUnix::InternalFseek(
     int nRet = -1;
     _ASSERTE(f != NULL);
     
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
     nRet = fseek(f, lOffset, nWhence);
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return nRet;
 }
 

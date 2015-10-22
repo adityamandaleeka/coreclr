@@ -237,9 +237,9 @@ HeapAlloc(
     // This is patterned off of InternalMalloc in malloc.cpp.
     {
         CPalThread *pthrCurrent = InternalGetCurrentThread();
-        pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+        // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
         pMem = (BYTE *)malloc_zone_malloc((malloc_zone_t *)hHeap, numberOfBytes);
-        pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+        // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     }
 #else // __APPLE__
     pMem = (BYTE *) PAL_malloc(numberOfBytes);
@@ -319,9 +319,9 @@ HeapFree(
     // This is patterned off of InternalFree in malloc.cpp.
     {
         CPalThread *pthrCurrent = InternalGetCurrentThread();
-        pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+        // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
         malloc_zone_free((malloc_zone_t *)hHeap, lpMem);
-        pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+        // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     }
 #else // __APPLE__
     PAL_free (lpMem);
@@ -394,9 +394,9 @@ HeapReAlloc(
     // This is patterned off of InternalRealloc in malloc.cpp.
     {
         CPalThread *pthrCurrent = InternalGetCurrentThread();
-        pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+        // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
         pMem = (BYTE *) malloc_zone_realloc((malloc_zone_t *)hHeap, lpmem, numberOfBytes);
-        pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+        // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     }
 #else // __APPLE__
     pMem = (BYTE *) PAL_realloc(lpmem, numberOfBytes);

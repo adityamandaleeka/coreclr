@@ -1146,18 +1146,18 @@ int CorUnix::InternalVfwprintf(CPalThread *pthrCurrent, PAL_FILE *stream, const 
 int NativeVsnprintf(CPalThread *pthrCurrent, LPSTR Buffer, size_t Count, LPCSTR Format, va_list ap)
 {
     int retVal = 0;
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
     retVal = vsnprintf(Buffer, Count, Format, ap);
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return retVal;
 }
 
 int NativeVfprintf(CPalThread *pthrCurrent, FILE *filePtr, const char *format, va_list ap)
 {
     int retVal = 0;
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
     retVal = vfprintf(filePtr, format, ap);
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return retVal;
 }
 

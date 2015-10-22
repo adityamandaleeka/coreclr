@@ -65,9 +65,9 @@ CorUnix::InternalRealloc(
     }
     else
     {
-        pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+        // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
         pvMem = realloc(pvMemblock, szSize);
-        pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+        // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     }
 
     LOGEXIT("realloc returns void * %p\n", pvMem);
@@ -90,9 +90,9 @@ CorUnix::InternalFree(
     void *pvMem
     )
 {
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
     free(pvMem);
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
 }
 
 void * 
@@ -111,7 +111,7 @@ CorUnix::InternalMalloc(
     )
 {
     void *pvMem;
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
 
     if (szSize == 0)
     {
@@ -120,7 +120,7 @@ CorUnix::InternalMalloc(
     }
 
     pvMem = (void*)malloc(szSize);
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return pvMem;
 }
 
@@ -140,8 +140,8 @@ CorUnix::InternalStrdup(
     )
 {
     char *pszStrCopy;
-    pthrCurrent->suspensionInfo.EnterUnsafeRegion();
+    // pthrCurrent->suspensionInfo.EnterUnsafeRegion();
     pszStrCopy = strdup(c_szStr);
-    pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
+    // pthrCurrent->suspensionInfo.LeaveUnsafeRegion();
     return pszStrCopy;
 }
