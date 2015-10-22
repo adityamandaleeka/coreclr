@@ -508,14 +508,6 @@ CThreadSuspensionInfo::InternalResumeThreadFromData(
 
     int nWrittenBytes = -1;
 
-#ifdef _DEBUG
-    // This flag is used to determine if the resuming thread's count, of threads 
-    // it has suspended, should be decremented after the resume attempt 
-    // on the target thread.
-    BOOL fDecrementSuspenderCount = FALSE;
- #endif
-    
-
     if (!pthrResumer->suspensionInfo.IsSuspensionStateSafe())
     {
         ASSERT("The resuming thread is in an unsafe region.\n");

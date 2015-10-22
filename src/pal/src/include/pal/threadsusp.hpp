@@ -184,29 +184,29 @@ namespace CorUnix
             m_lNumThreadsSuspendedByThisThread is accessed by its owning 
             thread and therefore does not require synchronization. */
 
-            DWORD
-            GetUnsafeRegionCount(
-                void
-                )
-            {
-                return m_dwUnsafeRegionCount;
-            };
+            // DWORD
+            // GetUnsafeRegionCount(
+            //     void
+            //     )
+            // {
+            //     return m_dwUnsafeRegionCount;
+            // };
            
-            VOID
-            IncrUnsafeRegionCount(
-                void
-                )
-            {
-                m_dwUnsafeRegionCount++;
-            };  
+            // VOID
+            // IncrUnsafeRegionCount(
+            //     void
+            //     )
+            // {
+            //     m_dwUnsafeRegionCount++;
+            // };  
 
-            VOID
-            DecrUnsafeRegionCount(
-                void
-                )
-            {
-                m_dwUnsafeRegionCount--;
-            };
+            // VOID
+            // DecrUnsafeRegionCount(
+            //     void
+            //     )
+            // {
+            //     m_dwUnsafeRegionCount--;
+            // };
 
             VOID
             IncrSuspCount(
@@ -431,25 +431,25 @@ namespace CorUnix
 
             CThreadSuspensionInfo()
                 :
-                m_dwSuspCount(0),
-                m_dwUnsafeRegionCount(0),
-                m_fPending(FALSE),
-                m_fSelfsusp(FALSE),
-                m_fSuspendedForShutdown(FALSE),
-                m_nBlockingPipe(-1),
+                m_dwSuspCount(0)
+                , m_dwUnsafeRegionCount(0)
+                , m_fPending(FALSE)
+                , m_fSelfsusp(FALSE)
+                , m_fSuspendedForShutdown(FALSE)
+                , m_nBlockingPipe(-1)
 #if USE_SIGNALS_FOR_THREAD_SUSPENSION
-                m_fSuspendSignalSent(FALSE),
-                m_fResumeSignalSent(FALSE),
+                , m_fSuspendSignalSent(FALSE)
+                , m_fResumeSignalSent(FALSE)
 #endif // USE_SIGNALS_FOR_THREAD_SUSPENSION
 #ifdef _DEBUG
-                m_lNumThreadsSuspendedByThisThread(0),
+                , m_lNumThreadsSuspendedByThisThread(0)
 #endif // _DEBUG
 #if !DEADLOCK_WHEN_THREAD_IS_SUSPENDED_WHILE_BLOCKED_ON_MUTEX
-                ,m_fSuspmutexInitialized(FALSE)
+                , m_fSuspmutexInitialized(FALSE)
 #endif
 #if USE_POSIX_SEMAPHORES || USE_PTHREAD_CONDVARS
-                ,m_fSemaphoresInitialized(FALSE)
-#endif                
+                , m_fSemaphoresInitialized(FALSE)
+#endif
             {
                 InitializeSuspensionLock();
             }; 
