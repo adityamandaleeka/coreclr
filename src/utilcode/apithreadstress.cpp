@@ -7,6 +7,8 @@
 // APIThreadStress.cpp  (API thread stresser)
 // ---------------------------------------------------------------------------
 
+#ifdef STRESS_THREAD
+
 #include "stdafx.h"
 
 #include "apithreadstress.h"
@@ -179,3 +181,4 @@ void APIThreadStress::SyncThreadStress()
     }
 }
 
+#endif // STRESS_THREAD
