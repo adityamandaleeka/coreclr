@@ -7002,7 +7002,7 @@ HINSTANCE NDirect::LoadLibraryModule( NDirectMethodDesc * pMD, LoadLibErrorTrack
             hmod = LocalLoadLibraryHelper(wszLibName, LOAD_LIBRARY_SEARCH_SYSTEM32, pErrorTracker);
         }
     }
-#endif // FEATURE_CORESYSTEM && !FEATURE_PAL
+#endif // FEATURE_CORESYSTEM && !FEATURE_PAL 
 
     DWORD dllImportSearchPathFlag = 0;
     BOOL searchAssemblyDirectory = TRUE;
