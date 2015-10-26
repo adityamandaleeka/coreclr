@@ -80,11 +80,6 @@ static LONG g_ssSuspensionLock = 0;
 #if !HAVE_MACH_EXCEPTIONS
 static sigset_t smDefaultmask; // masks signals that the PAL handles as exceptions.
 #endif // !HAVE_MACH_EXCEPTIONS
-#if USE_SIGNALS_FOR_THREAD_SUSPENSION
-static sigset_t smWaitmask; // used so a thread does not receive a SIGUSR1 or SIGUSR2, during a suspension retry, until it enters sigsuspend
-static sigset_t smSuspmask; // used when a thread is suspended via signals; blocks all signals except SIGUSR2
-static sigset_t smContmask; // used when a thread is in sigsuspend on a suspension retry, waiting to receive a SIGUSR1
-#endif // USE_SIGNALS_FOR_THREAD_SUSPENSION
 
 /*++
 Function:
@@ -101,10 +96,6 @@ CThreadSuspensionInfo::InternalSuspendNewThreadFromData(
     )
 {
     PAL_ERROR palError = NO_ERROR;
-
-    AcquireSuspensionLock(pThread);
-    pThread->suspensionInfo.SetSelfSusp(TRUE);
-    ReleaseSuspensionLock(pThread);
 
     int pipe_descs[2];
     if (pipe(pipe_descs) == -1)
@@ -135,13 +126,6 @@ CThreadSuspensionInfo::InternalSuspendNewThreadFromData(
     {
         // If we did read successfully but the byte didn't match WAKEUPCODE, we treat it as a failure.
         palError = ERROR_INTERNAL_ERROR;
-    }
-
-    if (palError == NO_ERROR)
-    {
-        AcquireSuspensionLock(pThread);
-        pThread->suspensionInfo.SetSelfSusp(FALSE);
-        ReleaseSuspensionLock(pThread);
     }
 
     // Close the pipes regardless of whether we were successful.
@@ -570,311 +554,6 @@ CThreadSuspensionInfo::ReleaseSuspensionLocks(
 
 /*++
 Function:
-  PostOnSuspendSemaphore
-
-PostOnSuspendSemaphore is a utility function for a thread
-to post on its POSIX or SysV suspension semaphore.
---*/
-void
-CThreadSuspensionInfo::PostOnSuspendSemaphore()
-{
-#if USE_POSIX_SEMAPHORES
-    if (sem_post(&m_semSusp) == -1)
-    {
-        ASSERT("sem_post returned -1 and set errno to %d (%s)\n", errno, strerror(errno));
-    }
-#elif USE_SYSV_SEMAPHORES
-    if (semop(m_nSemsuspid, &m_sbSempost, 1) == -1)
-    {
-        ASSERT("semop - post returned -1 and set errno to %d (%s)\n", errno, strerror(errno));
-    }
-#elif USE_PTHREAD_CONDVARS
-    int status;
-
-    // The suspending thread may not have entered the wait yet, in which case the cond var
-    // signal below will be a no-op. To prevent the race condition we set m_fSuspended to
-    // TRUE first (which the suspender will take as an indication that no wait is required).
-    // But the setting of the flag and the signal must appear atomic to the suspender (as
-    // reading the flag and potentially waiting must appear to us) to avoid the race
-    // condition where the suspender reads the flag as FALSE, we set it and signal and the
-    // suspender then waits.
-
-    // Acquire the suspend mutex. Once we enter the critical section the suspender has
-    // either gotten there before us (and is waiting for our signal) or is yet to even
-    // check the flag (so we can set it here to stop them attempting a wait).
-    status = pthread_mutex_lock(&m_mutexSusp);
-    if (status != 0)
-    {
-        ASSERT("pthread_mutex_lock returned %d (%s)\n", status, strerror(status));
-    }
-
-    m_fSuspended = TRUE;
-
-    status = pthread_cond_signal(&m_condSusp);
-    if (status != 0)
-    {
-        ASSERT("pthread_cond_signal returned %d (%s)\n", status, strerror(status));
-    }
-
-    status = pthread_mutex_unlock(&m_mutexSusp);
-    if (status != 0)
-    {
-        ASSERT("pthread_mutex_unlock returned %d (%s)\n", status, strerror(status));
-    }
-#endif // USE_POSIX_SEMAPHORES
-}
-
-/*++
-Function:
-  WaitOnSuspendSemaphore
-
-WaitOnSuspendSemaphore is a utility function for a thread
-to wait on its POSIX or SysV suspension semaphore. 
---*/
-void
-CThreadSuspensionInfo::WaitOnSuspendSemaphore()
-{
-#if USE_POSIX_SEMAPHORES
-    while (sem_wait(&m_semSusp) == -1)
-    {
-        ASSERT("sem_wait returned -1 and set errno to %d (%s)\n", errno, strerror(errno));
-    }
-#elif USE_SYSV_SEMAPHORES
-    while (semop(m_nSemsuspid, &m_sbSemwait, 1) == -1)
-    {
-        ASSERT("semop wait returned -1 and set errno to %d (%s)\n", errno, strerror(errno));
-    }
-#elif USE_PTHREAD_CONDVARS
-    int status;
-
-    // By the time we wait the target thread may have already signalled its suspension (in
-    // which case m_fSuspended will be TRUE and we shouldn't wait on the cond var). But we
-    // must check the flag and potentially wait atomically to avoid the race where we read
-    // the flag and the target thread sets it and signals before we have a chance to wait.
-
-    status = pthread_mutex_lock(&m_mutexSusp);
-    if (status != 0)
-    {
-        ASSERT("pthread_mutex_lock returned %d (%s)\n", status, strerror(status));
-    }
-
-    // If the target has already acknowledged the suspend we shouldn't wait.
-    while (!m_fSuspended)
-    {
-        // We got here before the target could signal. Wait on them (which atomically releases
-        // the mutex during the wait).
-        status = pthread_cond_wait(&m_condSusp, &m_mutexSusp);
-        if (status != 0)
-        {
-            ASSERT("pthread_cond_wait returned %d (%s)\n", status, strerror(status));
-        }
-    }
-
-    status = pthread_mutex_unlock(&m_mutexSusp);
-    if (status != 0)
-    {
-        ASSERT("pthread_mutex_unlock returned %d (%s)\n", status, strerror(status));
-    }
-#endif // USE_POSIX_SEMAPHORES
-}
-
-/*++
-Function:
-  PostOnResumeSemaphore
-
-PostOnResumeSemaphore is a utility function for a thread
-to post on its POSIX or SysV resume semaphore.
---*/
-void
-CThreadSuspensionInfo::PostOnResumeSemaphore()
-{
-#if USE_POSIX_SEMAPHORES
-    if (sem_post(&m_semResume) == -1)
-    {
-        ASSERT("sem_post returned -1 and set errno to %d (%s)\n", errno, strerror(errno));
-    }
-#elif USE_SYSV_SEMAPHORES
-    if (semop(m_nSemrespid, &m_sbSempost, 1) == -1)
-    {
-        ASSERT("semop - post returned -1 and set errno to %d (%s)\n", errno, strerror(errno));
-    }
-#elif USE_PTHREAD_CONDVARS
-    int status;
-
-    // The resuming thread may not have entered the wait yet, in which case the cond var
-    // signal below will be a no-op. To prevent the race condition we set m_fResumed to
-    // TRUE first (which the resumer will take as an indication that no wait is required).
-    // But the setting of the flag and the signal must appear atomic to the resumer (as
-    // reading the flag and potentially waiting must appear to us) to avoid the race
-    // condition where the resumer reads the flag as FALSE, we set it and signal and the
-    // resumer then waits.
-
-    // Acquire the resume mutex. Once we enter the critical section the resumer has
-    // either gotten there before us (and is waiting for our signal) or is yet to even
-    // check the flag (so we can set it here to stop them attempting a wait).
-    status = pthread_mutex_lock(&m_mutexResume);
-    if (status != 0)
-    {
-        ASSERT("pthread_mutex_lock returned %d (%s)\n", status, strerror(status));
-    }
-
-    m_fResumed = TRUE;
-
-    status = pthread_cond_signal(&m_condResume);
-    if (status != 0)
-    {
-        ASSERT("pthread_cond_signal returned %d (%s)\n", status, strerror(status));
-    }
-
-    status = pthread_mutex_unlock(&m_mutexResume);
-    if (status != 0)
-    {
-        ASSERT("pthread_mutex_unlock returned %d (%s)\n", status, strerror(status));
-    }
-#endif // USE_POSIX_SEMAPHORES
-}
-
-/*++
-Function:
-  WaitOnResumeSemaphore
-
-WaitOnResumeSemaphore is a utility function for a thread
-to wait on its POSIX or SysV resume semaphore.
---*/
-void
-CThreadSuspensionInfo::WaitOnResumeSemaphore()
-{
-#if USE_POSIX_SEMAPHORES
-    while (sem_wait(&m_semResume) == -1)
-    {
-        ASSERT("sem_wait returned -1 and set errno to %d (%s)\n", errno, strerror(errno));
-    }
-#elif USE_SYSV_SEMAPHORES
-    while (semop(m_nSemrespid, &m_sbSemwait, 1) == -1)
-    {
-        ASSERT("semop wait returned -1 and set errno to %d (%s)\n", errno, strerror(errno));
-    }
-#elif USE_PTHREAD_CONDVARS
-    int status;
-
-    // By the time we wait the target thread may have already signalled its resumption (in
-    // which case m_fResumed will be TRUE and we shouldn't wait on the cond var). But we
-    // must check the flag and potentially wait atomically to avoid the race where we read
-    // the flag and the target thread sets it and signals before we have a chance to wait.
-
-    status = pthread_mutex_lock(&m_mutexResume);
-    if (status != 0)
-    {
-        ASSERT("pthread_mutex_lock returned %d (%s)\n", status, strerror(status));
-    }
-
-    // If the target has already acknowledged the resume we shouldn't wait.
-    while (!m_fResumed)
-    {
-        // We got here before the target could signal. Wait on them (which atomically releases
-        // the mutex during the wait).
-        status = pthread_cond_wait(&m_condResume, &m_mutexResume);
-        if (status != 0)
-        {
-            ASSERT("pthread_cond_wait returned %d (%s)\n", status, strerror(status));
-        }
-    }
-
-    status = pthread_mutex_unlock(&m_mutexResume);
-    if (status != 0)
-    {
-        ASSERT("pthread_mutex_unlock returned %d (%s)\n", status, strerror(status));
-    }
-#endif // USE_POSIX_SEMAPHORES
-}
-
-#if !HAVE_MACH_EXCEPTIONS || USE_SIGNALS_FOR_THREAD_SUSPENSION
-/*++
-Function:
-  InitializeSignalSets
-  
-InitializeSignalSets initializes the signal masks used for thread
-suspension operations. Each thread's signal mask is initially set
-to smDefaultMask in InitializePreCreate. This mask blocks SIGUSR2,
-and SIGUSR1 if suspension using signals is off. This mask
-also blocks common signals so they will be handled by the PAL's
-signal handling thread. 
---*/
-VOID
-CThreadSuspensionInfo::InitializeSignalSets()
-{
-#if !HAVE_MACH_EXCEPTIONS
-    sigemptyset(&smDefaultmask);
-    
-#ifndef DO_NOT_USE_SIGNAL_HANDLING_THREAD
-    // The default signal mask masks all common signals except those that represent 
-    // synchronous exceptions in the PAL or are used by the system (e.g. SIGPROF on BSD).
-    // Note that SIGPROF is used by the BSD thread scheduler and masking it caused a 
-    // significant reduction in performance.
-    sigaddset(&smDefaultmask, SIGHUP);
-    sigaddset(&smDefaultmask, SIGABRT);
-#ifdef SIGEMT
-    sigaddset(&smDefaultmask, SIGEMT);
-#endif
-    sigaddset(&smDefaultmask, SIGSYS);
-    sigaddset(&smDefaultmask, SIGALRM);
-    sigaddset(&smDefaultmask, SIGURG);
-    sigaddset(&smDefaultmask, SIGTSTP);
-    sigaddset(&smDefaultmask, SIGCONT);
-    sigaddset(&smDefaultmask, SIGCHLD);
-    sigaddset(&smDefaultmask, SIGTTIN);
-    sigaddset(&smDefaultmask, SIGTTOU);
-    sigaddset(&smDefaultmask, SIGIO);
-    sigaddset(&smDefaultmask, SIGXCPU);
-    sigaddset(&smDefaultmask, SIGXFSZ);
-    sigaddset(&smDefaultmask, SIGVTALRM);
-    sigaddset(&smDefaultmask, SIGWINCH);
-#ifdef SIGINFO
-    sigaddset(&smDefaultmask, SIGINFO);
-#endif
-    sigaddset(&smDefaultmask, SIGPIPE);
-    sigaddset(&smDefaultmask, SIGUSR2);
-
-    #if !USE_SIGNALS_FOR_THREAD_SUSPENSION
-    {
-        // Don't mask SIGUSR1 if using signal suspension since SIGUSR1 is needed
-        // to suspend threads.
-        sigaddset(&smDefaultmask, SIGUSR1);
-    }
-    #endif // !USE_SIGNALS_FOR_THREAD_SUSPENSION
-#endif // DO_NOT_USE_SIGNAL_HANDLING_THREAD
-#endif // !HAVE_MACH_EXCEPTIONS
-
-#if USE_SIGNALS_FOR_THREAD_SUSPENSION
-#if !HAVE_MACH_EXCEPTIONS
-    #ifdef DO_NOT_USE_SIGNAL_HANDLING_THREAD
-    {
-        // If the SWT is turned on, SIGUSR2 was already added to the mask. 
-        // Otherwise, add it to the mask now.
-        sigaddset(&smDefaultmask, SIGUSR2);
-    }
-    #endif
-#endif // !HAVE_MACH_EXCEPTIONS
-
-    // smContmask is used to allow a thread to accept a SIGUSR1 when in sigsuspend, 
-    // after a pending suspension
-    sigfillset(&smContmask);
-    sigdelset(&smContmask, SIGUSR1);
-
-    // smSuspmask is used in sigsuspend during a safe suspension attempt.
-    sigfillset(&smSuspmask);
-    sigdelset(&smSuspmask, SIGUSR2);
-
-    // smWaitmask forces a thread to wait for a SIGUSR1 during a suspension retry
-    sigemptyset(&smWaitmask);
-    sigaddset(&smWaitmask, SIGUSR1);
-    sigaddset(&smWaitmask, SIGUSR2);   
-#endif // USE_SIGNALS_FOR_THREAD_SUSPENSION
-}
-#endif // !HAVE_MACH_EXCEPTIONS || USE_SIGNALS_FOR_THREAD_SUSPENSION
-
-/*++
-Function:
   InitializeSuspensionLock
 
 InitializeSuspensionLock initializes a thread's suspension spinlock
@@ -1041,32 +720,6 @@ CThreadSuspensionInfo::InitializePreCreate()
     m_fSemaphoresInitialized = TRUE;
 #endif // USE_POSIX_SEMAPHORES
 
-#if USE_SIGNALS_FOR_THREAD_SUSPENSION
-    // m_smOrigmask is used to restore a thread's signal mask. 
-    // This is not needed for sigsuspend operations since sigsuspend 
-    // automatically restores the original mask
-    sigemptyset(&m_smOrigmask);
-#endif
-
-#if !HAVE_MACH_EXCEPTIONS
-    // This signal mask blocks SIGUSR2 when signal suspension is turned on
-    // (SIGUSR2 must be blocked for signal suspension), and masks other signals
-    // when the signal waiting thread is turned on. We must use SIG_SETMASK 
-    // so all threads start with the same signal mask. Otherwise, issues can arise.
-    // For example, on BSD using suspension with signals, the control handler 
-    // routine thread, spawned from the signal handling thread, inherits the 
-    // signal handling thread's mask which blocks SIGUSR1. Thus, the
-    // control handler routine thread cannot be suspended. Using SETMASK 
-    // ensures that SIGUSR1 is not blocked.
-    
-    iError = pthread_sigmask(SIG_SETMASK, &smDefaultmask, NULL);
-    if (iError != 0)
-    {
-        ASSERT("pthread sigmask(SIG_SETMASK, &smDefaultmask) returned %d\n", iError);
-        goto InitializePreCreateExit;
-    }
-#endif // !HAVE_MACH_EXCEPTIONS
-
     // Initialization was successful.
     palError = NO_ERROR;
     
@@ -1194,105 +847,15 @@ in it should be marked as suspension unsafe.
 void 
 THREADMarkDiagnostic(const char* funcName)
 {
-    if (PALIsThreadDataInitialized())
-    {
-        CPalThread *pthrCurrent = InternalGetCurrentThread();
-        _ASSERT_MSG(pthrCurrent->suspensionInfo.GetNumThreadsSuspendedByThisThread() == 0, 
-            "SUSPENSION DIAGNOSTIC: %s is potentially suspension unsafe "
-            "and was executed by a thread that suspended %d threads.\n", 
-            funcName, pthrCurrent->suspensionInfo.GetNumThreadsSuspendedByThisThread());
-    }
+
+    /// This can be removed, right?
+    // if (PALIsThreadDataInitialized())
+    // {
+    //     CPalThread *pthrCurrent = InternalGetCurrentThread();
+    //     _ASSERT_MSG(pthrCurrent->suspensionInfo.GetNumThreadsSuspendedByThisThread() == 0, 
+    //         "SUSPENSION DIAGNOSTIC: %s is potentially suspension unsafe "
+    //         "and was executed by a thread that suspended %d threads.\n", 
+    //         funcName, pthrCurrent->suspensionInfo.GetNumThreadsSuspendedByThisThread());
+    // }
 }
 #endif // _DEBUG
-
-#if USE_SIGNALS_FOR_THREAD_SUSPENSION
-/*++
-Function:
-  HandleSuspendSignal
-
-Returns:
-    true if the signal is expected by this PAL instance; false should 
-    be chained to the next signal handler.
-  
-HandleSuspendSignal is called from within the SIGUSR1 handler. The thread
-that invokes this function will suspend itself if it's suspension safe
-or set its pending flag to TRUE and continue executing until it becomes
-suspension safe.
---*/
-bool
-CThreadSuspensionInfo::HandleSuspendSignal(
-    CPalThread *pthrTarget
-    )
-{
-    if (!GetSuspendSignalSent())
-    {
-        return false;
-    }
-
-    SetSuspendSignalSent(FALSE);
-
-    if (IsSuspensionStateSafe())
-    {
-        SetSuspPending(FALSE);
-        if (!pthrTarget->GetCreateSuspended())
-        {
-            /* Note that we don't call sem_post when CreateSuspended is true. 
-            This is to handle the scenario where a thread suspends itself and 
-            another thread then attempts to suspend that thread. It won't wait 
-            on the semaphore if the self suspending thread already posted 
-            but didn't reach the matching wait. */
-            PostOnSuspendSemaphore();
-        }
-        else 
-        {
-            pthrTarget->SetStartStatus(TRUE);
-        }
-        sigsuspend(&smSuspmask);
-    }
-    else
-    {
-        SetSuspPending(TRUE);
-    }
-
-    return true;
-}
-
-/*++
-Function:
-  HandleResumeSignal
-
-Returns:
-    true if the signal is expected by this PAL instance; false should 
-    be chained to the next signal handler.
-  
-HandleResumeSignal is called from within the SIGUSR2 handler. 
-A thread suspended by sigsuspend will enter the SUGUSR2 handler
-and reach this function, which checks that SIGUSR2 was sent
-by InternalResumeThreadFromData and that the resumed thread
-still has a positive suspend count. After these checks, the resumed
-thread posts on its resume semaphore so the resuming thread can
-continue execution.
---*/
-bool
-CThreadSuspensionInfo::HandleResumeSignal()
-{
-    if (!GetResumeSignalSent())
-    {
-        return false;
-    }
-
-    SetResumeSignalSent(FALSE);
-
-    // This thread is no longer suspended - if it self suspended, 
-    // then its self suspension field should now be set to FALSE.
-    if (GetSelfSusp())
-    {
-        SetSelfSusp(FALSE);
-    }
-
-    PostOnResumeSemaphore();
-
-    return true;
-}
-#endif // USE_SIGNALS_FOR_THREAD_SUSPENSION
-

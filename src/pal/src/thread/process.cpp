@@ -3032,10 +3032,9 @@ void PROCDumpThreadList()
     pThread = pGThreadList;
     while (NULL != pThread)
     {
-        TRACE ("    {pThr=0x%p tid=%#x lwpid=%#x state=%d finsusp=%d}\n",
+        TRACE ("    {pThr=0x%p tid=%#x lwpid=%#x state=%d}\n",
                pThread, (int)pThread->GetThreadId(), (int)pThread->GetLwpId(), 
-               (int)pThread->synchronizationInfo.GetThreadState(),
-               (int)pThread->suspensionInfo.GetSuspendedForShutdown());
+               (int)pThread->synchronizationInfo.GetThreadState());
 
         pThread = pThread->GetNext();
     }

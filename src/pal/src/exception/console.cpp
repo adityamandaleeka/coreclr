@@ -24,6 +24,7 @@ Abstract:
 #include "pal/malloc.hpp"
 #include "pal/process.h"
 #include <errno.h>
+#include <signal.h>
 
 using namespace CorUnix;
 
