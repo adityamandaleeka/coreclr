@@ -130,6 +130,8 @@ Function:
 --*/
 void PROCCleanupProcess(BOOL bTerminateUnconditionally);
 
+BOOL PROCGetUniqueTimeValueForProcess(DWORD processId, UINT64 *uniqueTimeValue);
+
 /*++
 Function:
   InitializeFlushProcessWriteBuffers

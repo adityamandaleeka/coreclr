@@ -1876,6 +1876,14 @@ GetProcessTimes(
         OUT LPFILETIME lpKernelTime,
         OUT LPFILETIME lpUserTime);
 
+
+
+
+BOOL PROCGetUniqueTimeValueForProcess(DWORD processId, UINT64 *uniqueTimeValue);
+
+
+
+
 #define MAXIMUM_WAIT_OBJECTS  64
 #define WAIT_OBJECT_0 0
 #define WAIT_ABANDONED   0x00000080

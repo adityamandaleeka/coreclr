@@ -1440,6 +1440,108 @@ void PROCCleanupProcess(BOOL bTerminateUnconditionally)
 
 /*++
 Function:
+  PROCGetUniqueTimeValueForProcess
+  
+  Get a numeric value that can be used to disambiguate between processes with the same PID,
+  provided that at least one of them is stillrunning. The numeric value can mean different
+  things on different platforms, so it should not be used for any other purpose. Under the
+  hood, it is implemented based on the creation time of the process.
+--*/
+BOOL
+PROCGetUniqueTimeValueForProcess(DWORD processId, UINT64 *uniqueTimeValue)
+{
+    if (uniqueTimeValue == nullptr)
+    {
+        _ASSERTE(!"uniqueTimeValue argument cannot be null!");
+        return FALSE;
+    }
+
+    *uniqueTimeValue = 0;
+
+#if defined(__APPLE__)
+
+    struct kinfo_proc info = {};
+    size_t size = sizeof(info);
+    int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, processId };
+    int ret = ::sysctl(mib, sizeof(mib)/sizeof(*mib), &info, &size, NULL, 0);
+
+    if (ret == 0)
+    {
+        timeval procStartTime = info.kp_proc.p_starttime;
+        long secondsSinceEpoch = procStartTime.tv_sec;
+
+        *uniqueTimeValue = secondsSinceEpoch;
+        return TRUE;
+    }
+    else
+    {
+        _ASSERTE(!"Failed to get start time of a process.");
+        return FALSE;
+    }
+
+#elif defined(HAVE_PROCFS_CTL)
+
+    // Here we read /proc/<pid>/stat file to get the start time for the process.
+    // The value it returns is expressed in jiffies since boot time.
+
+    // Making something like: /proc/123/stat
+    char statFileName[100];
+
+    INDEBUG(int chars = )
+    snprintf(statFileName, sizeof(statFileName), "/proc/%d/stat", processId);
+    _ASSERTE(chars > 0 && chars <= sizeof(statFileName));
+
+    FILE *statFile = fopen(statFileName, "r");
+    if (statFile == NULL) 
+    {
+        SetLastError(ERROR_INVALID_HANDLE);
+        return FALSE;
+    }
+
+    char *line = NULL;
+    size_t lineLen = 0;
+    ssize_t read;
+
+    if ((read = getline(&line, &lineLen, statFile)) == -1)
+    {
+        _ASSERTE(!"Failed to getline from the stat file for a process.");
+        return FALSE;
+    }
+
+    // Contents of the stat file up to and including the start time.
+    int pid;
+    char execName[PATH_MAX];
+    char procstate;
+    int ppid, pgrp, session, tty_nr, tpgid;
+    unsigned int procFlags;
+    unsigned long minflt, cminflt, majflt, cmajflt, utime, stime;
+    long cutime, cstime, priority, nice, num_threads, itrealvalue;
+    unsigned long long starttime;
+
+    int sscanfRet = sscanf(line, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld %llu \n",
+               &pid, &execName, &procstate, &ppid, &pgrp, &session, &tty_nr, &tpgid, &procFlags, &minflt, &cminflt
+               , &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue
+               , &starttime);
+
+    if (sscanfRet != 22)
+    {
+        _ASSERTE(!"Failed to parse stat file contents with sscanf.");
+        return FALSE;
+    }
+
+    free(line); // We didn't allocate line, but as per contract of getline we should free it
+    fclose(statFile);
+
+    *uniqueTimeValue = starttime;
+    return TRUE;
+
+#else
+    _ASSERTE(!"Not implemented on this platform.");
+#endif
+}
+
+/*++
+Function:
   GetProcessTimes
 
 See MSDN doc.
