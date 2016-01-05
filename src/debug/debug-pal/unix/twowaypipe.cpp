@@ -13,6 +13,11 @@
 #include "windefs.h"
 #include "twowaypipe.h"
 
+///////////REMOVE
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+#endif
+
 #define PIPE_NAME_FORMAT_STR "/tmp/clr-debug-pipe-%d-%llu-%s"
 
 BOOL

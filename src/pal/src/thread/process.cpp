@@ -50,6 +50,10 @@ Abstract:
 #include <sys/resource.h>
 #include <debugmacrosext.h>
 
+#ifdef __APPLE__
+#include <sys/sysctl.h>
+#endif
+
 using namespace CorUnix;
 
 SET_DEFAULT_DEBUG_CHANNEL(THREAD);
