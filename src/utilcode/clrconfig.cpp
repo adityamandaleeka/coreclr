@@ -299,6 +299,185 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 
 
 
+
+const CLRConfig2::ZNewConfInfo CLRConfig2::m_configInfos[] = 
+{
+    {CLRConfig2::ZNewConfigId::EnableFooGc, CLRConfig2::ZNewConfigValueType::DwordType, W("System.GC.EnableFooGC"), {.dwordInfo = CLRConfig::INTERNAL_ThreadSuspendInjection}},
+    {CLRConfig2::ZNewConfigId::MaxThreadsForFoo, CLRConfig2::ZNewConfigValueType::DwordType, W("System.Threading.MaxFoo"), {.stringInfo = CLRConfig::INTERNAL_Security_TransparencyMethodBreak}}//CLRConfig::INTERNAL_ThreadPool_ForceMinWorkerThreads}}
+};
+
+// Contains the actual values of the new configs (or an indicator that they aren't initialized)
+CLRConfig2::ZNewConfValue configValues[CLRConfig2::ZCONFIG_COUNT];
+
+
+const CLRConfig2::ZNewConfInfo* CLRConfig2::ZGetConfigInfoFromId(const CLRConfig2::ZNewConfigId desiredId)
+{
+    //// improve this lookup? for now linear
+    for (int i = 0; i < ZCONFIG_COUNT; i++)
+    {
+        if (m_configInfos[i].newConfigId == desiredId)
+        {
+            return &m_configInfos[i];
+        }
+    }
+
+    return nullptr;
+}
+
+const CLRConfig2::ZNewConfInfo* CLRConfig2::ZGetConfigInfoFromName(LPCWSTR desiredName)
+{
+    //// improve this lookup? for now linear
+    for (int i = 0; i < ZCONFIG_COUNT; i++)
+    {
+        if (wcscmp(desiredName, m_configInfos[i].newConfigName) == 0)
+        {
+            return &m_configInfos[i];
+        }
+    }
+
+    return nullptr;
+}
+
+void CLRConfig2::InitializeTableThing(int numberOfConfigs, LPCWSTR *names, LPCWSTR *values)
+{
+    // Initialize everything to NOT SET
+    for (int i = 0; i < ZCONFIG_COUNT; ++i)
+    {
+        configValues[i].typeOfValue = ZNewConfigValueType::NotSetType;
+    }
+
+    for (int i = 0; i < numberOfConfigs; ++i)
+    {
+        const ZNewConfInfo *configInfo = ZGetConfigInfoFromName(names[i]);
+        if (configInfo == nullptr)
+            continue;
+
+        ZNewConfigId id = configInfo->newConfigId;
+
+        if (configInfo->valuetype == ZNewConfigValueType::DwordType)
+        {
+            CLRConfig::ConfigDWORDInfo legacyInfo = configInfo->legacyConfigInfo.dwordInfo;
+
+            /////// TODO: DON'T LET THIS RETURN DEFAULT VALUE
+            DWORD value = CLRConfig::GetConfigValue(legacyInfo);
+            bool isSetAndNotDefault = true; ////// this should do the right thing
+
+            if (isSetAndNotDefault)
+            {
+                configValues[static_cast<int>(id)].typeOfValue = ZNewConfigValueType::DwordType;
+                configValues[static_cast<int>(id)].configValue.dwordValue = value;
+            }
+            else
+            {
+                configValues[static_cast<int>(id)].typeOfValue = ZNewConfigValueType::DwordType;
+                configValues[static_cast<int>(id)].configValue.dwordValue = 123; //// values[i] as a DWORD
+            }
+
+        }
+        else if (configInfo->valuetype == ZNewConfigValueType::StringType)
+        {
+            CLRConfig::ConfigStringInfo legacyInfo = configInfo->legacyConfigInfo.stringInfo;
+
+            /////// TODO: DON'T LET THIS RETURN DEFAULT VALUE
+            LPWSTR value = CLRConfig::GetConfigValue(legacyInfo);
+            bool isSetAndNotDefault = true;////// this should do the right thing
+
+            if (isSetAndNotDefault)
+            {
+                configValues[static_cast<int>(id)].typeOfValue = ZNewConfigValueType::StringType;
+                configValues[static_cast<int>(id)].configValue.stringValue = value; //// SHOULD WE MAKE A COPY OF THIS?
+            }
+            else
+            {
+                configValues[static_cast<int>(id)].typeOfValue = ZNewConfigValueType::StringType;
+                // configValues[static_cast<int>(id)].configValue.stringValue = values[i]; //// SHOULD WE MAKE A COPY OF THIS?
+            }
+
+        }
+
+    }
+
+    // For each item in the configs passed in:
+    //    If we don't know about the item:
+    //      Continue
+    //
+    //    If we know about the item:
+    //      Look up the COMPlus equivalent, if there is one
+    //      If the COMPlus thing is set (verify that it's not a default value)
+    //        Set the config in the table to the COMPlus value
+    //      Else
+    //        Set the config in the table to the value that's passed in
+}
+
+
+
+void CLRConfig2::ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value)
+{
+    _ASSERT(value != nullptr);
+
+    // Look up the ID in the table.
+    // If the value is set, use that. Otherwise, set it in the table using the old way.
+    if (configValues[static_cast<int>(configId)].typeOfValue == CLRConfig2::ZNewConfigValueType::NotSetType)
+    {
+        const ZNewConfInfo *configInfo = ZGetConfigInfoFromId(configId);
+        if (configInfo != nullptr)
+        {
+            configValues[static_cast<int>(configId)].typeOfValue = configInfo->valuetype;
+            if (configInfo->valuetype == ZNewConfigValueType::DwordType)
+            {
+                DWORD valueToSet = CLRConfig::GetConfigValue(configInfo->legacyConfigInfo.dwordInfo);
+                configValues[static_cast<int>(configId)].configValue.dwordValue = valueToSet;
+            }
+            else if (configInfo->valuetype == ZNewConfigValueType::StringType)
+            {
+                LPWSTR valueToSet = CLRConfig::GetConfigValue(configInfo->legacyConfigInfo.stringInfo);
+                configValues[static_cast<int>(configId)].configValue.stringValue = valueToSet; //// SHOULD WE MAKE A COPY OF THIS?
+            }
+            else
+            {
+                /// should never get here. all configs should be either DWORD or string
+            }
+        }
+    }
+
+    *value = configValues[static_cast<int>(configId)];
+}
+
+DWORD CLRConfig2::ZGetConfigDWORDValue2(const ZNewConfigId configId)
+{
+    // look up the ZNewConfValue and verify that the type is correct, then return it.
+
+    ZNewConfValue confValue;
+    ZGetConfigValue2(configId, &confValue);
+
+    _ASSERT(confValue.typeOfValue == ZNewConfigValueType::DwordType);
+    if (confValue.typeOfValue != ZNewConfigValueType::DwordType)
+    {
+       ///// what should be returned in this case?
+    }
+
+    return confValue.configValue.dwordValue;
+}
+
+
+LPWSTR CLRConfig2::ZGetConfigStringValue2(const ZNewConfigId configId)
+{
+    ZNewConfValue confValue;
+    ZGetConfigValue2(configId, &confValue);
+
+    _ASSERT(confValue.typeOfValue == ZNewConfigValueType::StringType);
+    if (confValue.typeOfValue != ZNewConfigValueType::StringType)
+    {
+       ///// what should be returned in this case?
+    }
+
+    return confValue.configValue.stringValue;
+}
+
+
+
+
+
 // 
 // Look up a DWORD config value.
 // 

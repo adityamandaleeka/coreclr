@@ -181,6 +181,8 @@ public:
     // You own the string that's returned.
     static HRESULT GetConfigValue(const ConfigStringInfo & info, __deref_out_z LPWSTR * outVal);
 
+
+
     //
     // Check whether an option is specified (e.g. explicitly listed) in any of the CLRConfig
     // locations: environment or registry (with or without COMPLUS_) or any config file.
@@ -252,5 +254,91 @@ inline CLRConfig::LookupOptions operator|(CLRConfig::LookupOptions lhs, CLRConfi
 }
 
 typedef Wrapper<LPWSTR, DoNothing, CLRConfig::FreeConfigString, NULL> CLRConfigStringHolder;
+
+#ifdef FEATURE_CORECLR //////
+
+
+class CLRConfig2
+{
+public:
+    // POSSIBLE TYPES FOR CONFIG VALUES
+    enum class ZNewConfigValueType
+    {
+        // Describe this option
+        NotSetType = 0x0,
+        // Describe this option
+        DwordType = 0x1,
+        // Describe this option
+        StringType = 0x2
+    };
+
+    struct ZNewConfValue 
+    {
+        // Indicates type (and which thing in union is active)
+        ZNewConfigValueType typeOfValue;
+
+        union
+        {
+            DWORD dwordValue;
+            LPWSTR stringValue;
+        } configValue;
+    };
+
+    // LIST OF THINGS WE KNOW MAY BE IN THE RUNTIME CONFIG
+    enum class ZNewConfigId
+    {
+        // Describe this option
+        EnableFooGc = 1,
+        // Describe this option
+        MaxThreadsForFoo = 2,
+
+        ENUM_COUNT = 2
+    };
+
+    static const int ZCONFIG_COUNT = (int)ZNewConfigId::ENUM_COUNT;
+
+// private:
+    struct ZNewConfInfo
+    {
+        ZNewConfigId newConfigId;
+        ZNewConfigValueType valuetype;
+        LPCWSTR newConfigName;      // "System.GC.Whatever"
+
+        union
+        {
+            CLRConfig::ConfigDWORDInfo dwordInfo;
+            CLRConfig::ConfigStringInfo stringInfo;
+        } legacyConfigInfo;
+    };
+
+public:
+    void InitializeTableThing(int numberOfConfigs, LPCWSTR *configNames, LPCWSTR *configValues);
+
+    DWORD ZGetConfigDWORDValue2(const ZNewConfigId);
+
+    LPWSTR ZGetConfigStringValue2(const ZNewConfigId);
+
+private:
+    const ZNewConfInfo* ZGetConfigInfoFromId(const ZNewConfigId desiredId);
+    const ZNewConfInfo* ZGetConfigInfoFromName(LPCWSTR desiredName);
+
+    void ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value);
+
+    // Contains mapping from new config ID -> legacy ID and type
+    static const ZNewConfInfo m_configInfos[];
+    // {
+    //     {CLRConfig2::ZNewConfigId::EnableFooGc, CLRConfig2::ZNewConfigValueType::DwordType, W("System.GC.EnableFooGC"), {.dwordInfo = CLRConfig::INTERNAL_ThreadSuspendInjection}},
+    //     {CLRConfig2::ZNewConfigId::MaxThreadsForFoo, CLRConfig2::ZNewConfigValueType::DwordType, W("System.Threading.MaxFoo"), {CLRConfig::INTERNAL_ThreadPool_ForceMinWorkerThreads}}
+    // };
+
+
+
+    ///// add static assert that the size of the ID list and the Infos list are the same
+};
+
+extern CLRConfig2::ZNewConfValue configValues[CLRConfig2::ZCONFIG_COUNT];
+
+
+#endif // FEATURE_CORECLR zzzzzzzzzzzzzzzzzzzzzz
 
 #endif //__CLRConfig_h__
