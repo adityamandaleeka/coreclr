@@ -297,16 +297,25 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
         return FALSE;
 }
 
-
-
 // 
 // Look up a DWORD config value.
 // 
 // Arguments:
-//     * info - see file:../inc/CLRConfig.h for details
-//     
+//     * info - see file:../inc/CLRConfig.h for details.
+//
+//     * useDefaultIfNotSet - if true, fall back to the default value if the value is not set.
+//
+//     * acceptExplicitDefaultFromRegutil - if false, only accept a value returned by REGUTIL if it is
+//           different from the default value. This parameter is useful as a way to preserve existing
+//           behavior.
+//
+//     * result - the result.
+//
+// Return value:
+//     * true for success, false otherwise.
+// 
 // static
-DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
+bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultIfNotSet, bool acceptExplicitDefaultFromRegutil, DWORD *result)
 {
     CONTRACTL
     {
@@ -317,7 +326,11 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
     }
     CONTRACTL_END;
 
-    DWORD result = info.defaultValue;
+    _ASSERT(result != nullptr);
+    if (result == nullptr)
+    {
+        return false;
+    }
 
 #ifdef FEATURE_WIN_DB_APPCOMPAT
     // Windows Shim DB should be the first place to look as it applies microsoft enforced policy
@@ -325,7 +338,6 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
     if(CheckLookupOption(info, IgnoreWindowsQuirkDB) == FALSE && 
        s_IsQuirkEnabledCallback != NULL )// Check that IsQuirkEnabledCallback function has been registered.
     {
-
         BOOL isEnabledInDB = FALSE;
         CPT_QUIRK_DATA quirkData;
         if(SUCCEEDED(getQuirkEnabledAndValueFromWinDB(info.name, &isEnabledInDB, &quirkData)))
@@ -334,19 +346,29 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
             {
                 WCHAR *end;
                 errno = 0;
-                result = wcstoul(quirkData.CommandLine, &end, 0);
-                
+                DWORD resultMaybe = wcstoul(quirkData.CommandLine, &end, 0);
+
                 // errno is ERANGE if the number is out of range, and end is set to pvalue if
                 // no valid conversion exists.
                 if (errno != ERANGE && end != quirkData.CommandLine)
                 {
-                    return result;
+                    *result = resultMaybe;
+                    return true;
                 }
                 else
                 {
-                    // If an invalid value is defined we treat it as the default value.
-                    // i.e. we don't look further.
-                    return info.defaultValue; 
+                    if (useDefaultIfNotSet)
+                    {
+                        // If an invalid value is defined we treat it as the default value.
+                        // i.e. we don't look further.
+                        *result = info.defaultValue;
+                        return true;
+                    }
+                    else
+                    {
+                        // If an invalid value is defined, we don't look further, so just return false.
+                        return false;
+                    }
                 }
             }
         }
@@ -362,46 +384,72 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
     // 
     // If we aren't favoring config files, we check REGUTIL here.
     // 
-    if(CheckLookupOption(info, FavorConfigFile) == FALSE)
+    if (CheckLookupOption(info, FavorConfigFile) == FALSE)
     {
-        REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &result, level, prependCOMPLUS);
-        // TODO: We are ignoring explicitly defined default values to avoid change in behavior. 
-        // TODO: Ideally, the following should check the hresult for success.
-        if(result != info.defaultValue)
+        DWORD resultMaybe;
+        HRESULT hr = REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &resultMaybe, level, prependCOMPLUS);
+
+        if (!acceptExplicitDefaultFromRegutil)
         {
-            return result;
+            // Ignore the default value even if it's set explicitly.
+            if (resultMaybe != info.defaultValue)
+            {
+                *result = resultMaybe;
+                return true;
+            }
+        }
+        else
+        {
+            // If we are willing to accept the default value when it's set explicitly,
+            // checking the HRESULT here is sufficient. E_FAIL is returned when the
+            // default is used.
+            if (hr != E_FAIL)
+            {
+                *result = resultMaybe;
+                return true;
+            }
         }
     }
 
     // 
     // Check config files through EEConfig.
     // 
-    if(CheckLookupOption(info, IgnoreConfigFiles) == FALSE && // Check that we aren't ignoring config files.
+    if (CheckLookupOption(info, IgnoreConfigFiles) == FALSE && // Check that we aren't ignoring config files.
         s_GetConfigValueCallback != NULL)// Check that GetConfigValueCallback function has been registered.
-    {        
+    {
         LPCWSTR pvalue;
 
         // EEConfig lookup options.
         BOOL systemOnly = CheckLookupOption(info, ConfigFile_SystemOnly) ? TRUE : FALSE;
         BOOL applicationFirst = CheckLookupOption(info, ConfigFile_ApplicationFirst) ? TRUE : FALSE;
-        
-        if(SUCCEEDED(s_GetConfigValueCallback(info.name, &pvalue, systemOnly, applicationFirst)) && pvalue != NULL)
+
+        if (SUCCEEDED(s_GetConfigValueCallback(info.name, &pvalue, systemOnly, applicationFirst)) && pvalue != NULL)
         {
             WCHAR * end;
             errno = 0;
-            result = wcstoul(pvalue, &end, 0);
-			
+            DWORD resultMaybe = wcstoul(pvalue, &end, 0);
+
             // errno is ERANGE if the number is out of range, and end is set to pvalue if
             // no valid conversion exists.
             if (errno != ERANGE && end != pvalue)
             {
-                return result;
+                *result = resultMaybe;
+                return true;
             }
             else
             {
-                // If an invalid value is defined we treat it as the default value.
-                // i.e. we don't look further.
-                return info.defaultValue; 
+                if (useDefaultIfNotSet)
+                {
+                    // If an invalid value is defined we treat it as the default value.
+                    // i.e. we don't look further.
+                    *result = info.defaultValue;
+                    return true;
+                }
+                else
+                {
+                    // If an invalid value is defined, we don't look further, so just return false.
+                    return false;
+                }
             }
         }
     }
@@ -409,14 +457,30 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
     // 
     // If we are favoring config files and we don't have a result from EEConfig, we check REGUTIL here.
     // 
-    if(CheckLookupOption(info, FavorConfigFile) == TRUE)
+    if (CheckLookupOption(info, FavorConfigFile) == TRUE)
     {
-        REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &result, level, prependCOMPLUS);
-        // TODO: We are ignoring explicitly defined default values to avoid change in behavior. 
-        // TODO: Ideally, the following should check the hresult for success.
-        if(result != info.defaultValue)
+        DWORD resultMaybe;
+        HRESULT hr = REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &resultMaybe, level, prependCOMPLUS);
+
+        if (!acceptExplicitDefaultFromRegutil)
         {
-            return result;
+            // Ignore the default value even if it's set explicitly.
+            if (resultMaybe != info.defaultValue)
+            {
+                *result = resultMaybe;
+                return true;
+            }
+        }
+        else
+        {
+            // If we are willing to accept the default value when it's set explicitly,
+            // checking the HRESULT here is sufficient. E_FAIL is returned when the
+            // default is used.
+            if (hr != E_FAIL)
+            {
+                *result = resultMaybe;
+                return true;
+            }
         }
     }
 
@@ -424,18 +488,50 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
     // If we get here, the option was not listed in REGUTIL or EEConfig; check whether the option
     // has a PerformanceDefault-specified value before falling back to the built-in default
     //
-    DWORD performanceDefaultValue;
-    if (CheckLookupOption(info, MayHavePerformanceDefault) &&
-        s_GetPerformanceDefaultValueCallback != NULL &&
-        s_GetPerformanceDefaultValueCallback(info.name, &performanceDefaultValue))
+    if (useDefaultIfNotSet)
     {
-        // TODO: We ignore explicitly defined default values above, but we do not want to let performance defaults override these.
-        // TODO: Ideally, the above would use hresult for success and this check would be removed.
-        if (!SUCCEEDED(REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &result, level, prependCOMPLUS)))
-            return performanceDefaultValue;
+        DWORD performanceDefaultValue;
+        if (CheckLookupOption(info, MayHavePerformanceDefault) &&
+            s_GetPerformanceDefaultValueCallback != NULL &&
+            s_GetPerformanceDefaultValueCallback(info.name, &performanceDefaultValue))
+        {
+            // TODO: We ignore explicitly defined default values above, but we do not want to let performance defaults override these.
+            // TODO: Ideally, the above would use hresult for success and this check would be removed.
+            DWORD resultMaybe;
+            if (!SUCCEEDED(REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &resultMaybe, level, prependCOMPLUS)))
+            {
+                *result = performanceDefaultValue;
+                return true;
+            }
+        }
     }
 
-    return info.defaultValue;
+    if (useDefaultIfNotSet)
+    {
+        *result = info.defaultValue;
+        return true;
+    }
+
+    return false;
+}
+
+// 
+// Look up a DWORD config value.
+// 
+// Arguments:
+//     * info - see file:../inc/CLRConfig.h for details
+//     
+// static
+DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
+{
+    DWORD value;
+
+    // We pass false for 'acceptExplicitDefaultFromRegutil' to maintain the existing behavior of this function.
+    INDEBUG(bool succeeded = )
+    GetConfigValue(info, true /* useDefaultIfNotSet */, false /* acceptExplicitDefaultFromRegutil */, &value);
+    _ASSERTE(succeeded == true);
+
+    return value;
 }
 
 // 

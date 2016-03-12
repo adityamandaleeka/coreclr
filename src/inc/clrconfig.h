@@ -171,7 +171,10 @@ public:
 
     // Look up a DWORD config value.
     static DWORD GetConfigValue(const ConfigDWORDInfo & info);
-    
+
+    // Look up a DWORD config value.
+    static bool GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultIfNotSet, bool acceptExplicitDefaultFromRegutil, DWORD *result);
+
     // Look up a string config value.
     // You own the string that's returned.
     static LPWSTR GetConfigValue(const ConfigStringInfo & info);

@@ -33,6 +33,9 @@
 #ifdef FEATURE_WIN_DB_APPCOMPAT
 #include "QuirksApi.h"
 #endif
+#ifdef FEATURE_CORECLR
+#include "configuration.h"
+#endif
 
 using namespace clr;
 
@@ -789,10 +792,16 @@ HRESULT EEConfig::sync()
         g_fEnableARM = TRUE;
     }
 
+#ifdef FEATURE_CORECLR
+    bool forceGCconcurrent = Configuration::GetKnobBooleanValue(Configuration::ConfigurationKnobId::System_GC_Concurrent);
+    if (forceGCconcurrent)
+        iGCconcurrent = TRUE;
+#else
     int forceGCconcurrent = CLRConfig::GetConfigValue(CLRConfig::UNSUPPORTED_gcConcurrent);
     if ((forceGCconcurrent > 0) || (forceGCconcurrent == -1 && g_IGCconcurrent))
         iGCconcurrent = TRUE;
-    
+#endif
+
     // Disable concurrent GC during ngen for the rare case a GC gets triggered, causing problems
     if (IsCompilationProcess())
         iGCconcurrent = FALSE;
