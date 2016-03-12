@@ -312,17 +312,17 @@ public:
     };
 
 public:
-    void InitializeTableThing(int numberOfConfigs, LPCWSTR *configNames, LPCWSTR *configValues);
+    static void InitializeTableThing(int numberOfConfigs, LPCWSTR *configNames, LPCWSTR *configValues);
 
-    DWORD ZGetConfigDWORDValue2(const ZNewConfigId);
+    static DWORD ZGetConfigDWORDValue2(const ZNewConfigId);
 
-    LPWSTR ZGetConfigStringValue2(const ZNewConfigId);
+    static LPWSTR ZGetConfigStringValue2(const ZNewConfigId);
 
 private:
-    const ZNewConfInfo* ZGetConfigInfoFromId(const ZNewConfigId desiredId);
-    const ZNewConfInfo* ZGetConfigInfoFromName(LPCWSTR desiredName);
+    static const ZNewConfInfo* ZGetConfigInfoFromId(const ZNewConfigId desiredId);
+    static const ZNewConfInfo* ZGetConfigInfoFromName(LPCWSTR desiredName);
 
-    void ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value);
+    static void ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value);
 
     // Contains mapping from new config ID -> legacy ID and type
     static const ZNewConfInfo m_configInfos[];

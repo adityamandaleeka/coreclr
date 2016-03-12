@@ -298,8 +298,6 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 }
 
 
-
-
 const CLRConfig2::ZNewConfInfo CLRConfig2::m_configInfos[] = 
 {
     {CLRConfig2::ZNewConfigId::EnableFooGc, CLRConfig2::ZNewConfigValueType::DwordType, W("System.GC.EnableFooGC"), {.dwordInfo = CLRConfig::INTERNAL_ThreadSuspendInjection}},
@@ -354,6 +352,9 @@ void CLRConfig2::InitializeTableThing(int numberOfConfigs, LPCWSTR *names, LPCWS
 
         ZNewConfigId id = configInfo->newConfigId;
 
+        // Set the type of the config value. If we got to this point, we're going to set the value.
+        configValues[static_cast<int>(id)].typeOfValue = configInfo->valuetype;
+
         if (configInfo->valuetype == ZNewConfigValueType::DwordType)
         {
             CLRConfig::ConfigDWORDInfo legacyInfo = configInfo->legacyConfigInfo.dwordInfo;
@@ -364,12 +365,10 @@ void CLRConfig2::InitializeTableThing(int numberOfConfigs, LPCWSTR *names, LPCWS
 
             if (isSetAndNotDefault)
             {
-                configValues[static_cast<int>(id)].typeOfValue = ZNewConfigValueType::DwordType;
                 configValues[static_cast<int>(id)].configValue.dwordValue = value;
             }
             else
             {
-                configValues[static_cast<int>(id)].typeOfValue = ZNewConfigValueType::DwordType;
                 configValues[static_cast<int>(id)].configValue.dwordValue = 123; //// values[i] as a DWORD
             }
 
@@ -384,16 +383,14 @@ void CLRConfig2::InitializeTableThing(int numberOfConfigs, LPCWSTR *names, LPCWS
 
             if (isSetAndNotDefault)
             {
-                configValues[static_cast<int>(id)].typeOfValue = ZNewConfigValueType::StringType;
                 configValues[static_cast<int>(id)].configValue.stringValue = value; //// SHOULD WE MAKE A COPY OF THIS?
             }
             else
             {
-                configValues[static_cast<int>(id)].typeOfValue = ZNewConfigValueType::StringType;
                 // configValues[static_cast<int>(id)].configValue.stringValue = values[i]; //// SHOULD WE MAKE A COPY OF THIS?
             }
-
         }
+
 
     }
 
