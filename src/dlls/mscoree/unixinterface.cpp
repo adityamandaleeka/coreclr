@@ -222,6 +222,8 @@ int coreclr_initialize(
     ConstWStringArrayHolder propertyValuesW;
     propertyValuesW.Set(propertyValuesWTemp, propertyCount);
 
+    CLRConfig2::InitializeTableThing(propertyCount, propertyKeysWTemp, propertyValuesWTemp);
+
     hr = host->SetStartupFlags(startupFlags);
     IfFailRet(hr);
 

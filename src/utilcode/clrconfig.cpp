@@ -298,24 +298,48 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 }
 
 
-const CLRConfig2::ZNewConfInfo CLRConfig2::m_configInfos[] = 
+///////// naming
+///////// casing
+///////// locks?
+
+
+const CLRConfig2::ZNewConfDwordInfo CLRConfig2::m_DwordConfigInfos[] = 
 {
-    {CLRConfig2::ZNewConfigId::EnableFooGc, CLRConfig2::ZNewConfigValueType::DwordType, W("System.GC.EnableFooGC"), {.dwordInfo = CLRConfig::INTERNAL_ThreadSuspendInjection}},
-    {CLRConfig2::ZNewConfigId::MaxThreadsForFoo, CLRConfig2::ZNewConfigValueType::DwordType, W("System.Threading.MaxFoo"), {.stringInfo = CLRConfig::INTERNAL_Security_TransparencyMethodBreak}}//CLRConfig::INTERNAL_ThreadPool_ForceMinWorkerThreads}}
+    {CLRConfig2::ZNewConfigId::ThreadSuspendInjection, W("System.Foo.InjectSuspension"), &CLRConfig::INTERNAL_ThreadSuspendInjection},
+    {CLRConfig2::ZNewConfigId::ServerGc, W("System.GC.EnableServerGC"), &CLRConfig::UNSUPPORTED_gcServer},
 };
 
-// Contains the actual values of the new configs (or an indicator that they aren't initialized)
-CLRConfig2::ZNewConfValue configValues[CLRConfig2::ZCONFIG_COUNT];
+const CLRConfig2::ZNewConfStringInfo CLRConfig2::m_StringConfigInfos[] = 
+{
+    {CLRConfig2::ZNewConfigId::JitDump, W("System.JIT.JitDump"), &CLRConfig::INTERNAL_JitDump},
+    {CLRConfig2::ZNewConfigId::MaxThreadsForFoo, W("System.Threading.MaxFoo"), &CLRConfig::INTERNAL_Security_TransparencyMethodBreak},
+};
 
+static const int DWORD_INFOS_COUNT = sizeof(CLRConfig2::m_DwordConfigInfos) / sizeof(CLRConfig2::m_DwordConfigInfos[0]);
+static const int STRING_INFOS_COUNT = sizeof(CLRConfig2::m_StringConfigInfos) / sizeof(CLRConfig2::m_StringConfigInfos[0]);
+
+///// add static assert that the size of the ID list and the Infos list are the same
+
+static_assert(DWORD_INFOS_COUNT + STRING_INFOS_COUNT == CLRConfig2::ZCONFIG_COUNT, "There should be information about each configuration option and no more.");
+
+CLRConfig2::ZNewConfValue configValues[CLRConfig2::ZCONFIG_COUNT];
 
 const CLRConfig2::ZNewConfInfo* CLRConfig2::ZGetConfigInfoFromId(const CLRConfig2::ZNewConfigId desiredId)
 {
     //// improve this lookup? for now linear
-    for (int i = 0; i < ZCONFIG_COUNT; i++)
+    for (int i = 0; i < DWORD_INFOS_COUNT; i++)
     {
-        if (m_configInfos[i].newConfigId == desiredId)
+        if (m_DwordConfigInfos[i].newConfigId == desiredId)
         {
-            return &m_configInfos[i];
+            return &m_DwordConfigInfos[i];
+        }
+    }
+
+    for (int i = 0; i < STRING_INFOS_COUNT; i++)
+    {
+        if (m_StringConfigInfos[i].newConfigId == desiredId)
+        {
+            return &m_StringConfigInfos[i];
         }
     }
 
@@ -325,11 +349,19 @@ const CLRConfig2::ZNewConfInfo* CLRConfig2::ZGetConfigInfoFromId(const CLRConfig
 const CLRConfig2::ZNewConfInfo* CLRConfig2::ZGetConfigInfoFromName(LPCWSTR desiredName)
 {
     //// improve this lookup? for now linear
-    for (int i = 0; i < ZCONFIG_COUNT; i++)
+    for (int i = 0; i < DWORD_INFOS_COUNT; i++)
     {
-        if (wcscmp(desiredName, m_configInfos[i].newConfigName) == 0)
+        if (wcscmp(desiredName, m_DwordConfigInfos[i].newConfigName) == 0)
         {
-            return &m_configInfos[i];
+            return &m_DwordConfigInfos[i];
+        }
+    }
+
+    for (int i = 0; i < STRING_INFOS_COUNT; i++)
+    {
+        if (wcscmp(desiredName, m_StringConfigInfos[i].newConfigName) == 0)
+        {
+            return &m_StringConfigInfos[i];
         }
     }
 
@@ -357,10 +389,10 @@ void CLRConfig2::InitializeTableThing(int numberOfConfigs, LPCWSTR *names, LPCWS
 
         if (configInfo->valuetype == ZNewConfigValueType::DwordType)
         {
-            CLRConfig::ConfigDWORDInfo legacyInfo = configInfo->legacyConfigInfo.dwordInfo;
+            const CLRConfig::ConfigDWORDInfo* const legacyInfo = static_cast<const ZNewConfDwordInfo* const>(configInfo)->legacyDwordInfo;
 
             /////// TODO: DON'T LET THIS RETURN DEFAULT VALUE
-            DWORD value = CLRConfig::GetConfigValue(legacyInfo);
+            DWORD value = CLRConfig::GetConfigValue(*legacyInfo);
             bool isSetAndNotDefault = true; ////// this should do the right thing
 
             if (isSetAndNotDefault)
@@ -369,25 +401,24 @@ void CLRConfig2::InitializeTableThing(int numberOfConfigs, LPCWSTR *names, LPCWS
             }
             else
             {
-                configValues[static_cast<int>(id)].configValue.dwordValue = 123; //// values[i] as a DWORD
+                configValues[static_cast<int>(id)].configValue.dwordValue = wcstoul(values[i], nullptr, 0);
             }
 
         }
         else if (configInfo->valuetype == ZNewConfigValueType::StringType)
         {
-            CLRConfig::ConfigStringInfo legacyInfo = configInfo->legacyConfigInfo.stringInfo;
+            const CLRConfig::ConfigStringInfo* const legacyInfo = static_cast<const ZNewConfStringInfo* const>(configInfo)->legacyStringInfo;
 
-            /////// TODO: DON'T LET THIS RETURN DEFAULT VALUE
-            LPWSTR value = CLRConfig::GetConfigValue(legacyInfo);
-            bool isSetAndNotDefault = true;////// this should do the right thing
+            LPWSTR value = CLRConfig::GetConfigValue(*legacyInfo);
 
-            if (isSetAndNotDefault)
+            if (value != nullptr)
             {
-                configValues[static_cast<int>(id)].configValue.stringValue = value; //// SHOULD WE MAKE A COPY OF THIS?
+                // If the value is set in the legacy way, use that.
+                configValues[static_cast<int>(id)].configValue.stringValue = value; ///// no copy here. we own the string that's returned
             }
             else
             {
-                // configValues[static_cast<int>(id)].configValue.stringValue = values[i]; //// SHOULD WE MAKE A COPY OF THIS?
+                configValues[static_cast<int>(id)].configValue.stringValue = values[i]; //// SHOULD WE MAKE A COPY OF THIS?
             }
         }
 
@@ -416,23 +447,24 @@ void CLRConfig2::ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *va
     // If the value is set, use that. Otherwise, set it in the table using the old way.
     if (configValues[static_cast<int>(configId)].typeOfValue == CLRConfig2::ZNewConfigValueType::NotSetType)
     {
-        const ZNewConfInfo *configInfo = ZGetConfigInfoFromId(configId);
+        const ZNewConfInfo * const configInfo = ZGetConfigInfoFromId(configId);
         if (configInfo != nullptr)
         {
             configValues[static_cast<int>(configId)].typeOfValue = configInfo->valuetype;
             if (configInfo->valuetype == ZNewConfigValueType::DwordType)
             {
-                DWORD valueToSet = CLRConfig::GetConfigValue(configInfo->legacyConfigInfo.dwordInfo);
+                DWORD valueToSet = CLRConfig::GetConfigValue(*(static_cast<const ZNewConfDwordInfo* const>(configInfo)->legacyDwordInfo));
                 configValues[static_cast<int>(configId)].configValue.dwordValue = valueToSet;
             }
             else if (configInfo->valuetype == ZNewConfigValueType::StringType)
             {
-                LPWSTR valueToSet = CLRConfig::GetConfigValue(configInfo->legacyConfigInfo.stringInfo);
+                LPWSTR valueToSet = CLRConfig::GetConfigValue(*(static_cast<const ZNewConfStringInfo* const>(configInfo)->legacyStringInfo));
                 configValues[static_cast<int>(configId)].configValue.stringValue = valueToSet; //// SHOULD WE MAKE A COPY OF THIS?
             }
             else
             {
-                /// should never get here. all configs should be either DWORD or string
+                // Should never get here. All configs should be either DWORD or string type.
+                _ASSERT(false);
             }
         }
     }
@@ -448,29 +480,176 @@ DWORD CLRConfig2::ZGetConfigDWORDValue2(const ZNewConfigId configId)
     ZGetConfigValue2(configId, &confValue);
 
     _ASSERT(confValue.typeOfValue == ZNewConfigValueType::DwordType);
-    if (confValue.typeOfValue != ZNewConfigValueType::DwordType)
-    {
-       ///// what should be returned in this case?
-    }
-
     return confValue.configValue.dwordValue;
 }
 
 
-LPWSTR CLRConfig2::ZGetConfigStringValue2(const ZNewConfigId configId)
+LPCWSTR CLRConfig2::ZGetConfigStringValue2(const ZNewConfigId configId)
 {
     ZNewConfValue confValue;
     ZGetConfigValue2(configId, &confValue);
 
     _ASSERT(confValue.typeOfValue == ZNewConfigValueType::StringType);
-    if (confValue.typeOfValue != ZNewConfigValueType::StringType)
-    {
-       ///// what should be returned in this case?
-    }
-
     return confValue.configValue.stringValue;
 }
 
+
+
+// returns true for success, false otherwise
+bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValue, DWORD *result)
+{
+    CONTRACTL
+    {
+        NOTHROW;
+        GC_NOTRIGGER;
+        FORBID_FAULT;
+        SO_TOLERANT; // Need this to be tolerant to stack overflows since REGUTIL::GetConfigDWORD was too. (This replaces calls to REGUTIL::GetConfigDWORD) 
+    }
+    CONTRACTL_END;
+
+    _ASSERT(result != nullptr);
+    if (result == nullptr)
+    {
+        return false;
+    }
+
+    if (useDefaultValue)
+    {
+        *result = info.defaultValue;
+    }
+
+#ifdef FEATURE_WIN_DB_APPCOMPAT
+    // Windows Shim DB should be the first place to look as it applies microsoft enforced policy
+    // and overrides setting at any other place like config or registry
+    if(CheckLookupOption(info, IgnoreWindowsQuirkDB) == FALSE && 
+       s_IsQuirkEnabledCallback != NULL )// Check that IsQuirkEnabledCallback function has been registered.
+    {
+
+        BOOL isEnabledInDB = FALSE;
+        CPT_QUIRK_DATA quirkData;
+        if(SUCCEEDED(getQuirkEnabledAndValueFromWinDB(info.name, &isEnabledInDB, &quirkData)))
+        {
+            if(isEnabledInDB)
+            {
+                WCHAR *end;
+                errno = 0;
+                DWORD resultMaybe = wcstoul(quirkData.CommandLine, &end, 0);
+                
+                // errno is ERANGE if the number is out of range, and end is set to pvalue if
+                // no valid conversion exists.
+                if (errno != ERANGE && end != quirkData.CommandLine)
+                {
+                    *result = resultMaybe
+                    return true; ////////// NOT DEFAULT
+                }
+                else
+                {
+                    if (useDefaultValue)
+                    {
+                        // If an invalid value is defined we treat it as the default value.
+                        // i.e. we don't look further.
+                        *result = info.defaultValue; ////////// DEFAULT
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+#endif // FEATURE_WIN_DB_APPCOMPAT
+
+    //
+    // Set up REGUTIL options.
+    // 
+    REGUTIL::CORConfigLevel level = GetConfigLevel(info.options);
+    BOOL prependCOMPLUS = !CheckLookupOption(info, DontPrependCOMPLUS_);
+    
+    // 
+    // If we aren't favoring config files, we check REGUTIL here.
+    // 
+    if(CheckLookupOption(info, FavorConfigFile) == FALSE)
+    {
+        HRESULT hr = REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &result, level, prependCOMPLUS);
+        // TODO: We are ignoring explicitly defined default values to avoid change in behavior. 
+        // TODO: Ideally, the following should check the hresult for success.
+        if (hr != E_FAIL)
+        {
+            
+        }
+
+        if (result != info.defaultValue)
+        {
+            return result; ////////// CHECK HRESULT. E_FAIL MEANS DEFAULT
+        }
+    }
+
+    // 
+    // Check config files through EEConfig.
+    // 
+    if(CheckLookupOption(info, IgnoreConfigFiles) == FALSE && // Check that we aren't ignoring config files.
+        s_GetConfigValueCallback != NULL)// Check that GetConfigValueCallback function has been registered.
+    {        
+        LPCWSTR pvalue;
+
+        // EEConfig lookup options.
+        BOOL systemOnly = CheckLookupOption(info, ConfigFile_SystemOnly) ? TRUE : FALSE;
+        BOOL applicationFirst = CheckLookupOption(info, ConfigFile_ApplicationFirst) ? TRUE : FALSE;
+        
+        if(SUCCEEDED(s_GetConfigValueCallback(info.name, &pvalue, systemOnly, applicationFirst)) && pvalue != NULL)
+        {
+            WCHAR * end;
+            errno = 0;
+            result = wcstoul(pvalue, &end, 0);
+            
+            // errno is ERANGE if the number is out of range, and end is set to pvalue if
+            // no valid conversion exists.
+            if (errno != ERANGE && end != pvalue)
+            {
+                return result; ////////// NOT DEFAULT
+            }
+            else
+            {
+                // If an invalid value is defined we treat it as the default value.
+                // i.e. we don't look further.
+                return info.defaultValue;  ////////// DEFAULT
+            }
+        }
+    }
+
+    // 
+    // If we are favoring config files and we don't have a result from EEConfig, we check REGUTIL here.
+    // 
+    if(CheckLookupOption(info, FavorConfigFile) == TRUE)
+    {
+        REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &result, level, prependCOMPLUS);
+        // TODO: We are ignoring explicitly defined default values to avoid change in behavior. 
+        // TODO: Ideally, the following should check the hresult for success.
+        if(result != info.defaultValue)
+        {
+            return result; ////////// CHECK HRESULT. E_FAIL MEANS DEFAULT
+        }
+    }
+
+    //
+    // If we get here, the option was not listed in REGUTIL or EEConfig; check whether the option
+    // has a PerformanceDefault-specified value before falling back to the built-in default
+    //
+    DWORD performanceDefaultValue;
+    if (CheckLookupOption(info, MayHavePerformanceDefault) &&
+        s_GetPerformanceDefaultValueCallback != NULL &&
+        s_GetPerformanceDefaultValueCallback(info.name, &performanceDefaultValue))
+    {
+        // TODO: We ignore explicitly defined default values above, but we do not want to let performance defaults override these.
+        // TODO: Ideally, the above would use hresult for success and this check would be removed.
+        if (!SUCCEEDED(REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &result, level, prependCOMPLUS)))
+            return performanceDefaultValue; ////////// DEFAULT
+    }
+
+    return info.defaultValue; ////////// DEFAULT
+}
 
 
 
@@ -516,13 +695,13 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
                 // no valid conversion exists.
                 if (errno != ERANGE && end != quirkData.CommandLine)
                 {
-                    return result;
+                    return result; ////////// NOT DEFAULT
                 }
                 else
                 {
                     // If an invalid value is defined we treat it as the default value.
                     // i.e. we don't look further.
-                    return info.defaultValue; 
+                    return info.defaultValue; ////////// DEFAULT
                 }
             }
         }
@@ -545,7 +724,7 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
         // TODO: Ideally, the following should check the hresult for success.
         if(result != info.defaultValue)
         {
-            return result;
+            return result; ////////// CHECK HRESULT. E_FAIL MEANS DEFAULT
         }
     }
 
@@ -571,13 +750,13 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
             // no valid conversion exists.
             if (errno != ERANGE && end != pvalue)
             {
-                return result;
+                return result; ////////// NOT DEFAULT
             }
             else
             {
                 // If an invalid value is defined we treat it as the default value.
                 // i.e. we don't look further.
-                return info.defaultValue; 
+                return info.defaultValue;  ////////// DEFAULT
             }
         }
     }
@@ -592,7 +771,7 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
         // TODO: Ideally, the following should check the hresult for success.
         if(result != info.defaultValue)
         {
-            return result;
+            return result; ////////// CHECK HRESULT. E_FAIL MEANS DEFAULT
         }
     }
 
@@ -608,10 +787,10 @@ DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
         // TODO: We ignore explicitly defined default values above, but we do not want to let performance defaults override these.
         // TODO: Ideally, the above would use hresult for success and this check would be removed.
         if (!SUCCEEDED(REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &result, level, prependCOMPLUS)))
-            return performanceDefaultValue;
+            return performanceDefaultValue; ////////// DEFAULT
     }
 
-    return info.defaultValue;
+    return info.defaultValue; ////////// DEFAULT
 }
 
 // 

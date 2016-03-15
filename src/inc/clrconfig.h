@@ -272,6 +272,21 @@ public:
         StringType = 0x2
     };
 
+    // LIST OF THINGS WE KNOW MAY BE IN THE RUNTIME CONFIG
+    enum class ZNewConfigId
+    {
+        // Describe this option
+        JitDump = 0,
+        // Describe this option
+        MaxThreadsForFoo = 1,
+        // Describe this option
+        ThreadSuspendInjection = 2,
+        // Describe this option
+        ServerGc = 3,
+
+        ENUM_COUNT = 4
+    };
+
     struct ZNewConfValue 
     {
         // Indicates type (and which thing in union is active)
@@ -280,63 +295,66 @@ public:
         union
         {
             DWORD dwordValue;
-            LPWSTR stringValue;
+            LPCWSTR stringValue;
         } configValue;
-    };
-
-    // LIST OF THINGS WE KNOW MAY BE IN THE RUNTIME CONFIG
-    enum class ZNewConfigId
-    {
-        // Describe this option
-        EnableFooGc = 1,
-        // Describe this option
-        MaxThreadsForFoo = 2,
-
-        ENUM_COUNT = 2
     };
 
     static const int ZCONFIG_COUNT = (int)ZNewConfigId::ENUM_COUNT;
 
-// private:
     struct ZNewConfInfo
     {
         ZNewConfigId newConfigId;
         ZNewConfigValueType valuetype;
         LPCWSTR newConfigName;      // "System.GC.Whatever"
+    };
 
-        union
+    struct ZNewConfDwordInfo : ZNewConfInfo
+    {
+        ZNewConfDwordInfo(ZNewConfigId asd, LPCWSTR lpc, const CLRConfig::ConfigDWORDInfo *dwin)
         {
-            CLRConfig::ConfigDWORDInfo dwordInfo;
-            CLRConfig::ConfigStringInfo stringInfo;
-        } legacyConfigInfo;
+            valuetype = ZNewConfigValueType::DwordType;
+
+            newConfigId = asd;
+            newConfigName = lpc;
+            legacyDwordInfo = dwin;
+        }
+
+        const CLRConfig::ConfigDWORDInfo* legacyDwordInfo;
+    };
+
+    struct ZNewConfStringInfo : ZNewConfInfo
+    {
+        ZNewConfStringInfo(ZNewConfigId asd, LPCWSTR lpc, const CLRConfig::ConfigStringInfo *dwin)
+        {
+            valuetype = ZNewConfigValueType::StringType;
+
+            newConfigId = asd;
+            newConfigName = lpc;
+            legacyStringInfo = dwin;
+        }
+
+        const CLRConfig::ConfigStringInfo* legacyStringInfo;
     };
 
 public:
     static void InitializeTableThing(int numberOfConfigs, LPCWSTR *configNames, LPCWSTR *configValues);
 
     static DWORD ZGetConfigDWORDValue2(const ZNewConfigId);
-
-    static LPWSTR ZGetConfigStringValue2(const ZNewConfigId);
+    static LPCWSTR ZGetConfigStringValue2(const ZNewConfigId);
 
 private:
     static const ZNewConfInfo* ZGetConfigInfoFromId(const ZNewConfigId desiredId);
     static const ZNewConfInfo* ZGetConfigInfoFromName(LPCWSTR desiredName);
 
-    static void ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value);
+    static void CLRConfig2::ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value);
 
-    // Contains mapping from new config ID -> legacy ID and type
-    static const ZNewConfInfo m_configInfos[];
-    // {
-    //     {CLRConfig2::ZNewConfigId::EnableFooGc, CLRConfig2::ZNewConfigValueType::DwordType, W("System.GC.EnableFooGC"), {.dwordInfo = CLRConfig::INTERNAL_ThreadSuspendInjection}},
-    //     {CLRConfig2::ZNewConfigId::MaxThreadsForFoo, CLRConfig2::ZNewConfigValueType::DwordType, W("System.Threading.MaxFoo"), {CLRConfig::INTERNAL_ThreadPool_ForceMinWorkerThreads}}
-    // };
-
-
-
-    ///// add static assert that the size of the ID list and the Infos list are the same
+public: /// make this private too
+    static const ZNewConfDwordInfo m_DwordConfigInfos[];
+    static const ZNewConfStringInfo m_StringConfigInfos[];
 };
 
-extern CLRConfig2::ZNewConfValue configValues[CLRConfig2::ZCONFIG_COUNT];
+// extern DWORD configDwordValues[CLRConfig2::ZCONFIG_COUNT]; ////// change size
+// extern LPCWSTR configStringValues[CLRConfig2::ZCONFIG_COUNT];
 
 
 #endif // FEATURE_CORECLR zzzzzzzzzzzzzzzzzzzzzz
