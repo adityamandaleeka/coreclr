@@ -171,6 +171,8 @@ public:
 
     // Look up a DWORD config value.
     static DWORD GetConfigValue(const ConfigDWORDInfo & info);
+
+    static bool GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValue, DWORD *result);
     
     // Look up a string config value.
     // You own the string that's returned.
@@ -257,22 +259,24 @@ typedef Wrapper<LPWSTR, DoNothing, CLRConfig::FreeConfigString, NULL> CLRConfigS
 
 #ifdef FEATURE_CORECLR //////
 
-
 class CLRConfig2
 {
 public:
-    // POSSIBLE TYPES FOR CONFIG VALUES
+
+    // Possible types for configuration values
     enum class ZNewConfigValueType
     {
-        // Describe this option
+        // Value isn't set
         NotSetType = 0x0,
-        // Describe this option
+
+        // Value is a DWORD
         DwordType = 0x1,
-        // Describe this option
+
+        // Value is a string
         StringType = 0x2
     };
 
-    // LIST OF THINGS WE KNOW MAY BE IN THE RUNTIME CONFIG
+    // Configuration options that we know about
     enum class ZNewConfigId
     {
         // Describe this option
@@ -289,7 +293,7 @@ public:
 
     struct ZNewConfValue 
     {
-        // Indicates type (and which thing in union is active)
+        // Indicates type of value (and which part of the union is active)
         ZNewConfigValueType typeOfValue;
 
         union
@@ -299,45 +303,55 @@ public:
         } configValue;
     };
 
-    static const int ZCONFIG_COUNT = (int)ZNewConfigId::ENUM_COUNT;
-
+    // Information about a configuration knob.
     struct ZNewConfInfo
     {
+        // ID of the configuration knob
         ZNewConfigId newConfigId;
+
+        // Type of value it can have
         ZNewConfigValueType valuetype;
-        LPCWSTR newConfigName;      // "System.GC.Whatever"
+
+        // String representing the knob (e.g. "System.GC.Whatever")
+        LPCWSTR newConfigName;
     };
 
+    // Information about a configuration knob which can have a DWORD value.
     struct ZNewConfDwordInfo : ZNewConfInfo
     {
-        ZNewConfDwordInfo(ZNewConfigId asd, LPCWSTR lpc, const CLRConfig::ConfigDWORDInfo *dwin)
+        ZNewConfDwordInfo(ZNewConfigId id, LPCWSTR name, const CLRConfig::ConfigDWORDInfo *dwordInfo)
         {
             valuetype = ZNewConfigValueType::DwordType;
 
-            newConfigId = asd;
-            newConfigName = lpc;
-            legacyDwordInfo = dwin;
+            newConfigId = id;
+            newConfigName = name;
+            legacyDwordInfo = dwordInfo;
         }
 
+        // The ConfigDWORDInfo which enables us to get the value for this
+        // configuration knob in the legacy (COMPlus) way.
         const CLRConfig::ConfigDWORDInfo* legacyDwordInfo;
     };
 
+    // Information about a configuration knob which can have a string value.
     struct ZNewConfStringInfo : ZNewConfInfo
     {
-        ZNewConfStringInfo(ZNewConfigId asd, LPCWSTR lpc, const CLRConfig::ConfigStringInfo *dwin)
+        ZNewConfStringInfo(ZNewConfigId id, LPCWSTR name, const CLRConfig::ConfigStringInfo *stringInfo)
         {
             valuetype = ZNewConfigValueType::StringType;
 
-            newConfigId = asd;
-            newConfigName = lpc;
-            legacyStringInfo = dwin;
+            newConfigId = id;
+            newConfigName = name;
+            legacyStringInfo = stringInfo;
         }
 
+        // The ConfigStringInfo which enables us to get the value for this
+        // configuration knob in the legacy (COMPlus) way.
         const CLRConfig::ConfigStringInfo* legacyStringInfo;
     };
 
 public:
-    static void InitializeTableThing(int numberOfConfigs, LPCWSTR *configNames, LPCWSTR *configValues);
+    static void ZInitializeNewConfigurationValues(int numberOfConfigs, LPCWSTR *configNames, LPCWSTR *configValues);
 
     static DWORD ZGetConfigDWORDValue2(const ZNewConfigId);
     static LPCWSTR ZGetConfigStringValue2(const ZNewConfigId);
@@ -352,10 +366,6 @@ public: /// make this private too
     static const ZNewConfDwordInfo m_DwordConfigInfos[];
     static const ZNewConfStringInfo m_StringConfigInfos[];
 };
-
-// extern DWORD configDwordValues[CLRConfig2::ZCONFIG_COUNT]; ////// change size
-// extern LPCWSTR configStringValues[CLRConfig2::ZCONFIG_COUNT];
-
 
 #endif // FEATURE_CORECLR zzzzzzzzzzzzzzzzzzzzzz
 
