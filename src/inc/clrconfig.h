@@ -259,7 +259,7 @@ typedef Wrapper<LPWSTR, DoNothing, CLRConfig::FreeConfigString, NULL> CLRConfigS
 
 // #ifdef FEATURE_CORECLR //////
 
-// class CLRConfig2
+// class Configuration
 // {
 // public:
 
@@ -360,7 +360,7 @@ typedef Wrapper<LPWSTR, DoNothing, CLRConfig::FreeConfigString, NULL> CLRConfigS
 //     static const ZNewConfInfo* ZGetConfigInfoFromId(const ZNewConfigId desiredId);
 //     static const ZNewConfInfo* ZGetConfigInfoFromName(LPCWSTR desiredName);
 
-//     static void CLRConfig2::ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value);
+//     static void Configuration::ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value);
 
 // //public: /// make this private too
 //     // static const ZNewConfDwordInfo m_DwordConfigInfos[];

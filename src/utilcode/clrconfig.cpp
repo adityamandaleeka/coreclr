@@ -303,30 +303,30 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 // ///////// locks?
 
 
-// const CLRConfig2::ZNewConfDwordInfo m_DwordConfigInfos[] = 
+// const Configuration::ZNewConfDwordInfo m_DwordConfigInfos[] = 
 // {
-//     {CLRConfig2::ZNewConfigId::ThreadSuspendInjection, W("System.Foo.InjectSuspension"), &CLRConfig::INTERNAL_ThreadSuspendInjection},
-//     {CLRConfig2::ZNewConfigId::ServerGc, W("System.GC.EnableServerGC"), &CLRConfig::UNSUPPORTED_gcServer},
+//     {Configuration::ZNewConfigId::ThreadSuspendInjection, W("System.Foo.InjectSuspension"), &CLRConfig::INTERNAL_ThreadSuspendInjection},
+//     {Configuration::ZNewConfigId::ServerGc, W("System.GC.EnableServerGC"), &CLRConfig::UNSUPPORTED_gcServer},
 // };
 
-// const CLRConfig2::ZNewConfStringInfo m_StringConfigInfos[] = 
+// const Configuration::ZNewConfStringInfo m_StringConfigInfos[] = 
 // {
-//     {CLRConfig2::ZNewConfigId::JitDump, W("System.JIT.JitDump"), &CLRConfig::INTERNAL_JitDump},
-//     {CLRConfig2::ZNewConfigId::MaxThreadsForFoo, W("System.Threading.MaxFoo"), &CLRConfig::INTERNAL_Security_TransparencyMethodBreak},
+//     {Configuration::ZNewConfigId::JitDump, W("System.JIT.JitDump"), &CLRConfig::INTERNAL_JitDump},
+//     {Configuration::ZNewConfigId::MaxThreadsForFoo, W("System.Threading.MaxFoo"), &CLRConfig::INTERNAL_Security_TransparencyMethodBreak},
 // };
 
-// const int CLRConfig2::DWORD_INFOS_COUNT = sizeof(m_DwordConfigInfos) / sizeof(m_DwordConfigInfos[0]);
-// const int CLRConfig2::STRING_INFOS_COUNT = sizeof(m_StringConfigInfos) / sizeof(m_StringConfigInfos[0]);
+// const int Configuration::DWORD_INFOS_COUNT = sizeof(m_DwordConfigInfos) / sizeof(m_DwordConfigInfos[0]);
+// const int Configuration::STRING_INFOS_COUNT = sizeof(m_StringConfigInfos) / sizeof(m_StringConfigInfos[0]);
 
-// static const int ZCONFIG_COUNT = (int)CLRConfig2::ZNewConfigId::ENUM_COUNT;
+// static const int ZCONFIG_COUNT = (int)Configuration::ZNewConfigId::ENUM_COUNT;
 
-// // static_assert(CLRConfig2::DWORD_INFOS_COUNT + CLRConfig2::STRING_INFOS_COUNT == ZCONFIG_COUNT, "There should be information about each configuration option and no more.");
+// // static_assert(Configuration::DWORD_INFOS_COUNT + Configuration::STRING_INFOS_COUNT == ZCONFIG_COUNT, "There should be information about each configuration option and no more.");
 
-// // CrstStatic CLRConfig2::m_ZConfigValuesCrst;
+// // CrstStatic Configuration::m_ZConfigValuesCrst;
 
-// CLRConfig2::ZNewConfValue configValues[ZCONFIG_COUNT];
+// Configuration::ZNewConfValue configValues[ZCONFIG_COUNT];
 
-// const CLRConfig2::ZNewConfInfo* CLRConfig2::ZGetConfigInfoFromId(const CLRConfig2::ZNewConfigId desiredId)
+// const Configuration::ZNewConfInfo* Configuration::ZGetConfigInfoFromId(const Configuration::ZNewConfigId desiredId)
 // {
 //     //// improve this lookup? for now linear
 //     for (int i = 0; i < DWORD_INFOS_COUNT; i++)
@@ -348,7 +348,7 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 //     return nullptr;
 // }
 
-// const CLRConfig2::ZNewConfInfo* CLRConfig2::ZGetConfigInfoFromName(LPCWSTR desiredName)
+// const Configuration::ZNewConfInfo* Configuration::ZGetConfigInfoFromName(LPCWSTR desiredName)
 // {
 //     //// improve this lookup? for now linear
 //     for (int i = 0; i < DWORD_INFOS_COUNT; i++)
@@ -370,7 +370,7 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 //     return nullptr;
 // }
 
-// void CLRConfig2::ZInitializeNewConfigurationValues(int numberOfConfigs, LPCWSTR *names, LPCWSTR *values)
+// void Configuration::ZInitializeNewConfigurationValues(int numberOfConfigs, LPCWSTR *names, LPCWSTR *values)
 // {
 //     // m_ZConfigValuesCrst.Init(CrstLeafLock, CrstFlags(CRST_UNSAFE_ANYMODE));
 
@@ -436,13 +436,13 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 //     }
 // }
 
-// void CLRConfig2::ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value)
+// void Configuration::ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value)
 // {
 //     _ASSERT(value != nullptr);
 
 //     // Look up the ID in the table.
 //     // If the value is set, use that. Otherwise, set it in the table using the old way.
-//     if (configValues[static_cast<int>(configId)].typeOfValue == CLRConfig2::ZNewConfigValueType::NotSetType)
+//     if (configValues[static_cast<int>(configId)].typeOfValue == Configuration::ZNewConfigValueType::NotSetType)
 //     {
 //         const ZNewConfInfo * const configInfo = ZGetConfigInfoFromId(configId);
 //         if (configInfo != nullptr)
@@ -469,7 +469,7 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 //     *value = configValues[static_cast<int>(configId)];
 // }
 
-// DWORD CLRConfig2::ZGetConfigDWORDValue2(const ZNewConfigId configId)
+// DWORD Configuration::ZGetConfigDWORDValue2(const ZNewConfigId configId)
 // {
 //     ZNewConfValue confValue;
 //     ZGetConfigValue2(configId, &confValue);
@@ -479,7 +479,7 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 // }
 
 
-// LPCWSTR CLRConfig2::ZGetConfigStringValue2(const ZNewConfigId configId)
+// LPCWSTR Configuration::ZGetConfigStringValue2(const ZNewConfigId configId)
 // {
 //     ZNewConfValue confValue;
 //     ZGetConfigValue2(configId, &confValue);
