@@ -18,6 +18,8 @@
 
 #include "mdaassistants.h"
 
+#include <configuration.h>
+
 // from ntstatus.h
 #define STATUS_SUSPEND_COUNT_EXCEEDED    ((NTSTATUS)0xC000004AL)
 

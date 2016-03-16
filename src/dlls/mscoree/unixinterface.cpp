@@ -14,6 +14,7 @@
 #include "stdafx.h"
 #include <utilcode.h>
 #include <corhost.h>
+#include <configuration.h>
 
 typedef int (STDMETHODCALLTYPE *HostMain)(
     const int argc,
