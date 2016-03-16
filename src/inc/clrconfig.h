@@ -362,9 +362,14 @@ private:
 
     static void CLRConfig2::ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value);
 
-public: /// make this private too
-    static const ZNewConfDwordInfo m_DwordConfigInfos[];
-    static const ZNewConfStringInfo m_StringConfigInfos[];
+//public: /// make this private too
+    // static const ZNewConfDwordInfo m_DwordConfigInfos[];
+    // static const ZNewConfStringInfo m_StringConfigInfos[];
+
+    static const int DWORD_INFOS_COUNT;
+    static const int STRING_INFOS_COUNT;
+
+    // static CrstStatic m_ZConfigValuesCrst;
 };
 
 #endif // FEATURE_CORECLR zzzzzzzzzzzzzzzzzzzzzz

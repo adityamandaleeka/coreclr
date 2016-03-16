@@ -303,24 +303,26 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 ///////// locks?
 
 
-const CLRConfig2::ZNewConfDwordInfo CLRConfig2::m_DwordConfigInfos[] = 
+const CLRConfig2::ZNewConfDwordInfo m_DwordConfigInfos[] = 
 {
     {CLRConfig2::ZNewConfigId::ThreadSuspendInjection, W("System.Foo.InjectSuspension"), &CLRConfig::INTERNAL_ThreadSuspendInjection},
     {CLRConfig2::ZNewConfigId::ServerGc, W("System.GC.EnableServerGC"), &CLRConfig::UNSUPPORTED_gcServer},
 };
 
-const CLRConfig2::ZNewConfStringInfo CLRConfig2::m_StringConfigInfos[] = 
+const CLRConfig2::ZNewConfStringInfo m_StringConfigInfos[] = 
 {
     {CLRConfig2::ZNewConfigId::JitDump, W("System.JIT.JitDump"), &CLRConfig::INTERNAL_JitDump},
     {CLRConfig2::ZNewConfigId::MaxThreadsForFoo, W("System.Threading.MaxFoo"), &CLRConfig::INTERNAL_Security_TransparencyMethodBreak},
 };
 
-static const int DWORD_INFOS_COUNT = sizeof(CLRConfig2::m_DwordConfigInfos) / sizeof(CLRConfig2::m_DwordConfigInfos[0]);
-static const int STRING_INFOS_COUNT = sizeof(CLRConfig2::m_StringConfigInfos) / sizeof(CLRConfig2::m_StringConfigInfos[0]);
+const int CLRConfig2::DWORD_INFOS_COUNT = sizeof(m_DwordConfigInfos) / sizeof(m_DwordConfigInfos[0]);
+const int CLRConfig2::STRING_INFOS_COUNT = sizeof(m_StringConfigInfos) / sizeof(m_StringConfigInfos[0]);
 
-static const int ZCONFIG_COUNT = (int)ZNewConfigId::ENUM_COUNT;
+static const int ZCONFIG_COUNT = (int)CLRConfig2::ZNewConfigId::ENUM_COUNT;
 
-static_assert(DWORD_INFOS_COUNT + STRING_INFOS_COUNT == ZCONFIG_COUNT, "There should be information about each configuration option and no more.");
+// static_assert(CLRConfig2::DWORD_INFOS_COUNT + CLRConfig2::STRING_INFOS_COUNT == ZCONFIG_COUNT, "There should be information about each configuration option and no more.");
+
+// CrstStatic CLRConfig2::m_ZConfigValuesCrst;
 
 CLRConfig2::ZNewConfValue configValues[ZCONFIG_COUNT];
 
@@ -368,13 +370,17 @@ const CLRConfig2::ZNewConfInfo* CLRConfig2::ZGetConfigInfoFromName(LPCWSTR desir
     return nullptr;
 }
 
-void CLRConfig2::ZInitializeNewConfigurationTable(int numberOfConfigs, LPCWSTR *names, LPCWSTR *values)
+void CLRConfig2::ZInitializeNewConfigurationValues(int numberOfConfigs, LPCWSTR *names, LPCWSTR *values)
 {
+    // m_ZConfigValuesCrst.Init(CrstLeafLock, CrstFlags(CRST_UNSAFE_ANYMODE));
+
     // Initialize everything to NotSetType
     for (int i = 0; i < ZCONFIG_COUNT; ++i)
     {
         configValues[i].typeOfValue = ZNewConfigValueType::NotSetType;
     }
+
+    // CrstHolder ch(&m_ZConfigValuesCrst);
 
     // For any configuration values that are passed in, set their values correctly. This may
     // mean either using the value passed in or using the legacy (COMPlus) equivalent if it

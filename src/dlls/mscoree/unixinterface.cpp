@@ -215,14 +215,15 @@ int coreclr_initialize(
         &startupFlags,
         &propertyKeysWTemp,
         &propertyValuesWTemp);
-    
+
     ConstWStringArrayHolder propertyKeysW;
     propertyKeysW.Set(propertyKeysWTemp, propertyCount);
-    
+
     ConstWStringArrayHolder propertyValuesW;
     propertyValuesW.Set(propertyValuesWTemp, propertyCount);
 
-    CLRConfig2::InitializeTableThing(propertyCount, propertyKeysWTemp, propertyValuesWTemp);
+    //// this should include the startup flag stuff too (?)
+    CLRConfig2::ZInitializeNewConfigurationValues(propertyCount, propertyKeysWTemp, propertyValuesWTemp);
 
     hr = host->SetStartupFlags(startupFlags);
     IfFailRet(hr);
