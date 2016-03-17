@@ -26,21 +26,8 @@ class Configuration
 {
 public:
 
-    // Possible types for configuration values
-    enum class ZNewConfigValueType
-    {
-        // Value isn't set
-        NotSetType = 0x0,
-
-        // Value is a DWORD
-        DwordType = 0x1,
-
-        // Value is a string
-        StringType = 0x2
-    };
-
     // Configuration options that we know about
-    enum class ZNewConfigId
+    enum class ConfigurationKnobId
     {
         // Describe this option
         JitDump = 0,
@@ -54,42 +41,57 @@ public:
         ENUM_COUNT = 4
     };
 
-    struct ZNewConfValue 
+    // Possible types for configuration values
+    enum class ConfigurationValueType
+    {
+        // Value isn't set
+        NotSetType = 0x0,
+
+        // Value is a DWORD
+        DwordType = 0x1,
+
+        // Value is a string
+        StringType = 0x2
+    };
+
+    struct ConfigurationValue
     {
         // Indicates type of value (and which part of the union is active)
-        ZNewConfigValueType typeOfValue;
+        ConfigurationValueType typeOfValue;
 
         union
         {
-            DWORD dwordValue;
-            LPCWSTR stringValue;
-        } configValue;
+            DWORD dword;
+            LPCWSTR str;
+        } value;
     };
 
     // Information about a configuration knob.
-    struct ZNewConfInfo
+    struct ConfigurationKnob
     {
+        ConfigurationKnob(ConfigurationKnobId id, ConfigurationValueType type, LPCWSTR name)
+            : knobId(id)
+            , valueType(type)
+            , knobName(name)
+        { }
+
         // ID of the configuration knob
-        ZNewConfigId newConfigId;
+        ConfigurationKnobId knobId;
 
         // Type of value it can have
-        ZNewConfigValueType valuetype;
+        ConfigurationValueType valueType;
 
-        // String representing the knob (e.g. "System.GC.Whatever")
-        LPCWSTR newConfigName;
+        // String representing the knob (e.g. "System.GC.EnableFooGc")
+        LPCWSTR knobName;
     };
 
     // Information about a configuration knob which can have a DWORD value.
-    struct ZNewConfDwordInfo : ZNewConfInfo
+    struct DwordConfigurationKnob : ConfigurationKnob
     {
-        ZNewConfDwordInfo(ZNewConfigId id, LPCWSTR name, const CLRConfig::ConfigDWORDInfo *dwordInfo)
-        {
-            valuetype = ZNewConfigValueType::DwordType;
-
-            newConfigId = id;
-            newConfigName = name;
-            legacyDwordInfo = dwordInfo;
-        }
+        DwordConfigurationKnob(ConfigurationKnobId id, LPCWSTR name, const CLRConfig::ConfigDWORDInfo *dwordInfo)
+            : ConfigurationKnob(id, ConfigurationValueType::DwordType, name)
+            , legacyDwordInfo(dwordInfo)
+        { }
 
         // The ConfigDWORDInfo which enables us to get the value for this
         // configuration knob in the legacy (COMPlus) way.
@@ -97,16 +99,12 @@ public:
     };
 
     // Information about a configuration knob which can have a string value.
-    struct ZNewConfStringInfo : ZNewConfInfo
+    struct StringConfigurationKnob : ConfigurationKnob
     {
-        ZNewConfStringInfo(ZNewConfigId id, LPCWSTR name, const CLRConfig::ConfigStringInfo *stringInfo)
-        {
-            valuetype = ZNewConfigValueType::StringType;
-
-            newConfigId = id;
-            newConfigName = name;
-            legacyStringInfo = stringInfo;
-        }
+        StringConfigurationKnob(ConfigurationKnobId id, LPCWSTR name, const CLRConfig::ConfigStringInfo *stringInfo)
+            : ConfigurationKnob(id, ConfigurationValueType::StringType, name)
+            , legacyStringInfo(stringInfo)
+        { }
 
         // The ConfigStringInfo which enables us to get the value for this
         // configuration knob in the legacy (COMPlus) way.
@@ -114,16 +112,16 @@ public:
     };
 
 public:
-    static void ZInitializeNewConfigurationValues(int numberOfConfigs, LPCWSTR *configNames, LPCWSTR *configValues);
+    static void InitializeConfigurationKnobs(int numberOfConfigs, LPCWSTR *configNames, LPCWSTR *configValues);
 
-    static DWORD ZGetConfigDWORDValue2(const ZNewConfigId);
-    static LPCWSTR ZGetConfigStringValue2(const ZNewConfigId);
+    static DWORD GetKnobDWORDValue(const ConfigurationKnobId id);
+    static LPCWSTR GetKnobStringValue(const ConfigurationKnobId id);
 
 private:
-    static const ZNewConfInfo* ZGetConfigInfoFromId(const ZNewConfigId desiredId);
-    static const ZNewConfInfo* ZGetConfigInfoFromName(LPCWSTR desiredName);
+    static const ConfigurationKnob* GetConfigurationKnobById(const ConfigurationKnobId id);
+    static const ConfigurationKnob* GetConfigurationKnobByName(LPCWSTR name);
 
-    static void Configuration::ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value);
+    static void Configuration::GetConfigurationValue(const ConfigurationKnobId id, ConfigurationValue *value);
 
     // static CrstStatic m_ZConfigValuesCrst;
 };

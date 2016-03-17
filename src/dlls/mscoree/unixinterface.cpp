@@ -224,7 +224,7 @@ int coreclr_initialize(
     propertyValuesW.Set(propertyValuesWTemp, propertyCount);
 
     //// this should include the startup flag stuff too (?)
-    Configuration::ZInitializeNewConfigurationValues(propertyCount, propertyKeysWTemp, propertyValuesWTemp);
+    Configuration::InitializeConfigurationKnobs(propertyCount, propertyKeysWTemp, propertyValuesWTemp);
 
     hr = host->SetStartupFlags(startupFlags);
     IfFailRet(hr);

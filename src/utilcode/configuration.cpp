@@ -14,190 +14,195 @@
 #include "clrconfig.h"
 #include "configuration.h"
 
-///////// naming
-///////// casing
 ///////// locks?
 
-const Configuration::ZNewConfDwordInfo m_DwordConfigInfos[] = 
+const Configuration::DwordConfigurationKnob DwordConfigurationKnobs[] = 
 {
-    {Configuration::ZNewConfigId::ThreadSuspendInjection, W("System.Foo.InjectSuspension"), &CLRConfig::INTERNAL_ThreadSuspendInjection},
-    {Configuration::ZNewConfigId::ServerGc, W("System.GC.EnableServerGC"), &CLRConfig::UNSUPPORTED_gcServer},
+    {Configuration::ConfigurationKnobId::ThreadSuspendInjection, W("System.Foo.InjectSuspension"), &CLRConfig::INTERNAL_ThreadSuspendInjection},
+    {Configuration::ConfigurationKnobId::ServerGc, W("System.GC.EnableServerGC"), &CLRConfig::UNSUPPORTED_gcServer},
 };
 
-const Configuration::ZNewConfStringInfo m_StringConfigInfos[] = 
+const Configuration::StringConfigurationKnob StringConfigurationKnobs[] = 
 {
-    {Configuration::ZNewConfigId::JitDump, W("System.JIT.JitDump"), &CLRConfig::INTERNAL_JitDump},
-    {Configuration::ZNewConfigId::MaxThreadsForFoo, W("System.Threading.MaxFoo"), &CLRConfig::INTERNAL_Security_TransparencyMethodBreak},
+    {Configuration::ConfigurationKnobId::JitDump, W("System.JIT.JitDump"), &CLRConfig::INTERNAL_JitDump},
+    {Configuration::ConfigurationKnobId::MaxThreadsForFoo, W("System.Threading.MaxFoo"), &CLRConfig::INTERNAL_Security_TransparencyMethodBreak},
 };
 
-static const int DWORD_INFOS_COUNT = sizeof(m_DwordConfigInfos) / sizeof(m_DwordConfigInfos[0]);
-static const int STRING_INFOS_COUNT = sizeof(m_StringConfigInfos) / sizeof(m_StringConfigInfos[0]);
-static const int ZCONFIG_COUNT = (int)Configuration::ZNewConfigId::ENUM_COUNT;
+static const int NumberOfDwordKnobs = sizeof(DwordConfigurationKnobs) / sizeof(DwordConfigurationKnobs[0]);
+static const int NumberOfStringKnobs = sizeof(StringConfigurationKnobs) / sizeof(StringConfigurationKnobs[0]);
 
-static_assert(DWORD_INFOS_COUNT + STRING_INFOS_COUNT == ZCONFIG_COUNT, "There should be one ZZZConfigInfo per configuration option and no more.");
+static const int TotalNumberOfKnobs = (int)Configuration::ConfigurationKnobId::ENUM_COUNT;
+
+static_assert(NumberOfDwordKnobs + NumberOfStringKnobs == TotalNumberOfKnobs, "Number of knob definitions must match number of possible knobs.");
 
 // CrstStatic Configuration::m_ZConfigValuesCrst;
 
-Configuration::ZNewConfValue configValues[ZCONFIG_COUNT];
+Configuration::ConfigurationValue configValues[TotalNumberOfKnobs];
 
-const Configuration::ZNewConfInfo* Configuration::ZGetConfigInfoFromId(const Configuration::ZNewConfigId desiredId)
+const Configuration::ConfigurationKnob* Configuration::GetConfigurationKnobById(const Configuration::ConfigurationKnobId id)
 {
-    //// improve this lookup? for now linear
-    for (int i = 0; i < DWORD_INFOS_COUNT; i++)
+    // TODO: Might be worth improving lookup time once there are more elements. For now, it's just linear.
+    for (int i = 0; i < NumberOfDwordKnobs; i++)
     {
-        if (m_DwordConfigInfos[i].newConfigId == desiredId)
+        if (DwordConfigurationKnobs[i].knobId == id)
         {
-            return &m_DwordConfigInfos[i];
+            return &DwordConfigurationKnobs[i];
         }
     }
 
-    for (int i = 0; i < STRING_INFOS_COUNT; i++)
+    for (int i = 0; i < NumberOfStringKnobs; i++)
     {
-        if (m_StringConfigInfos[i].newConfigId == desiredId)
+        if (StringConfigurationKnobs[i].knobId == id)
         {
-            return &m_StringConfigInfos[i];
+            return &StringConfigurationKnobs[i];
         }
     }
 
     return nullptr;
 }
 
-const Configuration::ZNewConfInfo* Configuration::ZGetConfigInfoFromName(LPCWSTR desiredName)
+const Configuration::ConfigurationKnob* Configuration::GetConfigurationKnobByName(LPCWSTR name)
 {
-    //// improve this lookup? for now linear
-    for (int i = 0; i < DWORD_INFOS_COUNT; i++)
+    // TODO: Might be worth improving lookup time once there are more elements. For now, it's just linear.
+    for (int i = 0; i < NumberOfDwordKnobs; i++)
     {
-        if (wcscmp(desiredName, m_DwordConfigInfos[i].newConfigName) == 0)
+        if (wcscmp(name, DwordConfigurationKnobs[i].knobName) == 0)
         {
-            return &m_DwordConfigInfos[i];
+            return &DwordConfigurationKnobs[i];
         }
     }
 
-    for (int i = 0; i < STRING_INFOS_COUNT; i++)
+    for (int i = 0; i < NumberOfStringKnobs; i++)
     {
-        if (wcscmp(desiredName, m_StringConfigInfos[i].newConfigName) == 0)
+        if (wcscmp(name, StringConfigurationKnobs[i].knobName) == 0)
         {
-            return &m_StringConfigInfos[i];
+            return &StringConfigurationKnobs[i];
         }
     }
 
     return nullptr;
 }
 
-void Configuration::ZInitializeNewConfigurationValues(int numberOfConfigs, LPCWSTR *names, LPCWSTR *values)
+void Configuration::InitializeConfigurationKnobs(int numberOfConfigs, LPCWSTR *names, LPCWSTR *values)
 {
     // m_ZConfigValuesCrst.Init(CrstLeafLock, CrstFlags(CRST_UNSAFE_ANYMODE));
 
     // Initialize everything to NotSetType
-    for (int i = 0; i < ZCONFIG_COUNT; ++i)
+    for (int i = 0; i < TotalNumberOfKnobs; ++i)
     {
-        configValues[i].typeOfValue = ZNewConfigValueType::NotSetType;
+        configValues[i].typeOfValue = ConfigurationValueType::NotSetType;
     }
 
     // CrstHolder ch(&m_ZConfigValuesCrst);
 
-    // For any configuration values that are passed in, set their values correctly. This may
-    // mean either using the value passed in or using the legacy (COMPlus) equivalent if it
-    // is set.
+    // For any configuration values that are passed in, set their values correctly. This may mean
+    // either using the value passed in or using the legacy (COMPlus) equivalent if it is set.
     for (int i = 0; i < numberOfConfigs; ++i)
     {
-        const ZNewConfInfo *configInfo = ZGetConfigInfoFromName(names[i]);
+        const ConfigurationKnob *knob = GetConfigurationKnobByName(names[i]);
 
         // This isn't a configuration option that we recognize. Ignore it.
-        if (configInfo == nullptr)
+        if (knob == nullptr)
             continue;
 
-        ZNewConfigId id = configInfo->newConfigId;
+        ConfigurationKnobId id = knob->knobId;
 
         // Set the type of the config value. If we got to this point, we're going to set the value.
-        configValues[static_cast<int>(id)].typeOfValue = configInfo->valuetype;
+        configValues[static_cast<int>(id)].typeOfValue = knob->valueType;
 
-        _ASSERTE(configInfo->valuetype == ZNewConfigValueType::DwordType || configInfo->valuetype == ZNewConfigValueType::StringType);
+        _ASSERTE(knob->valueType == ConfigurationValueType::DwordType || knob->valueType == ConfigurationValueType::StringType);
 
-        if (configInfo->valuetype == ZNewConfigValueType::DwordType)
+        if (knob->valueType == ConfigurationValueType::DwordType)
         {
-            const CLRConfig::ConfigDWORDInfo* const legacyInfo = static_cast<const ZNewConfDwordInfo* const>(configInfo)->legacyDwordInfo;
+            const CLRConfig::ConfigDWORDInfo* const legacyInfo = static_cast<const DwordConfigurationKnob* const>(knob)->legacyDwordInfo;
 
             DWORD value;
             bool legacyConfigSet = CLRConfig::GetConfigValue(*legacyInfo, false /* useDefaultValue */, &value);
 
             if (legacyConfigSet)
             {
-                configValues[static_cast<int>(id)].configValue.dwordValue = value;
+                configValues[static_cast<int>(id)].value.dword = value;
             }
             else
             {
-                configValues[static_cast<int>(id)].configValue.dwordValue = wcstoul(values[i], nullptr, 0);
+                configValues[static_cast<int>(id)].value.dword = wcstoul(values[i], nullptr, 0);
             }
 
         }
-        else if (configInfo->valuetype == ZNewConfigValueType::StringType)
+        else if (knob->valueType == ConfigurationValueType::StringType)
         {
-            const CLRConfig::ConfigStringInfo* const legacyInfo = static_cast<const ZNewConfStringInfo* const>(configInfo)->legacyStringInfo;
+            const CLRConfig::ConfigStringInfo* const legacyInfo = static_cast<const StringConfigurationKnob* const>(knob)->legacyStringInfo;
 
             LPWSTR value = CLRConfig::GetConfigValue(*legacyInfo);
 
             if (value != nullptr)
             {
                 // If the value is set in the legacy way, use that.
-                configValues[static_cast<int>(id)].configValue.stringValue = value; ///// no copy here. we own the string that's returned
+                // We don't make a copy of value because we own it.
+                configValues[static_cast<int>(id)].value.str = value;
             }
             else
             {
-                configValues[static_cast<int>(id)].configValue.stringValue = values[i]; //// SHOULD WE MAKE A COPY OF THIS?
+                // Make a copy of the string passed in.
+                int bufferLength = wcslen(values[i]) + 1;
+                LPWSTR buffer = new WCHAR[bufferLength];
+                wcscpy_s(buffer, bufferLength, values[i]);
+
+                configValues[static_cast<int>(id)].value.str = buffer;
             }
         }
     }
 }
 
-void Configuration::ZGetConfigValue2(const ZNewConfigId configId, ZNewConfValue *value)
+void Configuration::GetConfigurationValue(const ConfigurationKnobId id, ConfigurationValue *value)
 {
     _ASSERT(value != nullptr);
 
     // Look up the ID in the table.
     // If the value is set, use that. Otherwise, set it in the table using the old way.
-    if (configValues[static_cast<int>(configId)].typeOfValue == Configuration::ZNewConfigValueType::NotSetType)
+    if (configValues[static_cast<int>(id)].typeOfValue == Configuration::ConfigurationValueType::NotSetType)
     {
-        const ZNewConfInfo * const configInfo = ZGetConfigInfoFromId(configId);
-        if (configInfo != nullptr)
+        const ConfigurationKnob * const knob = GetConfigurationKnobById(id);
+        if (knob != nullptr)
         {
-            configValues[static_cast<int>(configId)].typeOfValue = configInfo->valuetype;
-            if (configInfo->valuetype == ZNewConfigValueType::DwordType)
+            configValues[static_cast<int>(id)].typeOfValue = knob->valueType;
+            if (knob->valueType == ConfigurationValueType::DwordType)
             {
-                DWORD valueToSet = CLRConfig::GetConfigValue(*(static_cast<const ZNewConfDwordInfo* const>(configInfo)->legacyDwordInfo));
-                configValues[static_cast<int>(configId)].configValue.dwordValue = valueToSet;
+                const CLRConfig::ConfigDWORDInfo* const legacyInfo = static_cast<const DwordConfigurationKnob* const>(knob)->legacyDwordInfo;
+                DWORD valueToSet = CLRConfig::GetConfigValue(*legacyInfo);
+                configValues[static_cast<int>(id)].value.dword = valueToSet;
             }
-            else if (configInfo->valuetype == ZNewConfigValueType::StringType)
+            else if (knob->valueType == ConfigurationValueType::StringType)
             {
-                LPWSTR valueToSet = CLRConfig::GetConfigValue(*(static_cast<const ZNewConfStringInfo* const>(configInfo)->legacyStringInfo));
-                configValues[static_cast<int>(configId)].configValue.stringValue = valueToSet; //// SHOULD WE MAKE A COPY OF THIS?
+                const CLRConfig::ConfigStringInfo* const legacyInfo = static_cast<const StringConfigurationKnob* const>(knob)->legacyStringInfo;
+                LPWSTR valueToSet = CLRConfig::GetConfigValue(*legacyInfo);
+                configValues[static_cast<int>(id)].value.str = valueToSet;
             }
             else
             {
-                // Should never get here. All configs should be either DWORD or string type.
+                // Should never get here. All configurations should be either DWORD or string type.
                 _ASSERT(false);
             }
         }
     }
 
-    *value = configValues[static_cast<int>(configId)];
+    *value = configValues[static_cast<int>(id)];
 }
 
-DWORD Configuration::ZGetConfigDWORDValue2(const ZNewConfigId configId)
+DWORD Configuration::GetKnobDWORDValue(const ConfigurationKnobId id)
 {
-    ZNewConfValue confValue;
-    ZGetConfigValue2(configId, &confValue);
+    ConfigurationValue confValue;
+    GetConfigurationValue(id, &confValue);
 
-    _ASSERT(confValue.typeOfValue == ZNewConfigValueType::DwordType);
-    return confValue.configValue.dwordValue;
+    _ASSERT(confValue.typeOfValue == ConfigurationValueType::DwordType);
+    return confValue.value.dword;
 }
 
-
-LPCWSTR Configuration::ZGetConfigStringValue2(const ZNewConfigId configId)
+LPCWSTR Configuration::GetKnobStringValue(const ConfigurationKnobId id)
 {
-    ZNewConfValue confValue;
-    ZGetConfigValue2(configId, &confValue);
+    ConfigurationValue confValue;
+    GetConfigurationValue(id, &confValue);
 
-    _ASSERT(confValue.typeOfValue == ZNewConfigValueType::StringType);
-    return confValue.configValue.stringValue;
+    _ASSERT(confValue.typeOfValue == ConfigurationValueType::StringType);
+    return confValue.value.str;
 }

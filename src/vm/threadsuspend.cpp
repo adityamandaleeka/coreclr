@@ -8480,7 +8480,7 @@ bool Thread::InjectGcSuspension()
     if (injectionEnabled.val(CLRConfig::INTERNAL_ThreadSuspendInjection) == 0)
         return false;
 
-DWORD foo = Configuration::ZGetConfigDWORDValue2(Configuration::ZNewConfigId::ThreadSuspendInjection);
+DWORD foo = Configuration::GetKnobDWORDValue(Configuration::ConfigurationKnobId::ThreadSuspendInjection);
 
     Volatile<HANDLE> hThread;
     hThread = GetThreadHandle();
