@@ -119,7 +119,7 @@ void Configuration::InitializeConfigurationKnobs(int numberOfConfigs, LPCWSTR *n
             const CLRConfig::ConfigDWORDInfo* const legacyInfo = static_cast<const DwordConfigurationKnob* const>(knob)->legacyDwordInfo;
 
             DWORD value;
-            bool legacyConfigSet = CLRConfig::GetConfigValue(*legacyInfo, false /* useDefaultValue */, &value);
+            bool legacyConfigSet = CLRConfig::GetConfigValue(*legacyInfo, false /* useDefaultIfNotSet */, true /* acceptExplicitDefaultFromRegutil */, &value);
 
             if (legacyConfigSet)
             {

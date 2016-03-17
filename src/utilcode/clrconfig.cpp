@@ -298,7 +298,9 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
 }
 
 // Returns true for success, false otherwise
-bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValue, DWORD *result)
+// Params:
+// ZZZZZZZZDESCRIBE
+bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultIfNotSet, bool acceptExplicitDefaultFromRegutil, DWORD *result)
 {
     CONTRACTL
     {
@@ -321,7 +323,6 @@ bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValu
     if(CheckLookupOption(info, IgnoreWindowsQuirkDB) == FALSE && 
        s_IsQuirkEnabledCallback != NULL )// Check that IsQuirkEnabledCallback function has been registered.
     {
-
         BOOL isEnabledInDB = FALSE;
         CPT_QUIRK_DATA quirkData;
         if(SUCCEEDED(getQuirkEnabledAndValueFromWinDB(info.name, &isEnabledInDB, &quirkData)))
@@ -331,21 +332,21 @@ bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValu
                 WCHAR *end;
                 errno = 0;
                 DWORD resultMaybe = wcstoul(quirkData.CommandLine, &end, 0);
-                
+
                 // errno is ERANGE if the number is out of range, and end is set to pvalue if
                 // no valid conversion exists.
                 if (errno != ERANGE && end != quirkData.CommandLine)
                 {
                     *result = resultMaybe;
-                    return true; ////////// NOT DEFAULT
+                    return true;
                 }
                 else
                 {
-                    if (useDefaultValue)
+                    if (useDefaultIfNotSet)
                     {
                         // If an invalid value is defined we treat it as the default value.
                         // i.e. we don't look further.
-                        *result = info.defaultValue; ////////// DEFAULT
+                        *result = info.defaultValue;
                         return true;
                     }
                     else
@@ -372,12 +373,26 @@ bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValu
     {
         DWORD resultMaybe;
         HRESULT hr = REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &resultMaybe, level, prependCOMPLUS);
-        ////// TODO: We are ignoring explicitly defined default values to avoid change in behavior.
-        ///////////// for old behavior uncomment the second part of the if. I don't think we want that.
-        if (hr != E_FAIL /* && result != info.defaultValue */)
+
+        if (!acceptExplicitDefaultFromRegutil)
         {
-            *result = resultMaybe;
-            return true;
+            // Ignore the default value even if it's set explicitly.
+            if (resultMaybe != info.defaultValue)
+            {
+                *result = resultMaybe;
+                return true;
+            }
+        }
+        else
+        {
+            // If we are willing to accept the default value when it's set explicitly,
+            // checking the HRESULT here is sufficient. E_FAIL is returned when the
+            // default is used.
+            if (hr != E_FAIL)
+            {
+                *result = resultMaybe;
+                return true;
+            }
         }
     }
 
@@ -392,8 +407,8 @@ bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValu
         // EEConfig lookup options.
         BOOL systemOnly = CheckLookupOption(info, ConfigFile_SystemOnly) ? TRUE : FALSE;
         BOOL applicationFirst = CheckLookupOption(info, ConfigFile_ApplicationFirst) ? TRUE : FALSE;
-        
-        if(SUCCEEDED(s_GetConfigValueCallback(info.name, &pvalue, systemOnly, applicationFirst)) && pvalue != NULL)
+
+        if (SUCCEEDED(s_GetConfigValueCallback(info.name, &pvalue, systemOnly, applicationFirst)) && pvalue != NULL)
         {
             WCHAR * end;
             errno = 0;
@@ -404,15 +419,15 @@ bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValu
             if (errno != ERANGE && end != pvalue)
             {
                 *result = resultMaybe;
-                return true; ////////// NOT DEFAULT
+                return true;
             }
             else
             {
-                if (useDefaultValue)
+                if (useDefaultIfNotSet)
                 {
                     // If an invalid value is defined we treat it as the default value.
                     // i.e. we don't look further.
-                    *result = info.defaultValue; ////////// DEFAULT
+                    *result = info.defaultValue;
                     return true;
                 }
                 else
@@ -431,12 +446,26 @@ bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValu
     {
         DWORD resultMaybe;
         HRESULT hr = REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &resultMaybe, level, prependCOMPLUS);
-        // TODO: We are ignoring explicitly defined default values to avoid change in behavior. 
-        ///////////// for old behavior uncomment the second part of the if. I don't think we want that.
-        if (hr != E_FAIL /* && result != info.defaultValue */)
+
+        if (!acceptExplicitDefaultFromRegutil)
         {
-            *result = resultMaybe;
-            return true;
+            // Ignore the default value even if it's set explicitly.
+            if (resultMaybe != info.defaultValue)
+            {
+                *result = resultMaybe;
+                return true;
+            }
+        }
+        else
+        {
+            // If we are willing to accept the default value when it's set explicitly,
+            // checking the HRESULT here is sufficient. E_FAIL is returned when the
+            // default is used.
+            if (hr != E_FAIL)
+            {
+                *result = resultMaybe;
+                return true;
+            }
         }
     }
 
@@ -444,7 +473,7 @@ bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValu
     // If we get here, the option was not listed in REGUTIL or EEConfig; check whether the option
     // has a PerformanceDefault-specified value before falling back to the built-in default
     //
-    if (useDefaultValue)
+    if (useDefaultIfNotSet)
     {
         DWORD performanceDefaultValue;
         if (CheckLookupOption(info, MayHavePerformanceDefault) &&
@@ -456,13 +485,13 @@ bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValu
             DWORD resultMaybe;
             if (!SUCCEEDED(REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &resultMaybe, level, prependCOMPLUS)))
             {
-                *result = performanceDefaultValue; ////////// DEFAULT
+                *result = performanceDefaultValue;
                 return true;
             }
         }
     }
 
-    if (useDefaultValue)
+    if (useDefaultIfNotSet)
     {
         *result = info.defaultValue;
         return true;
@@ -470,9 +499,6 @@ bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValu
 
     return false;
 }
-
-
-
 
 // 
 // Look up a DWORD config value.
@@ -483,134 +509,14 @@ bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultValu
 // static
 DWORD CLRConfig::GetConfigValue(const ConfigDWORDInfo & info)
 {
-    CONTRACTL
-    {
-        NOTHROW;
-        GC_NOTRIGGER;
-        FORBID_FAULT;
-        SO_TOLERANT; // Need this to be tolerant to stack overflows since REGUTIL::GetConfigDWORD was too. (This replaces calls to REGUTIL::GetConfigDWORD) 
-    }
-    CONTRACTL_END;
+    DWORD value;
 
-    DWORD result = info.defaultValue;
+    // We pass false for 'acceptExplicitDefaultFromRegutil' to maintain the existing behavior of this function.
+    INDEBUG(bool succeeded = )
+    GetConfigValue(info, true /* useDefaultIfNotSet */, false /* acceptExplicitDefaultFromRegutil */, &value);
+    _ASSERTE(succeeded == true);
 
-#ifdef FEATURE_WIN_DB_APPCOMPAT
-    // Windows Shim DB should be the first place to look as it applies microsoft enforced policy
-    // and overrides setting at any other place like config or registry
-    if(CheckLookupOption(info, IgnoreWindowsQuirkDB) == FALSE && 
-       s_IsQuirkEnabledCallback != NULL )// Check that IsQuirkEnabledCallback function has been registered.
-    {
-
-        BOOL isEnabledInDB = FALSE;
-        CPT_QUIRK_DATA quirkData;
-        if(SUCCEEDED(getQuirkEnabledAndValueFromWinDB(info.name, &isEnabledInDB, &quirkData)))
-        {
-            if(isEnabledInDB)
-            {
-                WCHAR *end;
-                errno = 0;
-                result = wcstoul(quirkData.CommandLine, &end, 0);
-                
-                // errno is ERANGE if the number is out of range, and end is set to pvalue if
-                // no valid conversion exists.
-                if (errno != ERANGE && end != quirkData.CommandLine)
-                {
-                    return result;
-                }
-                else
-                {
-                    // If an invalid value is defined we treat it as the default value.
-                    // i.e. we don't look further.
-                    return info.defaultValue;
-                }
-            }
-        }
-    }
-#endif // FEATURE_WIN_DB_APPCOMPAT
-
-    //
-    // Set up REGUTIL options.
-    // 
-    REGUTIL::CORConfigLevel level = GetConfigLevel(info.options);
-    BOOL prependCOMPLUS = !CheckLookupOption(info, DontPrependCOMPLUS_);
-    
-    // 
-    // If we aren't favoring config files, we check REGUTIL here.
-    // 
-    if(CheckLookupOption(info, FavorConfigFile) == FALSE)
-    {
-        REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &result, level, prependCOMPLUS);
-        // TODO: We are ignoring explicitly defined default values to avoid change in behavior. 
-        // TODO: Ideally, the following should check the hresult for success.
-        if(result != info.defaultValue)
-        {
-            return result;
-        }
-    }
-
-    // 
-    // Check config files through EEConfig.
-    // 
-    if(CheckLookupOption(info, IgnoreConfigFiles) == FALSE && // Check that we aren't ignoring config files.
-        s_GetConfigValueCallback != NULL)// Check that GetConfigValueCallback function has been registered.
-    {        
-        LPCWSTR pvalue;
-
-        // EEConfig lookup options.
-        BOOL systemOnly = CheckLookupOption(info, ConfigFile_SystemOnly) ? TRUE : FALSE;
-        BOOL applicationFirst = CheckLookupOption(info, ConfigFile_ApplicationFirst) ? TRUE : FALSE;
-        
-        if(SUCCEEDED(s_GetConfigValueCallback(info.name, &pvalue, systemOnly, applicationFirst)) && pvalue != NULL)
-        {
-            WCHAR * end;
-            errno = 0;
-            result = wcstoul(pvalue, &end, 0);
-			
-            // errno is ERANGE if the number is out of range, and end is set to pvalue if
-            // no valid conversion exists.
-            if (errno != ERANGE && end != pvalue)
-            {
-                return result;
-            }
-            else
-            {
-                // If an invalid value is defined we treat it as the default value.
-                // i.e. we don't look further.
-                return info.defaultValue;
-            }
-        }
-    }
-
-    // 
-    // If we are favoring config files and we don't have a result from EEConfig, we check REGUTIL here.
-    // 
-    if(CheckLookupOption(info, FavorConfigFile) == TRUE)
-    {
-        REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &result, level, prependCOMPLUS);
-        // TODO: We are ignoring explicitly defined default values to avoid change in behavior. 
-        // TODO: Ideally, the following should check the hresult for success.
-        if(result != info.defaultValue)
-        {
-            return result;
-        }
-    }
-
-    //
-    // If we get here, the option was not listed in REGUTIL or EEConfig; check whether the option
-    // has a PerformanceDefault-specified value before falling back to the built-in default
-    //
-    DWORD performanceDefaultValue;
-    if (CheckLookupOption(info, MayHavePerformanceDefault) &&
-        s_GetPerformanceDefaultValueCallback != NULL &&
-        s_GetPerformanceDefaultValueCallback(info.name, &performanceDefaultValue))
-    {
-        // TODO: We ignore explicitly defined default values above, but we do not want to let performance defaults override these.
-        // TODO: Ideally, the above would use hresult for success and this check would be removed.
-        if (!SUCCEEDED(REGUTIL::GetConfigDWORD_DontUse_(info.name, info.defaultValue, &result, level, prependCOMPLUS)))
-            return performanceDefaultValue;
-    }
-
-    return info.defaultValue;
+    return value;
 }
 
 // 
