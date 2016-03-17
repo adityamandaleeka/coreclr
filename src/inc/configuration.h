@@ -122,8 +122,6 @@ private:
     static const ConfigurationKnob* GetConfigurationKnobByName(LPCWSTR name);
 
     static void Configuration::GetConfigurationValue(const ConfigurationKnobId id, ConfigurationValue *value);
-
-    // static CrstStatic m_ZConfigValuesCrst;
 };
 
 #endif // __configuration_h__

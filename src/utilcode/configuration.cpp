@@ -14,7 +14,7 @@
 #include "clrconfig.h"
 #include "configuration.h"
 
-///////// locks?
+static CRITSEC_COOKIE configurationCritSec = nullptr;
 
 const Configuration::DwordConfigurationKnob DwordConfigurationKnobs[] = 
 {
@@ -34,8 +34,6 @@ static const int NumberOfStringKnobs = sizeof(StringConfigurationKnobs) / sizeof
 static const int TotalNumberOfKnobs = (int)Configuration::ConfigurationKnobId::ENUM_COUNT;
 
 static_assert(NumberOfDwordKnobs + NumberOfStringKnobs == TotalNumberOfKnobs, "Number of knob definitions must match number of possible knobs.");
-
-// CrstStatic Configuration::m_ZConfigValuesCrst;
 
 Configuration::ConfigurationValue configValues[TotalNumberOfKnobs];
 
@@ -85,15 +83,19 @@ const Configuration::ConfigurationKnob* Configuration::GetConfigurationKnobByNam
 
 void Configuration::InitializeConfigurationKnobs(int numberOfConfigs, LPCWSTR *names, LPCWSTR *values)
 {
-    // m_ZConfigValuesCrst.Init(CrstLeafLock, CrstFlags(CRST_UNSAFE_ANYMODE));
+    CRITSEC_COOKIE lock = ClrCreateCriticalSection(CrstLeafLock, CRST_UNSAFE_ANYMODE);
+    if (InterlockedCompareExchangeT<CRITSEC_COOKIE>(&configurationCritSec, lock, nullptr) != nullptr)
+    {
+        ClrDeleteCriticalSection(lock);
+    }
+
+    CRITSEC_Holder csecHolder(configurationCritSec);
 
     // Initialize everything to NotSetType
     for (int i = 0; i < TotalNumberOfKnobs; ++i)
     {
         configValues[i].typeOfValue = ConfigurationValueType::NotSetType;
     }
-
-    // CrstHolder ch(&m_ZConfigValuesCrst);
 
     // For any configuration values that are passed in, set their values correctly. This may mean
     // either using the value passed in or using the legacy (COMPlus) equivalent if it is set.
@@ -162,26 +164,32 @@ void Configuration::GetConfigurationValue(const ConfigurationKnobId id, Configur
     // If the value is set, use that. Otherwise, set it in the table using the old way.
     if (configValues[static_cast<int>(id)].typeOfValue == Configuration::ConfigurationValueType::NotSetType)
     {
-        const ConfigurationKnob * const knob = GetConfigurationKnobById(id);
-        if (knob != nullptr)
+        CRITSEC_Holder csecHolder(configurationCritSec);
+
+        // Check if someone has already updated the value.
+        if (configValues[static_cast<int>(id)].typeOfValue == Configuration::ConfigurationValueType::NotSetType)
         {
-            configValues[static_cast<int>(id)].typeOfValue = knob->valueType;
-            if (knob->valueType == ConfigurationValueType::DwordType)
+            const ConfigurationKnob * const knob = GetConfigurationKnobById(id);
+            if (knob != nullptr)
             {
-                const CLRConfig::ConfigDWORDInfo* const legacyInfo = static_cast<const DwordConfigurationKnob* const>(knob)->legacyDwordInfo;
-                DWORD valueToSet = CLRConfig::GetConfigValue(*legacyInfo);
-                configValues[static_cast<int>(id)].value.dword = valueToSet;
-            }
-            else if (knob->valueType == ConfigurationValueType::StringType)
-            {
-                const CLRConfig::ConfigStringInfo* const legacyInfo = static_cast<const StringConfigurationKnob* const>(knob)->legacyStringInfo;
-                LPWSTR valueToSet = CLRConfig::GetConfigValue(*legacyInfo);
-                configValues[static_cast<int>(id)].value.str = valueToSet;
-            }
-            else
-            {
-                // Should never get here. All configurations should be either DWORD or string type.
-                _ASSERT(false);
+                configValues[static_cast<int>(id)].typeOfValue = knob->valueType;
+                if (knob->valueType == ConfigurationValueType::DwordType)
+                {
+                    const CLRConfig::ConfigDWORDInfo* const legacyInfo = static_cast<const DwordConfigurationKnob* const>(knob)->legacyDwordInfo;
+                    DWORD valueToSet = CLRConfig::GetConfigValue(*legacyInfo);
+                    configValues[static_cast<int>(id)].value.dword = valueToSet;
+                }
+                else if (knob->valueType == ConfigurationValueType::StringType)
+                {
+                    const CLRConfig::ConfigStringInfo* const legacyInfo = static_cast<const StringConfigurationKnob* const>(knob)->legacyStringInfo;
+                    LPWSTR valueToSet = CLRConfig::GetConfigValue(*legacyInfo);
+                    configValues[static_cast<int>(id)].value.str = valueToSet;
+                }
+                else
+                {
+                    // Should never get here. All configurations should be either DWORD or string type.
+                    _ASSERT(false);
+                }
             }
         }
     }
