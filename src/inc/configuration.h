@@ -7,15 +7,9 @@
 // 
 
 //
-// ZZZZZZZZZZZZZZZZZZZZZZZZZZ write new description!! Unified method of accessing configuration values from environment variables, registry and config file(s).
-// This class replaces all GetConfigDWORD and GetConfigString methods in EEConfig and REGUTIL. To define a
-// flag, add an entry in the table in file:CLRConfigValues.h.
-// 
-// 
-// 
+// Access and update configuration values, fall back on legacy CLRConfig methods where necessary.
 // 
 // --------------------------------------------------------------------------------------------------
-
 
 #include "clrconfig.h"
 
@@ -25,7 +19,6 @@
 class Configuration
 {
 public:
-
     // Configuration options that we know about
     enum class ConfigurationKnobId
     {

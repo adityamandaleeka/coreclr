@@ -297,9 +297,24 @@ BOOL CLRConfig::IsConfigEnabled(const ConfigDWORDInfo & info)
         return FALSE;
 }
 
-// Returns true for success, false otherwise
-// Params:
-// ZZZZZZZZDESCRIBE
+// 
+// Look up a String config value.
+// 
+// Arguments:
+//     * info - see file:../inc/CLRConfig.h for details.
+//
+//     * useDefaultIfNotSet - if true, fall back to the default value if the value is not set.
+//
+//     * acceptExplicitDefaultFromRegutil - if false, only accept a value returned by REGUTIL if it is
+//           different from the default value. This parameter is useful as a way to preserve existing
+//           behavior.
+//
+//     * result - the result.
+//
+// Return value:
+//     * true for success, false otherwise.
+// 
+// static
 bool CLRConfig::GetConfigValue(const ConfigDWORDInfo & info, bool useDefaultIfNotSet, bool acceptExplicitDefaultFromRegutil, DWORD *result)
 {
     CONTRACTL
