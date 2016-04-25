@@ -44,6 +44,22 @@ Test results will go into:
 
 > `~/test/Windows_NT.x64.Debug/coreclrtests.xml`
 
+Testing (a unit test case, with `--testDir` option) multiple times:
+
+Each time you run the `runttest.sh`, `coreOverlay` is prepared to reflect latest files for execution.
+This will take a little bit of time with slow target machines, ARM based Raspberry Pi 2 for example.
+If you know what files are changed and can manage them, you can skip this step with `--coreOverlayDir` option.
+With this, you should remove `--coreClrBinDir`, `--mscorlibDir`, `--coreFxBinDir` and `--coreFxNativeBinDir`.
+
+> ```bash
+> ~/coreclr$ tests/runtest.sh
+>     --testRootDir=~/test/Windows_NT.x64.Debug
+>     --testNativeBinDir=~/coreclr/bin/obj/Linux.x64.Debug/tests
+>     --coreOverlayDir=~/test/Windows_NT.x64.Debug/Tests/coreoverlay
+>     --testDir=JIT/Methodical/MDArray/basics/classarr_cs_do
+> ```
+
+
 **Unsupported and temporarily disabled tests**
 
 These tests are skipped by default:
