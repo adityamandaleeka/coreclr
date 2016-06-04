@@ -111,6 +111,30 @@ CorUnix::InternalMalloc(
     }
 
     pvMem = (void*)malloc(szSize);
+
+    static int a = 1;
+
+    char* failintervalstr = ::getenv("zallocfailinterval");
+
+    if (failintervalstr != nullptr)
+    {
+        if (strncmp(failintervalstr,"rand,", 5) == 0)
+        {
+            int chanceOfFail = atoi((char*)((unsigned long long) failintervalstr + 5));
+            if (rand() % chanceOfFail == chanceOfFail - 1)
+                return nullptr;
+        }
+        else
+        {
+            int failinterval = atoi(failintervalstr);
+            if (failinterval != 0)
+            {
+                if (a++ % failinterval == 0)
+                    return nullptr;
+            }
+        }
+    }
+
     return pvMem;
 }
 
