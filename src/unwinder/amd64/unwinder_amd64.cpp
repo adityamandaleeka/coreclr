@@ -1100,6 +1100,14 @@ Arguments:
     UnwindInfo = GetUnwindInfo(ImageBase + FunctionEntry->UnwindInfoAddress);
     if (UnwindInfo == NULL)
     {
+        printf("\nReturning from A\n");
+        if(*EstablisherFrame == 0)
+        {
+               printf("\nWTF EstablisherFrame null!\n");
+               while (true) 
+               {}
+        }
+        
         return HRESULT_FROM_WIN32(ERROR_READ_FAULT);
     }
 
@@ -1627,6 +1635,13 @@ Arguments:
                             &FunctionEntry);
 
     if (Status != S_OK) {
+        printf("\nReturning from B\n");
+        if(*EstablisherFrame == 0)
+        {
+               printf("\nWTF EstablisherFrame null!\n");
+               while (true) 
+               {}
+        }
         return Status;
     }
 
@@ -1642,6 +1657,13 @@ Arguments:
         UnwindInfo = GetUnwindInfo(FunctionEntry->UnwindInfoAddress + ImageBase);
         if (UnwindInfo == NULL)
         {
+            printf("\nReturning from C\n");
+            if(*EstablisherFrame == 0)
+            {
+                   printf("\nWTF EstablisherFrame null!\n");
+                   while (true) 
+                   {}
+            }
             return HRESULT_FROM_WIN32(ERROR_READ_FAULT);
         }
         if ((PrologOffset >= UnwindInfo->SizeOfProlog) &&
@@ -1662,6 +1684,12 @@ ExitSetHandler:
         *HandlerRoutine = FoundHandler;
     }
 
+    if(*EstablisherFrame == 0)
+    {
+           printf("\nWTF EstablisherFrame null!\n");
+           while (true) 
+           {}
+    }
     return S_OK;
 }
 

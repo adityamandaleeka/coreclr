@@ -4340,6 +4340,32 @@ static void DoEHLog(
 
 #ifdef FEATURE_PAL
 
+struct ExEvent
+{
+    int whereAmI;
+    PAL_SEHException theException;
+};
+
+static const int histCount = 256;
+thread_local ExEvent latestDataPoints[histCount];
+thread_local static int currIdx = 0;
+
+const int pass1 = 0x11111111;
+const int pass1do = 0x1111d0d0;
+const int pass2 = 0x22222222;
+const int pass2do = 0x2222d0d0;
+const int dispatchManEx = 0xD152A7C4;
+
+void AddExEvent(int whereAmI, PAL_SEHException ex)
+{
+    int index = currIdx % histCount;
+
+    latestDataPoints[index].theException = ex;
+    latestDataPoints[index].whereAmI = whereAmI;
+
+    FastInterlockIncrement(&currIdx);
+}
+
 //---------------------------------------------------------------------------------------
 //
 // This functions performs an unwind procedure for a managed exception. The stack is unwound
@@ -4354,6 +4380,8 @@ static void DoEHLog(
 //
 VOID UnwindManagedExceptionPass2(PAL_SEHException& ex, CONTEXT* unwindStartContext)
 {
+    AddExEvent(pass2, ex);
+
     UINT_PTR controlPc;
     EXCEPTION_DISPOSITION disposition;
     CONTEXT* currentFrameContext;
@@ -4375,6 +4403,8 @@ VOID UnwindManagedExceptionPass2(PAL_SEHException& ex, CONTEXT* unwindStartConte
 
     do
     {
+        AddExEvent(pass2do, ex);
+
         controlPc = GetIP(currentFrameContext);
 
         codeInfo.Init(controlPc);
@@ -4406,7 +4436,7 @@ VOID UnwindManagedExceptionPass2(PAL_SEHException& ex, CONTEXT* unwindStartConte
             // TODO: make sure the establisher frame is properly aligned.
             if (!Thread::IsAddressInCurrentStack((void*)establisherFrame) || establisherFrame > ex.TargetFrameSp)
             {
-                printf("\n\nMOOOOOOO\n\n");
+                printf("\n\nMOOOOOOO %p\n\n", (void*)establisherFrame);
                 // TODO: add better error handling
                 UNREACHABLE();
             }
@@ -4508,6 +4538,8 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex, CONTEXT
     controlPc = GetIP(frameContext);
     unwindStartContext = *frameContext;
 
+    AddExEvent(pass1, ex);
+
     if (!ExecutionManager::IsManagedCode(GetIP(&ex.ContextRecord)))
     {
         // This is the first time we see the managed exception, set its context to the managed frame that has caused
@@ -4530,6 +4562,8 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex, CONTEXT
 #if defined(_TARGET_ARM_) 
         dispatcherContext.ControlPcIsUnwound = !(frameContext->ContextFlags & CONTEXT_EXCEPTION_ACTIVE);
 #endif
+
+        AddExEvent(pass1do, ex);
 
         // Check whether we have a function table entry for the current controlPC.
         // If yes, then call RtlVirtualUnwind to get the establisher frame pointer
@@ -4638,6 +4672,9 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex, CONTEXT
 
 VOID DECLSPEC_NORETURN DispatchManagedException(PAL_SEHException& ex)
 {
+
+    AddExEvent(dispatchManEx, ex);
+
     do
     {
         try
