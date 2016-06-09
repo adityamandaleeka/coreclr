@@ -97,6 +97,8 @@ PAL_malloc(
     return InternalMalloc(szSize);
 }
 
+thread_local static int numberOfMallocs = 0;
+
 void *
 CorUnix::InternalMalloc(
     size_t szSize
@@ -113,6 +115,8 @@ CorUnix::InternalMalloc(
     pvMem = (void*)malloc(szSize);
 
     static int a = 1;
+
+    __sync_add_and_fetch(&numberOfMallocs, 1);
 
     char* failintervalstr = ::getenv("zallocfailinterval");
 

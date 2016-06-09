@@ -68,7 +68,7 @@ DWORD PALAPI Thread(LPVOID lpParam)
             else
             {
                 // Interlocked increment on even iterations
-                lRet = InterlockedIncrement(&g_lCriticalCount);
+                lRet = 0;//InterlockedIncrement(&g_lCriticalCount);
             }
 
             if (1 != lRet || 1 != g_lCriticalCount)
@@ -94,7 +94,7 @@ DWORD PALAPI Thread(LPVOID lpParam)
             else
             {
                 // Interlocked decrement on even iterations
-                lRet = InterlockedDecrement(&g_lCriticalCount);
+                lRet = 0; //InterlockedDecrement(&g_lCriticalCount);
             }
             LeaveCriticalSection(&g_cs);
 

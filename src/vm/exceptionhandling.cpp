@@ -4344,6 +4344,8 @@ struct ExEvent
 {
     int whereAmI;
     PAL_SEHException theException;
+    PCODE ip;
+    PCODE sp;
 };
 
 static const int histCount = 256;
@@ -4352,8 +4354,11 @@ thread_local static int currIdx = 0;
 
 const int pass1 = 0x11111111;
 const int pass1do = 0x1111d0d0;
+const int pass1native = 0x1111CCCC;
+const int pass1switch = 0x11112222;
 const int pass2 = 0x22222222;
 const int pass2do = 0x2222d0d0;
+const int pass2native = 0x2222CCCC;
 const int dispatchManEx = 0xD152A7C4;
 
 void AddExEvent(int whereAmI, PAL_SEHException ex)
@@ -4362,6 +4367,20 @@ void AddExEvent(int whereAmI, PAL_SEHException ex)
 
     latestDataPoints[index].theException = ex;
     latestDataPoints[index].whereAmI = whereAmI;
+    latestDataPoints[index].ip = 0;
+    latestDataPoints[index].sp = 0;
+
+    FastInterlockIncrement(&currIdx);
+}
+
+void AddExEvent(int whereAmI, PAL_SEHException ex, PCODE ip, PCODE sp)
+{
+    int index = currIdx % histCount;
+
+    latestDataPoints[index].theException = ex;
+    latestDataPoints[index].whereAmI = whereAmI;
+    latestDataPoints[index].ip = ip;
+    latestDataPoints[index].sp = sp;
 
     FastInterlockIncrement(&currIdx);
 }
@@ -4439,6 +4458,23 @@ VOID UnwindManagedExceptionPass2(PAL_SEHException& ex, CONTEXT* unwindStartConte
                 printf("\n\nMOOOOOOO %p\n\n", (void*)establisherFrame);
                 // TODO: add better error handling
                 UNREACHABLE();
+
+                printf("\n\n about to do it again %p\n\n", (void*)establisherFrame);
+                memcpy(callerFrameContext, currentFrameContext, sizeof(CONTEXT));
+                RtlVirtualUnwind(UNW_FLAG_EHANDLER,
+                    dispatcherContext.ImageBase,
+                    dispatcherContext.ControlPc,
+                    dispatcherContext.FunctionEntry,
+                    callerFrameContext,
+                    &handlerData,
+                    &establisherFrame,
+                    NULL);
+                printf("\n\n did it again %p\n\n", (void*)establisherFrame);
+
+                if (!Thread::IsAddressInCurrentStack((void*)establisherFrame) || establisherFrame > ex.TargetFrameSp)
+                {
+                    UNREACHABLE();
+                }
             }
 
             dispatcherContext.EstablisherFrame = establisherFrame;
@@ -4494,6 +4530,9 @@ VOID UnwindManagedExceptionPass2(PAL_SEHException& ex, CONTEXT* unwindStartConte
                 ExceptionTracker* pTracker = GetThread()->GetExceptionState()->GetCurrentExceptionTracker();
                 pTracker->CleanupBeforeNativeFramesUnwind();
             }
+
+            AddExEvent(pass2native, ex, GetIP(currentFrameContext), GetSP(currentFrameContext));
+            STRESS_LOG2(LF_EH, LL_INFO100, "Unwinding native frames starting at IP = %p, SP = %p \n", GetIP(currentFrameContext), GetSP(currentFrameContext));
 
             // Now we need to unwind the native frames until we reach managed frames again or the exception is
             // handled in the native code.
@@ -4633,6 +4672,9 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex, CONTEXT
 
             controlPc = GetIP(frameContext);
 
+            AddExEvent(pass1native, ex, controlPc, sp);
+            STRESS_LOG2(LF_EH, LL_INFO100, "Processing exception at native frame: IP = %p, SP = %p \n", controlPc, sp);
+
             if (controlPc == 0)
             {
                 if (!GetThread()->HasThreadStateNC(Thread::TSNC_ProcessedUnhandledException))
@@ -4654,6 +4696,9 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex, CONTEXT
                 if (disposition == EXCEPTION_EXECUTE_HANDLER)
                 {
                     // Switch to pass 2
+                    AddExEvent(pass1switch, ex, 0, sp);
+                    STRESS_LOG1(LF_EH, LL_INFO100, "First pass finished. Found native handler. TargetFrameSp = %p", sp);
+
                     ex.TargetFrameSp = sp;
                     UnwindManagedExceptionPass2(ex, &unwindStartContext);
                     UNREACHABLE();

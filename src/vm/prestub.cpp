@@ -1408,7 +1408,10 @@ PCODE MethodDesc::DoPrestub(MethodTable *pDispatchingMT)
                     AVInRuntimeImplOkayHolder AVOkay;
                     pHeader = new COR_ILMETHOD_DECODER(ilHeader, GetMDImport(), &status);
                     if(pHeader == NULL)
+                    {
+                        printf("asdfasdfasdf");
                         status = COR_ILMETHOD_DECODER::FORMAT_ERROR;
+                    }
                 }
 
                 if (status == COR_ILMETHOD_DECODER::VERIFICATION_ERROR &&
@@ -1426,6 +1429,7 @@ PCODE MethodDesc::DoPrestub(MethodTable *pDispatchingMT)
                     }
                     else
                     {
+                        printf("fdsafdsafdsa");
                         COMPlusThrowHR(COR_E_BADIMAGEFORMAT, BFA_BAD_IL);
                     }
                 }

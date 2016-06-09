@@ -1687,7 +1687,11 @@ CPalThread::ThreadEntry(
         palError = pThread->suspensionInfo.InternalSuspendNewThreadFromData(pThread);
         if (NO_ERROR != palError)
         {
-            ASSERT("Error %i attempting to suspend new thread\n", palError);
+            if (ERROR_NOT_ENOUGH_MEMORY != palError)
+            {
+                ASSERT("Error %i attempting to suspend new thread\n", palError);
+            }
+
             goto fail;
         }
 

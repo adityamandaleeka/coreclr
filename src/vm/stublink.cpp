@@ -1323,6 +1323,7 @@ bool StubLinker::EmitUnwindInfo(Stub* pStub, int globalsize)
     if (sizeof(mbi) != ClrVirtualQuery(pCode, &mbi, sizeof(mbi)))
     {
         // REVISIT_TODO better exception
+        printf("ZZZZZZZZZZZZZZZZZZZZ sizeof(mbi) != ClrVirtualQuery(pCode, &mbi, sizeof(mbi))");
         COMPlusThrowOM();
     }
 
@@ -1428,6 +1429,7 @@ bool StubLinker::EmitUnwindInfo(Stub* pStub, int globalsize)
         if (CodeOffset != (SIZE_T)(UCHAR)CodeOffset)
         {
             // REVISIT_TODO better exception
+            printf("ZZZZZZZZZZZZZZZZZZZZ CodeOffset != (SIZE_T)(UCHAR)CodeOffset");
             COMPlusThrowOM();
         }
 
@@ -1461,6 +1463,7 @@ bool StubLinker::EmitUnwindInfo(Stub* pStub, int globalsize)
         || nEntryPointSlots > UCHAR_MAX)
     {
         // REVISIT_TODO better exception
+        printf("ZZZZZZZZZZZZZZZZZZZZ PrologueSize != (SIZE_T)(UCHAR)PrologueSize || nEntryPointSlots > UCHAR_MAX");
         COMPlusThrowOM();
     }
 
