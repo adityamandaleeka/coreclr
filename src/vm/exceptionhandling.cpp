@@ -4464,6 +4464,8 @@ VOID UnwindManagedExceptionPass2(PAL_SEHException& ex, CONTEXT* unwindStartConte
                 pTracker->CleanupBeforeNativeFramesUnwind();
             }
 
+            STRESS_LOG2(LF_EH, LL_INFO100, "Unwinding native frames starting at IP = %p, SP = %p \n", GetIP(currentFrameContext), GetSP(currentFrameContext));
+
             // Now we need to unwind the native frames until we reach managed frames again or the exception is
             // handled in the native code.
             PAL_ThrowExceptionFromContext(currentFrameContext, &ex);
@@ -4598,6 +4600,8 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex, CONTEXT
 
             controlPc = GetIP(frameContext);
 
+            STRESS_LOG2(LF_EH, LL_INFO100, "Processing exception at native frame: IP = %p, SP = %p \n", controlPc, sp);
+
             if (controlPc == 0)
             {
                 if (!GetThread()->HasThreadStateNC(Thread::TSNC_ProcessedUnhandledException))
@@ -4619,6 +4623,8 @@ VOID DECLSPEC_NORETURN UnwindManagedExceptionPass1(PAL_SEHException& ex, CONTEXT
                 if (disposition == EXCEPTION_EXECUTE_HANDLER)
                 {
                     // Switch to pass 2
+                    STRESS_LOG1(LF_EH, LL_INFO100, "First pass finished. Found native handler. TargetFrameSp = %p\n", sp);
+
                     ex.TargetFrameSp = sp;
                     UnwindManagedExceptionPass2(ex, &unwindStartContext);
                     UNREACHABLE();
