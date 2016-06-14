@@ -536,7 +536,8 @@ function set_up_core_dump_generation {
         # files already in /cores/ at this point. This is being done to prevent
         # inadvertently flooding the CI machines with dumps.
         if [ ! "$(ls -A /cores)" ]; then 
-            ulimit -c unlimited
+            echo "ZZZZ CORE FILE GENERATION WOULD HAVE BEEN ENABLED"
+            # ulimit -c unlimited
         fi
     elif [ "$(uname -s)" == "Linux" ]; then
         # On Linux, we'll enable core file generation unconditionally, and if a dump
@@ -617,6 +618,8 @@ function inspect_and_delete_core_files {
         copy_core_file_to_temp_location "core"
         rm "core"
     fi
+
+
 }
 
 function run_test {
@@ -635,6 +638,9 @@ function run_test {
         set_up_core_dump_generation
     fi
 
+    ######## delete
+    export enablerandomcrashes=1
+
     "./$scriptFileName" >"$outputFileName" 2>&1
     local testScriptExitCode=$?
 
@@ -645,7 +651,7 @@ function run_test {
         inspect_and_delete_core_files
     fi
 
-    return $testScriptExitCode
+    return $testScriptExitCode 
 }
 
 # Variables for running tests in the background
