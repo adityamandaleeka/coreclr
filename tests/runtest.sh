@@ -601,6 +601,7 @@ function inspect_and_delete_core_files {
     # or "core.<PID>" by default. We will read /proc/sys/kernel/core_uses_pid to 
     # determine which one it is.
     local core_name_uses_pid=0
+
     if [ -e /proc/sys/kernel/core_uses_pid ] && [ "1" == $(cat /proc/sys/kernel/core_uses_pid) ]; then
         core_name_uses_pid=1
     fi
