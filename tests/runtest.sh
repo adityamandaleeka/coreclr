@@ -71,6 +71,10 @@ function print_usage {
     echo ''
 }
 
+echo "REMOVE THIS"
+sleep 3600
+echo "DONE WAITING"
+
 function print_results {
     echo ""
     echo "======================="
