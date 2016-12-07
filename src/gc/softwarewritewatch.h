@@ -22,6 +22,8 @@ extern "C"
     // Write watch may be disabled when it is not needed (between GCs for instance). This indicates whether it is enabled.
     extern bool g_sw_ww_enabled_for_gc_heap;
 
+    extern bool g_sw_ww_enabled_for_card_table; ///// may not need this later
+
     extern uint8_t *g_lowest_address; // start address of the GC heap
     extern uint8_t *g_highest_address; // end address of the GC heap
 }
@@ -119,6 +121,11 @@ inline uint8_t *SoftwareWriteWatch::GetTable()
     return g_sw_ww_table;
 }
 
+inline uint8_t *SoftwareWriteWatch::GetCardBundle()
+{
+    return g_sw_ww_bundle;
+}
+
 inline uint8_t *SoftwareWriteWatch::GetUntranslatedTable()
 {
     VerifyCreated();
@@ -190,6 +197,13 @@ inline void SoftwareWriteWatch::SetResizedUntranslatedTable(
 
     uint8_t *tableRegionStart = &GetTable()[GetTableByteIndex(oldTableHeapStartAddress)];
     memcpy(tableRegionStart, oldUntranslatedTable, oldTableByteSize);
+}
+
+
+///// MAY NOT NEED THIS IN THE FUTURE IF WE ALWAYS ENABLE THE CARD BUNDLE WHEN SWW IS ON
+inline bool SoftwareWriteWatch::EnableForCardTable()
+{
+    return g_sw_ww_enabled_for_gc_heap;
 }
 
 inline bool SoftwareWriteWatch::IsEnabledForGCHeap()

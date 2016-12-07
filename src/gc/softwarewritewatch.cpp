@@ -17,6 +17,9 @@ extern "C"
 {
     uint8_t *g_sw_ww_table = nullptr;
     bool g_sw_ww_enabled_for_gc_heap = false;
+
+    uint8_t *g_sw_ww_bundle = nullptr;
+    bool g_sw_ww_enabled_for_card_table = false; ////// MAY NOT BE NEEDED IF WE ALWAYS HAVE IT ON WHEN SWW IS USED
 }
 
 void SoftwareWriteWatch::StaticClose()
@@ -28,6 +31,12 @@ void SoftwareWriteWatch::StaticClose()
 
     g_sw_ww_enabled_for_gc_heap = false;
     g_sw_ww_table = nullptr;
+
+
+    ///// HANDLE THE CARD BUNDLE POINTER TOO
+    g_sw_ww_enabled_for_card_table = false;
+    
+
 }
 
 bool SoftwareWriteWatch::GetDirtyFromBlock(
@@ -60,7 +69,7 @@ bool SoftwareWriteWatch::GetDirtyFromBlock(
     if (startByteIndex != 0)
     {
         size_t numLowBitsToClear = startByteIndex * 8;
-        dirtyBytes >>= numLowBitsToClear;
+        dirtyBytes >>= numLowBitsToClear; ////// <----- curious... is this the fastest way to clear these bits? check out what compiler codegen does with this
         dirtyBytes <<= numLowBitsToClear;
     }
     if (endByteIndex != sizeof(size_t))
@@ -97,6 +106,10 @@ bool SoftwareWriteWatch::GetDirtyFromBlock(
         }
 
         void *pageAddress = firstPageAddressInBlock + byteIndex * OS_PAGE_SIZE;
+        
+        ///// The asserts below will need to be modified if we're using this function to get the dirty stuff for
+        ///// the card table as well (address won't be in the heap limits)
+
         assert(pageAddress >= GetHeapStartAddress());
         assert(pageAddress < GetHeapEndAddress());
         assert(dirtyPageIndex < dirtyPageCount);

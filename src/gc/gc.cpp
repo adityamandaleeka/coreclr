@@ -6906,6 +6906,8 @@ uint32_t* gc_heap::make_card_table (uint8_t* start, uint8_t* end)
     }
 #endif //CARD_BUNDLE
 
+    ///// If we're using the SWW card bundle, calculate the size and stuff for it.
+
     size_t wws = 0;
 #ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
     size_t sw_ww_table_offset = 0;
@@ -6969,6 +6971,9 @@ uint32_t* gc_heap::make_card_table (uint8_t* start, uint8_t* end)
         SoftwareWriteWatch::InitializeUntranslatedTable(mem + sw_ww_table_offset, start);
     }
 #endif // FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
+
+
+    ///// INITIALIZE CARD BUNDLE HERE ?
 
 #ifdef GROWABLE_SEG_MAPPING_TABLE
     seg_mapping_table = (seg_mapping*)(mem + st_table_offset_aligned);
@@ -9414,6 +9419,9 @@ void gc_heap::reset_write_watch_for_gc_heap(void* base_address, size_t region_si
 void gc_heap::get_write_watch_for_gc_heap(bool reset, void *base_address, size_t region_size, void** dirty_pages, uintptr_t* dirty_page_count_ref, bool is_runtime_suspended)
 {
 #ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
+
+    ///// IF CARD BUNDLE IS ENABLED, USE THAT TO CHECK THE DIRTY STUFF
+
     SoftwareWriteWatch::GetDirty(base_address, region_size, dirty_pages, dirty_page_count_ref, reset, is_runtime_suspended);
 #else // !FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
     UNREFERENCED_PARAMETER(is_runtime_suspended);
