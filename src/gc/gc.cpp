@@ -1461,7 +1461,11 @@ inline bool can_use_write_watch_for_gc_heap()
 
 inline bool can_use_write_watch_for_card_table()
 {
+#ifndef ZZZZMYTHING /////////
     return can_use_hardware_write_watch();
+#else
+    return true;
+#endif
 }
 
 #else
@@ -3737,7 +3741,7 @@ heap_segment* seg_mapping_table_segment_of (uint8_t* o)
 #endif //SEG_MAPPING_TABLE
 
 size_t gcard_of ( uint8_t*);
-void gset_card (size_t card);
+// void gset_card (size_t card); /// not used anywhere?
 
 #define memref(i) *(uint8_t**)(i)
 
@@ -3977,18 +3981,26 @@ inline size_t unused_array_size(uint8_t * p)
 
 heap_segment* heap_segment_rw (heap_segment* ns)
 {
-    if ((ns == 0) || !heap_segment_read_only_p (ns))
+
+    while (ns != nullptr && heap_segment_read_only_p (ns))
     {
-        return ns;
+        ns = heap_segment_next (ns);
     }
-    else
-    {
-        do
-        {
-            ns = heap_segment_next (ns);
-        } while ((ns != 0) && heap_segment_read_only_p (ns));
-        return ns;
-    }
+
+    return ns;
+
+    // if ((ns == 0) || !heap_segment_read_only_p (ns))
+    // {
+    //     return ns;
+    // }
+    // else
+    // {
+    //     do
+    //     {
+    //         ns = heap_segment_next (ns);
+    //     } while ((ns != 0) && heap_segment_read_only_p (ns));
+    //     return ns;
+    // }
 }
 
 //returns the next non ro segment.
@@ -6291,6 +6303,8 @@ void gc_heap::make_c_mark_list (uint8_t** arr)
 }
 #endif //BACKGROUND_GC
 
+
+/// Number of bytes you can cover in a brick?
 #if defined (_TARGET_AMD64_)
 #define brick_size ((size_t)4096)
 #else
@@ -6420,15 +6434,22 @@ void gc_heap::clear_card (size_t card)
 inline
 void gc_heap::set_card (size_t card)
 {
-    card_table [card_word (card)] =
-        (card_table [card_word (card)] | (1 << card_bit (card)));
+    size_t corresponding_card_word = card_word (card);
+    card_table[corresponding_card_word] = (card_table [corresponding_card_word] | (1 << card_bit (card)));
+
+    ///////// CARD BUNDLE: If we aren't using OS WW for card bundle, I guess this function should also set the card bundle bit?
+    //// #ifdef ZZZWHATEVER
+    card_bundles_set(corresponding_card_word, corresponding_card_word);
+    //// #endif
 }
 
-inline
-void gset_card (size_t card)
-{
-    g_gc_card_table [card_word (card)] |= (1 << card_bit (card));
-}
+
+//////THIS IS NOT USED???
+// inline
+// void gset_card (size_t card)
+// {
+//     g_gc_card_table [card_word (card)] |= (1 << card_bit (card));
+// }
 
 inline
 BOOL  gc_heap::card_set_p (size_t card)
@@ -6452,9 +6473,11 @@ size_t size_card_of (uint8_t* from, uint8_t* end)
 
 #ifdef CARD_BUNDLE
 
-//The card bundle keeps track of groups of card words
-#define card_bundle_word_width ((size_t)32)
-//how do we express the fact that 32 bits (card_word_width) is one uint32_t?
+// The card bundle keeps track of groups of card words.
+/////// #define card_bundle_word_width ((size_t)32)
+static const size_t card_bundle_word_width = 32;
+
+// How do we express the fact that 32 bits (card_word_width) is one uint32_t?
 #define card_bundle_size ((size_t)(OS_PAGE_SIZE/(sizeof (uint32_t)*card_bundle_word_width)))
 
 inline
@@ -6474,37 +6497,50 @@ size_t align_cardw_on_bundle (size_t cardw)
     return ((size_t)(cardw + card_bundle_size - 1) & ~(card_bundle_size - 1 ));
 }
 
+// Get the card bundle representing a card word
 size_t cardw_card_bundle (size_t cardw)
 {
-    return cardw/card_bundle_size;
+    return cardw / card_bundle_size;
 }
 
+// Get the first card word in a card bundle
 size_t card_bundle_cardw (size_t cardb)
 {
-    return cardb*card_bundle_size;
+    return cardb * card_bundle_size;
 }
 
-void gc_heap::card_bundle_clear(size_t cardb)
+// Clear the specified card bundle
+void gc_heap::card_bundle_clear (size_t cardb)
 {
     card_bundle_table [card_bundle_word (cardb)] &= ~(1 << card_bundle_bit (cardb));
     dprintf (3,("Cleared card bundle %Ix [%Ix, %Ix[", cardb, (size_t)card_bundle_cardw (cardb),
               (size_t)card_bundle_cardw (cardb+1)));
-//    printf ("Cleared card bundle %Ix\n", cardb);
 }
 
+// Set the card bundle bits between start_cardb and end_cardb
 void gc_heap::card_bundles_set (size_t start_cardb, size_t end_cardb)
 {
+    /// Added this part. Remove if not needed
+    if (start_cardb == end_cardb)
+    {
+        card_bundle_table [card_bundle_word (start_cardb)] |= (1 << card_bundle_bit (start_cardb));
+        return;
+    }
+
     size_t start_word = card_bundle_word (start_cardb);
     size_t end_word = card_bundle_word (end_cardb);
+
+///////////// Compare the cost of doing this vs just setting the start and end stuff the same way whether the words are diff or not.
     if (start_word < end_word)
     {
-        //set the partial words
+        // Set the partial words
         card_bundle_table [start_word] |= highbits (~0u, card_bundle_bit (start_cardb));
 
         if (card_bundle_bit (end_cardb))
             card_bundle_table [end_word] |= lowbits (~0u, card_bundle_bit (end_cardb));
 
-        for (size_t i = start_word+1; i < end_word; i++)
+        // Set the full words
+        for (size_t i = start_word + 1; i < end_word; i++)
             card_bundle_table [i] = ~0u;
 
     }
@@ -6512,32 +6548,48 @@ void gc_heap::card_bundles_set (size_t start_cardb, size_t end_cardb)
     {
         card_bundle_table [start_word] |= (highbits (~0u, card_bundle_bit (start_cardb)) &
                                            lowbits (~0u, card_bundle_bit (end_cardb)));
-
     }
 
 }
 
+// Indicates whether the specified bundle is set.
 BOOL gc_heap::card_bundle_set_p (size_t cardb)
 {
-    return ( card_bundle_table [ card_bundle_word (cardb) ] & (1 << card_bundle_bit (cardb)));
+    return (card_bundle_table[card_bundle_word(cardb)] & (1 << card_bundle_bit (cardb)));
 }
 
+// Returns the size (in bytes) of a card bundle representing the region from 'from' to 'end'
 size_t size_card_bundle_of (uint8_t* from, uint8_t* end)
 {
-    //align from to lower
-    from = (uint8_t*)((size_t)from & ~(card_size*card_word_width*card_bundle_size*card_bundle_word_width - 1));
-    //align to to upper
-    end = (uint8_t*)((size_t)(end + (card_size*card_word_width*card_bundle_size*card_bundle_word_width - 1)) &
-                  ~(card_size*card_word_width*card_bundle_size*card_bundle_word_width - 1));
+    size_t num_heap_bytes_represented_by_card_bundle_word = card_size*card_word_width*card_bundle_size*card_bundle_word_width;
 
-    assert (((size_t)from & ((card_size*card_word_width*card_bundle_size*card_bundle_word_width)-1)) == 0);
-    assert (((size_t)end  & ((card_size*card_word_width*card_bundle_size*card_bundle_word_width)-1)) == 0);
+    // Align the start of the region down
+    from = (uint8_t*)((size_t)from & ~(num_heap_bytes_represented_by_card_bundle_word - 1));
 
-    return ((end - from) / (card_size*card_word_width*card_bundle_size*card_bundle_word_width)) * sizeof (uint32_t);
+    // Align the end of the region up
+    end = (uint8_t*)((size_t)(end + (num_heap_bytes_represented_by_card_bundle_word - 1)) &
+                  ~(num_heap_bytes_represented_by_card_bundle_word - 1));
+
+    // Make sure they're really aligned
+    assert (((size_t)from & (num_heap_bytes_represented_by_card_bundle_word - 1)) == 0);
+    assert (((size_t)end  & (num_heap_bytes_represented_by_card_bundle_word - 1)) == 0);
+
+    return ((end - from) / num_heap_bytes_represented_by_card_bundle_word) * sizeof (uint32_t);
 }
 
+/////DOCUMENT THIS
 uint32_t* translate_card_bundle_table (uint32_t* cb)
 {
+    /////card_size*card_word_width*card_bundle_size*card_bundle_word_width is the number of bytes of heap mem represented by a card bundle word
+    
+    ///// g_lowest_address divided by that gives us how many card bundles words into the card bundle table the card bundles word for the lowest address would be
+
+    ///// each card bundle word is 32 bits, so multiplying by sizeof(32) gives us the number of bits into the card bundle table the word for the lowest address is
+
+    ///// It looks like callers to this function are passing in the card bundle table for a card table as 'cb'. The value we return will thus represent the distance
+    ///// (in bytes) between the card bundle word representing the lowest address and the address that's the current start the card bundle table. That delta will
+    ///// then be used as the start of the card bundle table. This means that the first card bundle word in this "translated" table will be the one that represents
+    ///// g_lowest_address.
     return (uint32_t*)((uint8_t*)cb - ((((size_t)g_gc_lowest_address) / (card_size*card_word_width*card_bundle_size*card_bundle_word_width)) * sizeof (uint32_t)));
 }
 
@@ -6558,7 +6610,7 @@ BOOL gc_heap::card_bundles_enabled ()
     return settings.card_bundles;
 }
 
-#endif //CARD_BUNDLE
+#endif // CARD_BUNDLE
 
 // We don't store seg_mapping_table in card_table_info because there's only always one view.
 class card_table_info
@@ -6614,6 +6666,7 @@ short*& card_table_brick_table (uint32_t* c_table)
 }
 
 #ifdef CARD_BUNDLE
+// Get the card bundle table for the specified card table.
 inline
 uint32_t*& card_table_card_bundle_table (uint32_t* c_table)
 {
@@ -6907,6 +6960,8 @@ void destroy_card_table (uint32_t* c_table)
     dprintf (2, ("Table Virtual Free : %Ix", (size_t)&card_table_refcount(c_table)));
 }
 
+///// Make a card table representing the address range from start to end
+
 uint32_t* gc_heap::make_card_table (uint8_t* start, uint8_t* end)
 {
     assert (g_gc_lowest_address == start);
@@ -6914,9 +6969,14 @@ uint32_t* gc_heap::make_card_table (uint8_t* start, uint8_t* end)
 
     uint32_t virtual_reserve_flags = VirtualReserveFlags::None;
 
+    // Number of bytes required for a brick table over this range
     size_t bs = size_brick_of (start, end);
+    
+    // Number of bytes required for a card table over this range
     size_t cs = size_card_of (start, end);
 #ifdef MARK_ARRAY
+
+    // Number of bytes required for a mark array over this range (if concurrent GC enabled)
     size_t ms = (gc_can_use_concurrent ? 
                  size_mark_array_of (start, end) :
                  0);
@@ -6929,7 +6989,12 @@ uint32_t* gc_heap::make_card_table (uint8_t* start, uint8_t* end)
 #ifdef CARD_BUNDLE
     if (can_use_write_watch_for_card_table())
     {
-        virtual_reserve_flags |= VirtualReserveFlags::WriteWatch;
+        /////// fix this crappy logic
+        if (can_use_hardware_write_watch())
+        {
+            virtual_reserve_flags |= VirtualReserveFlags::WriteWatch;
+        }
+
         cb = size_card_bundle_of (g_gc_lowest_address, g_gc_highest_address);
     }
 #endif //CARD_BUNDLE
@@ -6997,6 +7062,9 @@ uint32_t* gc_heap::make_card_table (uint8_t* start, uint8_t* end)
         SoftwareWriteWatch::InitializeUntranslatedTable(mem + sw_ww_table_offset, start);
     }
 #endif // FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
+
+
+    ///// INITIALIZE CARD BUNDLE HERE ?
 
 #ifdef GROWABLE_SEG_MAPPING_TABLE
     seg_mapping_table = (seg_mapping*)(mem + st_table_offset_aligned);
@@ -7118,7 +7186,10 @@ int gc_heap::grow_brick_card_tables (uint8_t* start,
 #ifdef CARD_BUNDLE
         if (can_use_write_watch_for_card_table())
         {
-            virtual_reserve_flags = VirtualReserveFlags::WriteWatch;
+
+            /////// fix logic
+            if (can_use_hardware_write_watch())
+                virtual_reserve_flags = VirtualReserveFlags::WriteWatch;
             cb = size_card_bundle_of (saved_g_lowest_address, saved_g_highest_address);
         }
 #endif //CARD_BUNDLE
@@ -7515,6 +7586,8 @@ void gc_heap::copy_brick_card_table()
 #endif //GROWABLE_SEG_MAPPING_TABLE
 #endif //MARK_ARRAY && _DEBUG
     card_bundle_table = translate_card_bundle_table (card_table_card_bundle_table (ct));
+
+    // Check that the card bundle word representing g_gc_lowest_address is located at the start of the card bundle table.
     assert (&card_bundle_table [card_bundle_word (cardw_card_bundle (card_word (card_of (g_gc_lowest_address))))] ==
             card_table_card_bundle_table (ct));
 
@@ -9336,85 +9409,113 @@ static unsigned int tot_cycles = 0;
 
 #ifdef CARD_BUNDLE
 
+inline void gc_heap::verify_card_bundle_bits_set(size_t first_card_word, size_t last_card_word)
+{
+#ifdef _DEBUG
+    for (size_t x = cardw_card_bundle (first_card_word); x < cardw_card_bundle (last_card_word); x++)
+    {
+        if (!card_bundle_set_p (x))
+        {
+            assert (!"Card bundle not set");
+            dprintf (3, ("Card bundle %Ix not set", x));
+        }
+    }
+#endif
+}
+
+// If card bundles are enabled, use write watch to find pages in the card table that have 
+// been dirtied, and set the corresponding card bundle bits.
 void gc_heap::update_card_table_bundle()
 {
     if (card_bundles_enabled())
     {
+        // The address of the card word containing the card representing the lowest heap address
         uint8_t* base_address = (uint8_t*)(&card_table[card_word (card_of (lowest_address))]);
+
+        // The address of the card word containing the card representing the highest heap address
+        uint8_t* high_address = (uint8_t*)(&card_table[card_word (card_of (highest_address))]);
+        
         uint8_t* saved_base_address = base_address;
         uintptr_t bcount = array_size;
-        uint8_t* high_address = (uint8_t*)(&card_table[card_word (card_of (highest_address))]);
         size_t saved_region_size = align_on_page (high_address) - saved_base_address;
 
         do
         {
             size_t region_size = align_on_page (high_address) - base_address;
+
             dprintf (3,("Probing card table pages [%Ix, %Ix[", (size_t)base_address, (size_t)base_address+region_size));
-            bool success = GCToOSInterface::GetWriteWatch (false /* resetState */ , base_address, region_size,
-                                                           (void**)g_addresses,
-                                                           &bcount);
+            bool success = GCToOSInterface::GetWriteWatch(false /* resetState */,
+                                                          base_address,
+                                                          region_size,
+                                                          (void**)g_addresses,
+                                                          &bcount);
             assert (success && "GetWriteWatch failed!");
+
             dprintf (3,("Found %d pages written", bcount));
-            for (unsigned  i = 0; i < bcount; i++)
+            for (unsigned i = 0; i < bcount; i++)
             {
-                size_t bcardw = (uint32_t*)(max(g_addresses[i],base_address)) - &card_table[0];
-                size_t ecardw = (uint32_t*)(min(g_addresses[i]+OS_PAGE_SIZE, high_address)) - &card_table[0];
+                size_t bcardw = (uint32_t*)(max(g_addresses[i],base_address)) - &card_table[0]; //////// offset of the dirty page from the start of the card table (clamped to base addr)
+                size_t ecardw = (uint32_t*)(min(g_addresses[i]+OS_PAGE_SIZE, high_address)) - &card_table[0]; //////// offset of the end of the page from the start of the card table (clamped to high addr)
                 assert (bcardw >= card_word (card_of (g_gc_lowest_address)));
 
-                card_bundles_set (cardw_card_bundle (bcardw),
-                                  cardw_card_bundle (align_cardw_on_bundle (ecardw)));
+                // Set the card bundle bits representing the dirty card table page
+                card_bundles_set (cardw_card_bundle (bcardw), cardw_card_bundle (align_cardw_on_bundle (ecardw)));
+                dprintf (3,("Set Card bundle [%Ix, %Ix[", cardw_card_bundle (bcardw), cardw_card_bundle (align_cardw_on_bundle (ecardw))));
 
-                dprintf (3,("Set Card bundle [%Ix, %Ix[",
-                            cardw_card_bundle (bcardw), cardw_card_bundle (align_cardw_on_bundle (ecardw))));
-
-#ifdef _DEBUG
-                for (size_t x = cardw_card_bundle (bcardw); x < cardw_card_bundle (ecardw); x++)
-                {
-                    if (!card_bundle_set_p (x))
-                    {
-                        assert (!"Card bundle not set");
-                        dprintf (3, ("Card bundle %Ix not set", x));
-                    }
-                }
-#endif //_DEBUG
+                verify_card_bundle_bits_set(bcardw, ecardw);
+// #ifdef _DEBUG
+//                 for (size_t x = cardw_card_bundle (bcardw); x < cardw_card_bundle (ecardw); x++)
+//                 {
+//                     if (!card_bundle_set_p (x))
+//                     {
+//                         assert (!"Card bundle not set");
+//                         dprintf (3, ("Card bundle %Ix not set", x));
+//                     }
+//                 }
+// #endif //_DEBUG
 
             }
-            if (bcount >= array_size){
+
+            if (bcount >= array_size)
+            {
                 base_address = g_addresses [array_size-1] + OS_PAGE_SIZE;
                 bcount = array_size;
             }
+
         } while ((bcount >= array_size) && (base_address < high_address));
 
+        // Now that we've updated the card bundle bits, reset the write-tracking state. 
         GCToOSInterface::ResetWriteWatch (saved_base_address, saved_region_size);
 
 #ifdef _DEBUG
-
         size_t lowest_card = card_word (card_of (lowest_address));
         size_t highest_card = card_word (card_of (highest_address));
         size_t cardb = cardw_card_bundle (lowest_card);
         size_t end_cardb = cardw_card_bundle (align_cardw_on_bundle (highest_card));
 
-        //find a non null bundle
+        // Find a non null bundle
         while (cardb < end_cardb)
         {
-            if (card_bundle_set_p (cardb)==0)
+            if (card_bundle_set_p (cardb) == 0)
             {
-                //verify that the cards are indeed empty
+                // Verify that the cards are indeed empty
                 uint32_t* card_word = &card_table[max(card_bundle_cardw (cardb), lowest_card)];
                 uint32_t* card_word_end = &card_table[min(card_bundle_cardw (cardb+1), highest_card)];
                 while (card_word < card_word_end)
                 {
-                    if ((*card_word) != 0)
+                    if (*card_word != 0)
                     {
                         dprintf  (3, ("gc: %d, Card word %Ix for address %Ix set, card_bundle %Ix clear",
                                 dd_collection_count (dynamic_data_of (0)), 
                                 (size_t)(card_word-&card_table[0]),
                                 (size_t)(card_address ((size_t)(card_word-&card_table[0]) * card_word_width)), cardb));
                     }
+
                     assert((*card_word)==0);
                     card_word++;
                 }
             }
+
             //end of verification
             cardb++;
         }
@@ -9437,6 +9538,9 @@ void gc_heap::reset_write_watch_for_gc_heap(void* base_address, size_t region_si
 void gc_heap::get_write_watch_for_gc_heap(bool reset, void *base_address, size_t region_size, void** dirty_pages, uintptr_t* dirty_page_count_ref, bool is_runtime_suspended)
 {
 #ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
+
+    ///// IF CARD BUNDLE IS ENABLED, USE THAT TO CHECK THE DIRTY STUFF
+
     SoftwareWriteWatch::GetDirty(base_address, region_size, dirty_pages, dirty_page_count_ref, reset, is_runtime_suspended);
 #else // !FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
     UNREFERENCED_PARAMETER(is_runtime_suspended);
@@ -18564,7 +18668,7 @@ void gc_heap::fix_card_table ()
             assert (region_size > 0);
             dprintf (3,("Probing pages [%Ix, %Ix[", (size_t)base_address, (size_t)high_address));
 
-#ifdef TIME_WRITE_WATCH
+#ifdef TIME_WRITE_WATCH  ///// change this mechanism to something better so there's no ifdefs for it
             unsigned int time_start = GetCycleCount32();
 #endif //TIME_WRITE_WATCH
             get_write_watch_for_gc_heap(reset_watch_state, base_address, region_size,
@@ -18579,18 +18683,20 @@ void gc_heap::fix_card_table ()
 #endif //TIME_WRITE_WATCH
 
             assert( ((card_size * card_word_width)&(OS_PAGE_SIZE-1))==0 );
-            //printf ("%Ix written into\n", bcount);
             dprintf (3,("Found %Id pages written", bcount));
-            for (unsigned  i = 0; i < bcount; i++)
+            for (unsigned i = 0; i < bcount; i++)
             {
-                for (unsigned j = 0; j< (card_size*card_word_width)/OS_PAGE_SIZE; j++)
+                // Set the card words corresponding to the entire page.
+                for (unsigned j = 0; j < (card_size*card_word_width)/OS_PAGE_SIZE; j++)
                 {
                     card_table [card_word (card_of (g_addresses [i]))+j] = ~0u;
                 }
+
                 dprintf (2,("Set Cards [%Ix:%Ix, %Ix:%Ix[",
                       card_of (g_addresses [i]), (size_t)g_addresses [i],
                       card_of (g_addresses [i]+OS_PAGE_SIZE), (size_t)g_addresses [i]+OS_PAGE_SIZE));
             }
+
             if (bcount >= array_size){
                 base_address = g_addresses [array_size-1] + OS_PAGE_SIZE;
                 bcount = array_size;
@@ -19526,6 +19632,7 @@ void gc_heap::mark_phase (int condemned_gen_number, BOOL mark_only_p)
             {
 #endif //MULTIPLE_HEAPS
 
+                ///////// THIS IS WHERE WE UPDATE THE CARD BUNDLE TABLE!!!
                 update_card_table_bundle ();
 
 #ifdef MULTIPLE_HEAPS
@@ -26926,6 +27033,7 @@ void gc_heap::clear_cards (size_t start_card, size_t end_card)
         size_t end_word = card_word (end_card);
         if (start_word < end_word)
         {
+            //// card_bit is how far into its word the card is 
             unsigned bits = card_bit (start_card);
             card_table [start_word] &= lowbits (~0, bits);
             for (size_t i = start_word+1; i < end_word; i++)
@@ -26939,6 +27047,8 @@ void gc_heap::clear_cards (size_t start_card, size_t end_card)
         }
         else
         {
+            // If the start and end cards are in the same word, just clear the appropriate card
+            // bits in that word.
             card_table [start_word] &= (lowbits (~0, card_bit (start_card)) |
                                         highbits (~0, card_bit (end_card)));
         }
@@ -27124,6 +27234,8 @@ void gc_heap::fix_brick_to_highest (uint8_t* o, uint8_t* next_o)
     }
 }
 
+
+///// DOCUMENT THIS
 // start can not be >= heap_segment_allocated for the segment.
 uint8_t* gc_heap::find_first_object (uint8_t* start, uint8_t* first_object)
 {
@@ -27214,6 +27326,9 @@ uint8_t* gc_heap::find_first_object (uint8_t* start, uint8_t* first_object)
 }
 
 #ifdef CARD_BUNDLE
+
+// Find the first non-zero card word between cardw and cardw_end.
+// The index of the word we find is returned in cardw.
 BOOL gc_heap::find_card_dword (size_t& cardw, size_t cardw_end)
 {
     dprintf (3, ("gc: %d, find_card_dword cardw: %Ix, cardw_end: %Ix",
@@ -27225,38 +27340,40 @@ BOOL gc_heap::find_card_dword (size_t& cardw, size_t cardw_end)
         size_t end_cardb = cardw_card_bundle (align_cardw_on_bundle (cardw_end));
         while (1)
         {
-            //find a non null bundle
-            while ((cardb < end_cardb) &&
-                   (card_bundle_set_p (cardb)==0))
+            // Find a non-zero bundle
+            while ((cardb < end_cardb) && card_bundle_set_p (cardb) == 0)
             {
                 cardb++;
             }
+
             if (cardb == end_cardb)
                 return FALSE;
-            //find a non empty card word
-
+            
+            // We found a bundle, so go through its words and find a non-zero card word
             uint32_t* card_word = &card_table[max(card_bundle_cardw (cardb),cardw)];
-            uint32_t* card_word_end = &card_table[min(card_bundle_cardw (cardb+1),cardw_end)];
-            while ((card_word < card_word_end) &&
-                   !(*card_word))
+            uint32_t* card_word_end = &card_table[min(card_bundle_cardw (cardb + 1),cardw_end)];
+            while ((card_word < card_word_end) && !(*card_word))
             {
                 card_word++;
             }
+
             if (card_word != card_word_end)
             {
-                cardw = (card_word - &card_table [0]);
+                cardw = (card_word - &card_table[0]);
                 return TRUE;
             }
             else if ((cardw <= card_bundle_cardw (cardb)) &&
                      (card_word == &card_table [card_bundle_cardw (cardb+1)]))
             {
-                // a whole bundle was explored and is empty
-                dprintf  (3, ("gc: %d, find_card_dword clear bundle: %Ix cardw:[%Ix,%Ix[",
+                // A whole bundle was explored and is empty, so clear the bundle.
+                dprintf (3, ("gc: %d, find_card_dword clear bundle: %Ix cardw:[%Ix,%Ix[",
                         dd_collection_count (dynamic_data_of (0)), 
                         cardb, card_bundle_cardw (cardb),
                         card_bundle_cardw (cardb+1)));
+
                 card_bundle_clear (cardb);
             }
+
             cardb++;
         }
     }
@@ -27267,101 +27384,135 @@ BOOL gc_heap::find_card_dword (size_t& cardw, size_t cardw_end)
 
         while (card_word < card_word_end)
         {
-            if ((*card_word) != 0)
+            if (*card_word != 0)
             {
                 cardw = (card_word - &card_table [0]);
                 return TRUE;
             }
+
             card_word++;
         }
+
         return FALSE;
-
     }
-
 }
 
 #endif //CARD_BUNDLE
 
-BOOL gc_heap::find_card (uint32_t* card_table, size_t& card,
-                size_t card_word_end, size_t& end_card)
+
+//// DOCUMENT THIS
+// Parameters
+//     card_table    : The card table
+//     card          : The card to start searching from???? in/out
+//     card_word_end : The card word at which to stop looking
+//     end_card      : [out] The last card which is set
+BOOL gc_heap::find_card(uint32_t* card_table,
+                        size_t&   card,
+                        size_t    card_word_end,
+                        size_t&   end_card)
 {
     uint32_t* last_card_word;
-    uint32_t y;
-    uint32_t z;
+    uint32_t card_word_value; //// rename to card_word_value?
+    uint32_t bit_position; //// rename to bit_position?
+    
     // Find the first card which is set
-
     last_card_word = &card_table [card_word (card)];
-    z = card_bit (card);
-    y = (*last_card_word) >> z;
-    if (!y)
+    bit_position = card_bit (card);
+    card_word_value = (*last_card_word) >> bit_position;
+    if (!card_word_value)
     {
-        z = 0;
+        bit_position = 0;
 #ifdef CARD_BUNDLE
-        size_t lcw = card_word(card)+1;
+        // Using the card bundle, go through the remaining card words between here and 
+        // card_word_end until we find one that is non-zero.
+        /////// CAN THIS JUST BE A SEPARATE FUNCTION? WE WANT TO DO THE SAME THING WHETHER WE HAVE THE BUNDLE OR NOT
+        size_t lcw = card_word(card) + 1;
         if (gc_heap::find_card_dword (lcw, card_word_end) == FALSE)
+        {
+            ///////
             return FALSE;
+        }
         else
         {
             last_card_word = &card_table [lcw];
-            y = *last_card_word;
+            card_word_value = *last_card_word;
         }
 
 #else //CARD_BUNDLE
+        // Go through the remaining card words between here and card_word_end until we find
+        // one that is non-zero.
         do
         {
             ++last_card_word;
         }
+        while ((last_card_word < &card_table [card_word_end]) && !(*last_card_word));
 
-        while ((last_card_word < &card_table [card_word_end]) &&
-               !(*last_card_word));
+        //// make sure the < is intentional (and not suppposed to be <=)
+
         if (last_card_word < &card_table [card_word_end])
-            y = *last_card_word;
+        {
+            card_word_value = *last_card_word;
+        }
         else
+        {
+            // We failed to find any non-zero card words before we got to card_word_end
             return FALSE;
+        }
 #endif //CARD_BUNDLE
     }
 
-
     // Look for the lowest bit set
-    if (y)
+    if (card_word_value)
     {
-        while (!(y & 1))
+        while (!(card_word_value & 1))
         {
-            z++;
-            y = y / 2;
+            bit_position++;
+            card_word_value = card_word_value / 2;
         }
     }
-    card = (last_card_word - &card_table [0])* card_word_width + z;
+    
+    // card is the card word index * card size + the bit index within the card
+    card = (last_card_word - &card_table[0]) * card_word_width + bit_position;
+
     do
     {
-        z++;
-        y = y / 2;
-        if ((z == card_word_width) &&
-            (last_card_word < &card_table [card_word_end]))
-        {
+        // Keep going until we get to an un-set card.
+        bit_position++;
+        card_word_value = card_word_value / 2;
 
+        // If we reach the end of the card word and haven't hit a 0 yet, start going
+        // card word by card word until we get to one that's not fully set (0xFFFF...)
+        // or we reach card_word_end.
+        if ((bit_position == card_word_width) && (last_card_word < &card_table [card_word_end]))
+        {
             do
             {
-                y = *(++last_card_word);
-            }while ((last_card_word < &card_table [card_word_end]) &&
-#ifdef _MSC_VER
-                     (y == (1 << card_word_width)-1)
-#else
+                card_word_value = *(++last_card_word);
+            } while ((last_card_word < &card_table [card_word_end]) &&
+
+// #ifdef _MSC_VER
+//                      (card_word_value == (1 << card_word_width)-1)
+// #else
                      // if left shift count >= width of type,
                      // gcc reports error.
-                     (y == ~0u)
-#endif // _MSC_VER
+                     ///////////// WHY DON'T WE JUST USE THIS EVERYWHERE????
+                     (card_word_value == ~0u)
+// #endif // _MSC_VER
                 );
-            z = 0;
+            bit_position = 0;
         }
-    } while (y & 1);
+    } while (card_word_value & 1);
 
-    end_card = (last_card_word - &card_table [0])* card_word_width + z;
+    end_card = (last_card_word - &card_table [0])* card_word_width + bit_position;
+    
     //dprintf (3, ("find_card: [%Ix, %Ix[ set", card, end_card));
     dprintf (3, ("fc: [%Ix, %Ix[", card, end_card));
     return TRUE;
 }
 
+
+
+////// DOCUMENT THIS
 
     //because of heap expansion, computing end is complicated.
 uint8_t* compute_next_end (heap_segment* seg, uint8_t* low)
@@ -27396,9 +27547,12 @@ gc_heap::compute_next_boundary (uint8_t* low, int gen_number,
 
 }
 
+
+//// only used in the collectible class case
 inline void
-gc_heap::keep_card_live (uint8_t* o, size_t& n_gen,
-                         size_t& cg_pointers_found)
+gc_heap::keep_card_live(uint8_t* o,
+                        size_t& n_gen,
+                        size_t& cg_pointers_found)
 {
     THREAD_FROM_HEAP;
     if ((gc_low <= o) && (gc_high > o))
@@ -27465,6 +27619,7 @@ gc_heap::mark_through_cards_helper (uint8_t** poo, size_t& n_gen,
     }
 }
 
+//// DOCUMENT THIS
 BOOL gc_heap::card_transition (uint8_t* po, uint8_t* end, size_t card_word_end,
                                size_t& cg_pointers_found, 
                                size_t& n_eph, size_t& n_card_set,
@@ -27480,87 +27635,93 @@ BOOL gc_heap::card_transition (uint8_t* po, uint8_t* end, size_t card_word_end,
     if (cg_pointers_found == 0)
     {
         //dprintf(3,(" Clearing cards [%Ix, %Ix[ ",
-        dprintf(3,(" CC [%Ix, %Ix[ ",
-                (size_t)card_address(card), (size_t)po));
-        clear_cards (card, card_of(po));
-        n_card_set -= (card_of (po) - card);
-        n_cards_cleared += (card_of (po) - card);
+        dprintf(3,(" CC [%Ix, %Ix[ ", (size_t)card_address(card), (size_t)po));
 
+        // Clear all the cards between 'card' and the card where the object is.
+        clear_cards (card, card_of(po));
+
+        int number_of_cards_cleared = (card_of (po) - card);
+        n_card_set -= number_of_cards_cleared;
+        n_cards_cleared += number_of_cards_cleared;
     }
-    n_eph +=cg_pointers_found;
+
+    n_eph += cg_pointers_found;
     cg_pointers_found = 0;
     card = card_of (po);
     if (card >= end_card)
     {
         passed_end_card_p = TRUE;
-        dprintf (3, ("card %Ix exceeding end_card %Ix",
-                    (size_t)card, (size_t)end_card));
-        foundp = find_card (card_table, card, card_word_end, end_card);
+        dprintf (3, ("card %Ix exceeding end_card %Ix", (size_t)card, (size_t)end_card));
+
+        // Find the next card that's set
+        foundp = find_card(card_table, card, card_word_end, end_card);
         if (foundp)
         {
-            n_card_set+= end_card - card;
+            n_card_set += end_card - card;
             start_address = card_address (card);
             dprintf (3, ("NewC: %Ix, start: %Ix, end: %Ix",
                         (size_t)card, (size_t)start_address,
                         (size_t)card_address (end_card)));
         }
-        limit = min (end, card_address (end_card));
 
-        assert (!((limit == card_address (end_card))&&
-                card_set_p (end_card)));
+        limit = min(end, card_address (end_card));
+
+        assert (!(limit == card_address (end_card) && card_set_p (end_card)));
     }
 
     return passed_end_card_p;
 }
 
+////// DOCUMENT THIS
 void gc_heap::mark_through_cards_for_segments (card_fn fn, BOOL relocating)
 {
 #ifdef BACKGROUND_GC
     dprintf (3, ("current_sweep_pos is %Ix, saved_sweep_ephemeral_seg is %Ix(%Ix)",
                  current_sweep_pos, saved_sweep_ephemeral_seg, saved_sweep_ephemeral_start));
+    
+    // Find the first RW segment, starting with the Gen 2 start segment.
     heap_segment* soh_seg = heap_segment_rw (generation_start_segment (generation_of (max_generation)));
-    PREFIX_ASSUME(soh_seg  != NULL);
-    while (soh_seg )
+    PREFIX_ASSUME(soh_seg != NULL);
+
+    while (soh_seg)
     {
         dprintf (3, ("seg %Ix, bgc_alloc: %Ix, alloc: %Ix", 
             soh_seg, 
             heap_segment_background_allocated (soh_seg),
             heap_segment_allocated (soh_seg)));
+
         soh_seg = heap_segment_next_rw (soh_seg);
     }
 #endif //BACKGROUND_GC
 
     uint8_t* low = gc_low;
     uint8_t* high = gc_high;
-    size_t  end_card          = 0;
+    size_t end_card = 0;
+
     generation*   oldest_gen        = generation_of (max_generation);
     int           curr_gen_number   = max_generation;
-    uint8_t*         gen_boundary      = generation_allocation_start
-        (generation_of (curr_gen_number - 1));
-    uint8_t*         next_boundary     = (compute_next_boundary
-                                       (gc_low, curr_gen_number, relocating));
+    uint8_t*      gen_boundary      = generation_allocation_start(generation_of(curr_gen_number - 1));
+    uint8_t*      next_boundary     = compute_next_boundary(gc_low, curr_gen_number, relocating);
+    
     heap_segment* seg               = heap_segment_rw (generation_start_segment (oldest_gen));
-
     PREFIX_ASSUME(seg != NULL);
 
-    uint8_t*         beg               = generation_allocation_start (oldest_gen);
-    uint8_t*         end               = compute_next_end (seg, low);
-    uint8_t*         last_object       = beg;
+    uint8_t*      beg               = generation_allocation_start (oldest_gen);
+    uint8_t*      end               = compute_next_end (seg, low);
+    uint8_t*      last_object       = beg;
 
     size_t  cg_pointers_found = 0;
 
-    size_t  card_word_end = (card_of (align_on_card_word (end)) /
-                             card_word_width);
+    size_t  card_word_end = (card_of (align_on_card_word (end)) / card_word_width);
 
     size_t        n_eph             = 0;
     size_t        n_gen             = 0;
     size_t        n_card_set        = 0;
-    uint8_t*         nhigh             = (relocating ?
-                                       heap_segment_plan_allocated (ephemeral_heap_segment) : high);
+    uint8_t*      nhigh             = (relocating ? heap_segment_plan_allocated (ephemeral_heap_segment) : high);
 
     BOOL          foundp            = FALSE;
-    uint8_t*         start_address     = 0;
-    uint8_t*         limit             = 0;
+    uint8_t*      start_address     = 0;
+    uint8_t*      limit             = 0;
     size_t        card              = card_of (beg);
 #ifdef BACKGROUND_GC
     BOOL consider_bgc_mark_p        = FALSE;
@@ -27576,6 +27737,7 @@ void gc_heap::mark_through_cards_for_segments (card_fn fn, BOOL relocating)
     {
         if (card_of(last_object) > card)
         {
+            //// cg means cross generational??
             dprintf (3, ("Found %Id cg pointers", cg_pointers_found));
             if (cg_pointers_found == 0)
             {
@@ -27584,32 +27746,42 @@ void gc_heap::mark_through_cards_for_segments (card_fn fn, BOOL relocating)
                 n_card_set -= (card_of (last_object) - card);
                 total_cards_cleared += (card_of (last_object) - card);
             }
-            n_eph +=cg_pointers_found;
+
+            n_eph += cg_pointers_found;
             cg_pointers_found = 0;
+
             card = card_of (last_object);
         }
+
         if (card >= end_card)
         {
-            foundp = find_card (card_table, card, card_word_end, end_card);
+            // Find the first card that's set (between card and card_word_end)
+            foundp = find_card(card_table, card, card_word_end, end_card);
             if (foundp)
             {
-                n_card_set+= end_card - card;
+                // We found card(s) set. 
+                n_card_set += end_card - card;
                 start_address = max (beg, card_address (card));
             }
+
             limit = min (end, card_address (end_card));
         }
-        if ((!foundp) || (last_object >= end) || (card_address (card) >= end))
+
+        // If we haven't found a card or..........
+        if (!foundp || (last_object >= end) || (card_address (card) >= end))
         {
-            if ((foundp) && (cg_pointers_found == 0))
+            if (foundp && (cg_pointers_found == 0))
             {
-                dprintf(3,(" Clearing cards [%Ix, %Ix[ ", (size_t)card_address(card),
-                           (size_t)end));
+                dprintf(3,(" Clearing cards [%Ix, %Ix[ ", (size_t)card_address(card), (size_t)end));
                 clear_cards (card, card_of (end));
                 n_card_set -= (card_of (end) - card);
                 total_cards_cleared += (card_of (end) - card);
             }
-            n_eph +=cg_pointers_found;
+
+            n_eph += cg_pointers_found;
             cg_pointers_found = 0;
+
+            // 
             if ((seg = heap_segment_next_in_range (seg)) != 0)
             {
 #ifdef BACKGROUND_GC
@@ -27629,17 +27801,18 @@ void gc_heap::mark_through_cards_for_segments (card_fn fn, BOOL relocating)
             }
         }
 
+        // We've found a card and will now go through the objects in it.
         assert (card_set_p (card));
         {
-            uint8_t*   o             = last_object;
-
+            uint8_t* o = last_object;
             o = find_first_object (start_address, last_object);
-                //Never visit an object twice.
-                assert (o >= last_object);
+            
+            // Never visit an object twice.
+            assert (o >= last_object);
 
-                //dprintf(3,("Considering card %Ix start object: %Ix, %Ix[ boundary: %Ix",
-                dprintf(3, ("c: %Ix, o: %Ix, l: %Ix[ boundary: %Ix",
-                       card, (size_t)o, (size_t)limit, (size_t)gen_boundary));
+            //dprintf(3,("Considering card %Ix start object: %Ix, %Ix[ boundary: %Ix",
+            dprintf(3, ("c: %Ix, o: %Ix, l: %Ix[ boundary: %Ix",
+                   card, (size_t)o, (size_t)limit, (size_t)gen_boundary));
 
             while (o < limit)
             {
@@ -27647,18 +27820,20 @@ void gc_heap::mark_through_cards_for_segments (card_fn fn, BOOL relocating)
                 size_t s = size (o);
 
                 uint8_t* next_o =  o + Align (s);
+
+                ///// This does nothing unless PREFETCH is defined.
                 Prefetch (next_o);
 
                 if ((o >= gen_boundary) &&
                     (seg == ephemeral_heap_segment))
                 {
                     dprintf (3, ("switching gen boundary %Ix", (size_t)gen_boundary));
+                    
                     curr_gen_number--;
                     assert ((curr_gen_number > 0));
-                    gen_boundary = generation_allocation_start
-                        (generation_of (curr_gen_number - 1));
-                    next_boundary = (compute_next_boundary
-                                     (low, curr_gen_number, relocating));
+                    
+                    gen_boundary = generation_allocation_start(generation_of (curr_gen_number - 1));
+                    next_boundary = compute_next_boundary(low, curr_gen_number, relocating);
                 }
 
                 dprintf (4, ("|%Ix|", (size_t)o));
@@ -27774,6 +27949,7 @@ go_through_refs:
                              }
                             );
                     }
+
                 }
 
             end_object:
@@ -27788,7 +27964,8 @@ go_through_refs:
             last_object = o;
         }
     }
-    // compute the efficiency ratio of the card table
+
+    // Compute the efficiency ratio of the card table
     if (!relocating)
     {
         generation_skip_ratio = ((n_eph > 400)? (int)(((float)n_gen / (float)n_eph) * 100) : 100);
