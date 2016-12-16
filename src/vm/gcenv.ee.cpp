@@ -1226,6 +1226,9 @@ void GCToEEInterface::StompWriteBarrier(WriteBarrierParameters* args)
         assert(args->lowest_address != nullptr);
         assert(args->highest_address != nullptr);
         g_card_table = args->card_table;
+
+        g_card_bundle_table = args->card_bundle_table; /////
+
         ::StompWriteBarrierResize(args->is_runtime_suspended, args->requires_upper_bounds_check);
 
         // We need to make sure that other threads executing checked write barriers
@@ -1250,6 +1253,7 @@ void GCToEEInterface::StompWriteBarrier(WriteBarrierParameters* args)
     case WriteBarrierOp::Initialize:
         // This operation should only be invoked once, upon initialization.
         assert(g_card_table == nullptr);
+        assert(g_card_bundle_table == nullptr);
         assert(g_lowest_address == nullptr);
         assert(g_highest_address == nullptr);
         assert(args->card_table != nullptr);
@@ -1259,7 +1263,9 @@ void GCToEEInterface::StompWriteBarrier(WriteBarrierParameters* args)
         assert(!args->requires_upper_bounds_check && "the ephemeral generation must be at the top of the heap!");
 
         g_card_table = args->card_table;
+        g_card_bundle_table = args->card_bundle_table;
         FlushProcessWriteBuffers();
+        
         g_lowest_address = args->lowest_address;
         VolatileStore(&g_highest_address, args->highest_address);
         ::StompWriteBarrierResize(true, false);

@@ -445,7 +445,7 @@ function copy_test_native_bin_to_test_root {
     if [ -z "$testNativeBinDir" ]; then
         exit_with_error "$errorSource" "--testNativeBinDir is required."
     fi
-    testNativeBinDir=$testNativeBinDir/src
+    testNativeBinDir=$testNativeBinDir
     if [ ! -d "$testNativeBinDir" ]; then
         exit_with_error "$errorSource" "Directory specified by --testNativeBinDir does not exist: $testNativeBinDir"
     fi

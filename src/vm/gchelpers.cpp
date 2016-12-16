@@ -1107,14 +1107,20 @@ OBJECTREF AllocateObject(MethodTable *pMT
 
 
 #if defined(_WIN64)
-// Card byte shift is different on 64bit.
-#define card_byte_shift     11
+    // Card byte shift is different on 64bit.
+    #define card_byte_shift     11
+    #define card_bundle_byte_shift     21
 #else
-#define card_byte_shift     10
+    #define card_byte_shift     10
+
+/////////FIXXXXXXXXXX
+    #define card_bundle_byte_shift  0xABC
 #endif
 
 #define card_byte(addr) (((size_t)(addr)) >> card_byte_shift)
 #define card_bit(addr)  (1 << ((((size_t)(addr)) >> (card_byte_shift - 3)) & 7))
+
+#define card_bundle_byte(addr) (((size_t)(addr)) >> card_bundle_byte_shift)
 
 
 #ifdef FEATURE_USE_ASM_GC_WRITE_BARRIERS
@@ -1267,6 +1273,10 @@ extern "C" HCIMPL2_RAW(VOID, JIT_CheckedWriteBarrier, Object **dst, Object *ref)
             CheckedAfterAlreadyDirtyFilter++;
 #endif
             *pCardByte = 0xFF;
+
+            printf("JIT_CheckedWriteBarrier skadjhfkjs\n");
+            ////// ZZZZZ UPDATE BUNDLE
+            /// g_card_bundle_table [kjdkjashd]
         }
     }
 }
@@ -1322,6 +1332,14 @@ extern "C" HCIMPL2_RAW(VOID, JIT_WriteBarrier, Object **dst, Object *ref)
             UncheckedAfterAlreadyDirtyFilter++;
 #endif
             *pCardByte = 0xFF;
+
+
+            ////////////// UPDATE CARD BUNDLE
+            BYTE* pBundleByte = (BYTE *)VolatileLoadWithoutBarrier(&g_card_bundle_table) + card_bundle_byte((BYTE *)dst);
+            if (*pBundleByte != 0xFF)
+            {
+                *pBundleByte = 0xFF;
+            }
         }
     }
 }
@@ -1372,15 +1390,24 @@ void ErectWriteBarrier(OBJECTREF *dst, OBJECTREF ref)
     }
 #endif // FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
 
-    if((BYTE*) OBJECTREFToObject(ref) >= g_ephemeral_low && (BYTE*) OBJECTREFToObject(ref) < g_ephemeral_high)
+    if ((BYTE*) OBJECTREFToObject(ref) >= g_ephemeral_low && (BYTE*) OBJECTREFToObject(ref) < g_ephemeral_high)
     {
         // VolatileLoadWithoutBarrier() is used here to prevent fetch of g_card_table from being reordered 
         // with g_lowest/highest_address check above. See comment in code:gc_heap::grow_brick_card_tables.
         BYTE* pCardByte = (BYTE *)VolatileLoadWithoutBarrier(&g_card_table) + card_byte((BYTE *)dst);
-        if(*pCardByte != 0xFF)
+        if (*pCardByte != 0xFF)
+        {
             *pCardByte = 0xFF;
+            
+            //////////////////// UPDATE CARD BUNDLE
+            BYTE* pBundleByte = (BYTE *)VolatileLoadWithoutBarrier(&g_card_bundle_table) + card_bundle_byte((BYTE *)dst);
+            if (*pBundleByte != 0xFF)
+            {
+                *pBundleByte = 0xFF;
+            }
+        }
     }
-}        
+}
 #include <optdefault.h>
 
 void ErectWriteBarrierForMT(MethodTable **dst, MethodTable *ref)
@@ -1413,6 +1440,15 @@ void ErectWriteBarrierForMT(MethodTable **dst, MethodTable *ref)
             if( !((*pCardByte) & card_bit((BYTE *)dst)) )
             {
                 *pCardByte = 0xFF;
+
+                ////////// UPDATE CARD BUNDLE
+                BYTE* pBundleByte = (BYTE *)VolatileLoadWithoutBarrier(&g_card_bundle_table) + card_bundle_byte((BYTE *)dst);
+                
+                /////// we are checking/setting the whole bundle byte instead of just the bit we care about (unlike the CT stuff above). change?
+                if (*pBundleByte != 0xFF)
+                {
+                    *pBundleByte = 0xFF;
+                }
             }
         }
     }

@@ -23,7 +23,8 @@ PATCH_LABEL JIT_WriteBarrier_PreGrow64_Patch_Label_Lower
 
         // Check the lower ephemeral region bound.
         cmp     rsi, rax
-        .byte 0x72, 0x23
+        /////.byte 0x72, 0x23
+        .byte 0x72, 0x4B
         // jb      Exit_PreGrow64
 
         nop // padding for alignment of constant
@@ -39,6 +40,27 @@ PATCH_LABEL JIT_WriteBarrier_PreGrow64_Patch_Label_CardTable
         REPRET
 
     UpdateCardTable_PreGrow64:
+        mov     byte ptr [rdi + rax], 0FFh
+
+        /// CARDBUNDLEUPDATE also update the card bundle here
+        //// HOW CAN WE GET AROUND THIS?
+        NOP_3_BYTE // padding for alignment of constant
+        NOP_3_BYTE // padding for alignment of constant
+
+PATCH_LABEL JIT_WriteBarrier_PreGrow64_Patch_Label_CardBundleTable
+        movabs  rax, 0xF0F0F0F0F0F0F0F0
+
+        // Touch the card bundle, if not already dirty.
+        ///// rdi is already shifted by 0xB, so shift by 0xA more, right?
+        shr     rdi, 0x0A
+        cmp     byte ptr [rdi + rax], 0FFh
+
+/////// check this!!!
+        .byte 0x75, 0x02 
+        // jne     UpdateCardBundle_PreGrow64
+        REPRET
+
+    UpdateCardBundle_PreGrow64:
         mov     byte ptr [rdi + rax], 0FFh
         ret
 
@@ -69,7 +91,8 @@ PATCH_LABEL JIT_WriteBarrier_PostGrow64_Patch_Label_Lower
 
         // Check the lower and upper ephemeral region bounds
         cmp     rsi, rax
-        .byte 0x72,0x33
+        ///.byte 0x72,0x33
+        .byte 0x72,0x53
         // jb      Exit_PostGrow64
 
         nop // padding for alignment of constant
@@ -78,7 +101,8 @@ PATCH_LABEL JIT_WriteBarrier_PostGrow64_Patch_Label_Upper
         movabs  r8, 0xF0F0F0F0F0F0F0F0
 
         cmp     rsi, r8
-        .byte 0x73,0x23
+        ///.byte 0x73,0x23
+        .byte 0x73,0x43
         // jae     Exit_PostGrow64
 
         nop // padding for alignment of constant
@@ -94,6 +118,27 @@ PATCH_LABEL JIT_WriteBarrier_PostGrow64_Patch_Label_CardTable
         REPRET
 
     UpdateCardTable_PostGrow64:
+        mov     byte ptr [rdi + rax], 0FFh
+
+        /// CARDBUNDLEUPDATE also update the card bundle here
+        //// HOW CAN WE GET AROUND THIS?
+        NOP_3_BYTE // padding for alignment of constant
+        NOP_3_BYTE // padding for alignment of constant
+
+PATCH_LABEL JIT_WriteBarrier_PostGrow64_Patch_Label_CardBundleTable
+        movabs  rax, 0xF0F0F0F0F0F0F0F0
+
+        // Touch the card bundle, if not already dirty.
+        ///// rdi is already shifted by 0xB, so shift by 0xA more, right?
+        shr     rdi, 0x0A
+        cmp     byte ptr [rdi + rax], 0FFh
+
+/////// check this!!!
+        .byte 0x75, 0x02 
+        // jne     UpdateCardBundle_PostGrow64
+        REPRET
+
+    UpdateCardBundle_PostGrow64:
         mov     byte ptr [rdi + rax], 0FFh
         ret
 
@@ -134,7 +179,12 @@ PATCH_LABEL JIT_WriteBarrier_SVR64_PatchLabel_CardTable
 
     UpdateCardTable_SVR64:
         mov     byte ptr [rdi + rax], 0FFh
+        
+        ///// CARDBUNDLEUPDATE also update the card bundle here
+        cmp     byte ptr [0], 0FFh
+
         ret
+
 LEAF_END_MARKED JIT_WriteBarrier_SVR64, _TEXT
 
 #endif
@@ -174,7 +224,8 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_PreGrow64_Patch_Label_Lower
     CheckCardTable_WriteWatch_PreGrow64:
         // Check the lower ephemeral region bound.
         cmp     rsi, r11
-        .byte 0x72, 0x20
+        ////.byte 0x72, 0x20
+        .byte 0x72, 0x48
         // jb      Exit_WriteWatch_PreGrow64
 
         // Touch the card table entry, if not already dirty.
@@ -188,6 +239,22 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_PreGrow64_Patch_Label_CardTable
         REPRET
 
     UpdateCardTable_WriteWatch_PreGrow64:
+        mov     byte ptr [rdi + rax], 0FFh
+
+///// CARDBUNDLEUPDATE also update the card bundle here
+
+        NOP_2_BYTE // padding for alignment of constant
+PATCH_LABEL JIT_WriteBarrier_WriteWatch_PreGrow64_Patch_Label_CardBundleTable
+        movabs  rax, 0xF0F0F0F0F0F0F0F0
+
+        shr     rdi, 0x0A
+        cmp     byte ptr [rdi + rax], 0FFh
+
+        .byte 0x75, 0x02
+        // jne     UpdateCardBundle_WriteWatch_PreGrow64
+        REPRET
+
+    UpdateCardBundle_WriteWatch_PreGrow64:
         mov     byte ptr [rdi + rax], 0FFh
         ret
 
@@ -231,7 +298,8 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_PostGrow64_Patch_Label_Lower
         // Check the lower and upper ephemeral region bounds
     CheckCardTable_WriteWatch_PostGrow64:
         cmp     rsi, r11
-        .byte 0x72, 0x3d
+        ////.byte 0x72, 0x3d
+        .byte 0x72, 0x55
         // jb      Exit_WriteWatch_PostGrow64
 
         NOP_3_BYTE // padding for alignment of constant
@@ -240,7 +308,8 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_PostGrow64_Patch_Label_Upper
         movabs  r10, 0xF0F0F0F0F0F0F0F0
 
         cmp     rsi, r10
-        .byte 0x73, 0x2b
+        ////.byte 0x73, 0x2b
+        .byte 0x73, 0x43
         // jae     Exit_WriteWatch_PostGrow64
 
         nop // padding for alignment of constant
@@ -257,8 +326,23 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_PostGrow64_Patch_Label_CardTable
 
     UpdateCardTable_WriteWatch_PostGrow64:
         mov     byte ptr [rdi + rax], 0FFh
-        ret
 
+///// CARDBUNDLEUPDATE also update the card bundle here
+    NOP_2_BYTE // padding for alignment of constant
+        shr     rdi, 0x0A
+
+PATCH_LABEL JIT_WriteBarrier_WriteWatch_PostGrow64_Patch_Label_CardBundleTable
+        movabs  rax, 0xF0F0F0F0F0F0F0F0
+        cmp     byte ptr [rdi + rax], 0FFh
+
+        .byte 0x75, 0x02
+        // jne     UpdateCardBundle_WriteWatch_PostGrow64
+        REPRET
+
+    UpdateCardBundle_WriteWatch_PostGrow64:
+        mov     byte ptr [rdi + rax], 0FFh
+
+        ret
     .balign 16
     Exit_WriteWatch_PostGrow64:
         REPRET
@@ -279,7 +363,7 @@ LEAF_ENTRY JIT_WriteBarrier_WriteWatch_SVR64, _TEXT
         //
         // SVR GC has multiple heaps, so it cannot provide one single 
         // ephemeral region to bounds check against, so we just skip the
-        // bounds checking all together and do our card table update 
+        // bounds checking altogether and do our card table update 
         // unconditionally.
         //
 
@@ -312,7 +396,13 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_SVR64_PatchLabel_CardTable
 
     UpdateCardTable_WriteWatch_SVR64:
         mov     byte ptr [rdi + r11], 0FFh
+
+        ///// CARDBUNDLEUPDATE also update the card bundle here
+        cmp     byte ptr [0], 0FFh
+
+
         ret
+
 LEAF_END_MARKED JIT_WriteBarrier_WriteWatch_SVR64, _TEXT
 
 #endif
