@@ -10,6 +10,7 @@
 // of the GC to communicate updates to these globals to the EE through
 // GCToEEInterface::StompWriteBarrierResize and GCToEEInterface::StompWriteBarrierEphemeral.
 GPTR_IMPL_INIT(uint32_t, g_card_table,      nullptr);
+GPTR_IMPL_INIT(uint32_t, g_card_bundle,     nullptr); //// should probably be called g_card_bundle_table or something
 GPTR_IMPL_INIT(uint8_t,  g_lowest_address,  nullptr);
 GPTR_IMPL_INIT(uint8_t,  g_highest_address, nullptr);
 uint8_t* g_ephemeral_low  = (uint8_t*)1;

@@ -156,6 +156,8 @@ endif
         mov     byte ptr [rcx], 0FFh
         ret
 
+;;;;; CARDBUNDLEUPDATE also update the card bundle here
+
     align 16
     Exit:
         REPRET

@@ -1461,11 +1461,11 @@ inline bool can_use_write_watch_for_gc_heap()
 
 inline bool can_use_write_watch_for_card_table()
 {
-#ifndef ZZZZMYTHING /////////
-    return can_use_hardware_write_watch();
-#else
+//#ifndef ZZZZMYTHING ///////// fix when the switch is added
+//    return can_use_hardware_write_watch();
+// #else
     return true;
-#endif
+// #endif
 }
 
 #else
@@ -6304,173 +6304,6 @@ void gc_heap::make_c_mark_list (uint8_t** arr)
 #endif //BACKGROUND_GC
 
 
-/// Number of bytes you can cover in a brick?
-#if defined (_TARGET_AMD64_)
-#define brick_size ((size_t)4096)
-#else
-#define brick_size ((size_t)2048)
-#endif //_TARGET_AMD64_
-
-inline
-size_t gc_heap::brick_of (uint8_t* add)
-{
-    return (size_t)(add - lowest_address) / brick_size;
-}
-
-inline
-uint8_t* gc_heap::brick_address (size_t brick)
-{
-    return lowest_address + (brick_size * brick);
-}
-
-
-void gc_heap::clear_brick_table (uint8_t* from, uint8_t* end)
-{
-    for (size_t i = brick_of (from);i < brick_of (end); i++)
-        brick_table[i] = 0;
-}
-
-//codes for the brick entries:
-//entry == 0 -> not assigned
-//entry >0 offset is entry-1
-//entry <0 jump back entry bricks
-
-
-inline
-void gc_heap::set_brick (size_t index, ptrdiff_t val)
-{
-    if (val < -32767)
-    {
-        val = -32767;
-    }
-    assert (val < 32767);
-    if (val >= 0)
-        brick_table [index] = (short)val+1;
-    else
-        brick_table [index] = (short)val;
-}
-
-inline
-int gc_heap::brick_entry (size_t index)
-{
-    int val = brick_table [index];
-    if (val == 0)
-    {
-        return -32768;
-    }
-    else if (val < 0)
-    {
-        return val;
-    }
-    else
-        return val-1;
-}
-
-
-inline
-uint8_t* align_on_brick (uint8_t* add)
-{
-    return (uint8_t*)((size_t)(add + brick_size - 1) & ~(brick_size - 1));
-}
-
-inline
-uint8_t* align_lower_brick (uint8_t* add)
-{
-    return (uint8_t*)(((size_t)add) & ~(brick_size - 1));
-}
-
-size_t size_brick_of (uint8_t* from, uint8_t* end)
-{
-    assert (((size_t)from & (brick_size-1)) == 0);
-    assert (((size_t)end  & (brick_size-1)) == 0);
-
-    return ((end - from) / brick_size) * sizeof (short);
-}
-
-inline
-uint8_t* gc_heap::card_address (size_t card)
-{
-    return  (uint8_t*) (card_size * card);
-}
-
-inline
-size_t gc_heap::card_of ( uint8_t* object)
-{
-    return (size_t)(object) / card_size;
-}
-
-inline
-size_t gc_heap::card_to_brick (size_t card)
-{
-    return brick_of (card_address (card));
-}
-
-inline
-uint8_t* align_on_card (uint8_t* add)
-{
-    return (uint8_t*)((size_t)(add + card_size - 1) & ~(card_size - 1 ));
-}
-inline
-uint8_t* align_on_card_word (uint8_t* add)
-{
-    return (uint8_t*) ((size_t)(add + (card_size*card_word_width)-1) & ~(card_size*card_word_width - 1));
-}
-
-inline
-uint8_t* align_lower_card (uint8_t* add)
-{
-    return (uint8_t*)((size_t)add & ~(card_size-1));
-}
-
-inline
-void gc_heap::clear_card (size_t card)
-{
-    card_table [card_word (card)] =
-        (card_table [card_word (card)] & ~(1 << card_bit (card)));
-    dprintf (3,("Cleared card %Ix [%Ix, %Ix[", card, (size_t)card_address (card),
-              (size_t)card_address (card+1)));
-}
-
-inline
-void gc_heap::set_card (size_t card)
-{
-    size_t corresponding_card_word = card_word (card);
-    card_table[corresponding_card_word] = (card_table [corresponding_card_word] | (1 << card_bit (card)));
-
-    ///////// CARD BUNDLE: If we aren't using OS WW for card bundle, I guess this function should also set the card bundle bit?
-    //// #ifdef ZZZWHATEVER
-    card_bundles_set(corresponding_card_word, corresponding_card_word);
-    //// #endif
-}
-
-
-//////THIS IS NOT USED???
-// inline
-// void gset_card (size_t card)
-// {
-//     g_gc_card_table [card_word (card)] |= (1 << card_bit (card));
-// }
-
-inline
-BOOL  gc_heap::card_set_p (size_t card)
-{
-    return ( card_table [ card_word (card) ] & (1 << card_bit (card)));
-}
-
-// Returns the number of DWORDs in the card table that cover the
-// range of addresses [from, end[.
-size_t count_card_of (uint8_t* from, uint8_t* end)
-{
-    return card_word (gcard_of (end - 1)) - card_word (gcard_of (from)) + 1;
-}
-
-// Returns the number of bytes to allocate for a card table
-// that covers the range of addresses [from, end[.
-size_t size_card_of (uint8_t* from, uint8_t* end)
-{
-    return count_card_of (from, end) * sizeof(uint32_t);
-}
-
 #ifdef CARD_BUNDLE
 
 // The card bundle keeps track of groups of card words.
@@ -6611,6 +6444,316 @@ BOOL gc_heap::card_bundles_enabled ()
 }
 
 #endif // CARD_BUNDLE
+
+
+/// Number of bytes you can cover in a brick?
+#if defined (_TARGET_AMD64_)
+#define brick_size ((size_t)4096)
+#else
+#define brick_size ((size_t)2048)
+#endif //_TARGET_AMD64_
+
+inline
+size_t gc_heap::brick_of (uint8_t* add)
+{
+    return (size_t)(add - lowest_address) / brick_size;
+}
+
+inline
+uint8_t* gc_heap::brick_address (size_t brick)
+{
+    return lowest_address + (brick_size * brick);
+}
+
+
+void gc_heap::clear_brick_table (uint8_t* from, uint8_t* end)
+{
+    for (size_t i = brick_of (from);i < brick_of (end); i++)
+        brick_table[i] = 0;
+}
+
+//codes for the brick entries:
+//entry == 0 -> not assigned
+//entry >0 offset is entry-1
+//entry <0 jump back entry bricks
+
+
+inline
+void gc_heap::set_brick (size_t index, ptrdiff_t val)
+{
+    if (val < -32767)
+    {
+        val = -32767;
+    }
+    assert (val < 32767);
+    if (val >= 0)
+        brick_table [index] = (short)val+1;
+    else
+        brick_table [index] = (short)val;
+}
+
+inline
+int gc_heap::brick_entry (size_t index)
+{
+    int val = brick_table [index];
+    if (val == 0)
+    {
+        return -32768;
+    }
+    else if (val < 0)
+    {
+        return val;
+    }
+    else
+        return val-1;
+}
+
+
+inline
+uint8_t* align_on_brick (uint8_t* add)
+{
+    return (uint8_t*)((size_t)(add + brick_size - 1) & ~(brick_size - 1));
+}
+
+inline
+uint8_t* align_lower_brick (uint8_t* add)
+{
+    return (uint8_t*)(((size_t)add) & ~(brick_size - 1));
+}
+
+size_t size_brick_of (uint8_t* from, uint8_t* end)
+{
+    assert (((size_t)from & (brick_size-1)) == 0);
+    assert (((size_t)end  & (brick_size-1)) == 0);
+
+    return ((end - from) / brick_size) * sizeof (short);
+}
+
+inline
+uint8_t* gc_heap::card_address (size_t card)
+{
+    return  (uint8_t*) (card_size * card);
+}
+
+inline
+size_t gc_heap::card_of ( uint8_t* object)
+{
+    return (size_t)(object) / card_size;
+}
+
+inline
+size_t gc_heap::card_to_brick (size_t card)
+{
+    return brick_of (card_address (card));
+}
+
+inline
+uint8_t* align_on_card (uint8_t* add)
+{
+    return (uint8_t*)((size_t)(add + card_size - 1) & ~(card_size - 1 ));
+}
+inline
+uint8_t* align_on_card_word (uint8_t* add)
+{
+    return (uint8_t*) ((size_t)(add + (card_size*card_word_width)-1) & ~(card_size*card_word_width - 1));
+}
+
+inline
+uint8_t* align_lower_card (uint8_t* add)
+{
+    return (uint8_t*)((size_t)add & ~(card_size-1));
+}
+
+inline
+void gc_heap::clear_card (size_t card)
+{
+    card_table [card_word (card)] =
+        (card_table [card_word (card)] & ~(1 << card_bit (card)));
+    dprintf (3,("Cleared card %Ix [%Ix, %Ix[", card, (size_t)card_address (card),
+              (size_t)card_address (card+1)));
+}
+
+inline
+void gc_heap::set_card (size_t card)
+{
+    size_t corresponding_card_word = card_word (card);
+    card_table[corresponding_card_word] = (card_table [corresponding_card_word] | (1 << card_bit (card)));
+
+    ///////// CARD BUNDLE: If we aren't using OS WW for card bundle, I guess this function should also set the card bundle bit?
+    //// #ifdef ZZZWHATEVER (also should be ifdef card budnle)
+    size_t bundle_to_set = cardw_card_bundle(corresponding_card_word);
+    card_bundles_set(bundle_to_set, bundle_to_set);
+    //// #endif
+}
+
+
+//////THIS IS NOT USED???
+// inline
+// void gset_card (size_t card)
+// {
+//     g_gc_card_table [card_word (card)] |= (1 << card_bit (card));
+// }
+
+inline
+BOOL  gc_heap::card_set_p (size_t card)
+{
+    return ( card_table [ card_word (card) ] & (1 << card_bit (card)));
+}
+
+// Returns the number of DWORDs in the card table that cover the
+// range of addresses [from, end[.
+size_t count_card_of (uint8_t* from, uint8_t* end)
+{
+    return card_word (gcard_of (end - 1)) - card_word (gcard_of (from)) + 1;
+}
+
+// Returns the number of bytes to allocate for a card table
+// that covers the range of addresses [from, end[.
+size_t size_card_of (uint8_t* from, uint8_t* end)
+{
+    return count_card_of (from, end) * sizeof(uint32_t);
+}
+
+// #ifdef CARD_BUNDLE
+
+// // The card bundle keeps track of groups of card words.
+// /////// #define card_bundle_word_width ((size_t)32)
+// static const size_t card_bundle_word_width = 32;
+
+// // How do we express the fact that 32 bits (card_word_width) is one uint32_t?
+// #define card_bundle_size ((size_t)(OS_PAGE_SIZE/(sizeof (uint32_t)*card_bundle_word_width)))
+
+// inline
+// size_t card_bundle_word (size_t cardb)
+// {
+//     return cardb / card_bundle_word_width;
+// }
+
+// inline
+// uint32_t card_bundle_bit (size_t cardb)
+// {
+//     return (uint32_t)(cardb % card_bundle_word_width);
+// }
+
+// size_t align_cardw_on_bundle (size_t cardw)
+// {
+//     return ((size_t)(cardw + card_bundle_size - 1) & ~(card_bundle_size - 1 ));
+// }
+
+// // Get the card bundle representing a card word
+// size_t cardw_card_bundle (size_t cardw)
+// {
+//     return cardw / card_bundle_size;
+// }
+
+// // Get the first card word in a card bundle
+// size_t card_bundle_cardw (size_t cardb)
+// {
+//     return cardb * card_bundle_size;
+// }
+
+// // Clear the specified card bundle
+// void gc_heap::card_bundle_clear (size_t cardb)
+// {
+//     card_bundle_table [card_bundle_word (cardb)] &= ~(1 << card_bundle_bit (cardb));
+//     dprintf (3,("Cleared card bundle %Ix [%Ix, %Ix[", cardb, (size_t)card_bundle_cardw (cardb),
+//               (size_t)card_bundle_cardw (cardb+1)));
+// }
+
+// // Set the card bundle bits between start_cardb and end_cardb
+// void gc_heap::card_bundles_set (size_t start_cardb, size_t end_cardb)
+// {
+//     /// Added this part. Remove if not needed
+//     if (start_cardb == end_cardb)
+//     {
+//         card_bundle_table [card_bundle_word (start_cardb)] |= (1 << card_bundle_bit (start_cardb));
+//         return;
+//     }
+
+//     size_t start_word = card_bundle_word (start_cardb);
+//     size_t end_word = card_bundle_word (end_cardb);
+
+// ///////////// Compare the cost of doing this vs just setting the start and end stuff the same way whether the words are diff or not.
+//     if (start_word < end_word)
+//     {
+//         // Set the partial words
+//         card_bundle_table [start_word] |= highbits (~0u, card_bundle_bit (start_cardb));
+
+//         if (card_bundle_bit (end_cardb))
+//             card_bundle_table [end_word] |= lowbits (~0u, card_bundle_bit (end_cardb));
+
+//         // Set the full words
+//         for (size_t i = start_word + 1; i < end_word; i++)
+//             card_bundle_table [i] = ~0u;
+
+//     }
+//     else
+//     {
+//         card_bundle_table [start_word] |= (highbits (~0u, card_bundle_bit (start_cardb)) &
+//                                            lowbits (~0u, card_bundle_bit (end_cardb)));
+//     }
+
+// }
+
+// // Indicates whether the specified bundle is set.
+// BOOL gc_heap::card_bundle_set_p (size_t cardb)
+// {
+//     return (card_bundle_table[card_bundle_word(cardb)] & (1 << card_bundle_bit (cardb)));
+// }
+
+// // Returns the size (in bytes) of a card bundle representing the region from 'from' to 'end'
+// size_t size_card_bundle_of (uint8_t* from, uint8_t* end)
+// {
+//     size_t num_heap_bytes_represented_by_card_bundle_word = card_size*card_word_width*card_bundle_size*card_bundle_word_width;
+
+//     // Align the start of the region down
+//     from = (uint8_t*)((size_t)from & ~(num_heap_bytes_represented_by_card_bundle_word - 1));
+
+//     // Align the end of the region up
+//     end = (uint8_t*)((size_t)(end + (num_heap_bytes_represented_by_card_bundle_word - 1)) &
+//                   ~(num_heap_bytes_represented_by_card_bundle_word - 1));
+
+//     // Make sure they're really aligned
+//     assert (((size_t)from & (num_heap_bytes_represented_by_card_bundle_word - 1)) == 0);
+//     assert (((size_t)end  & (num_heap_bytes_represented_by_card_bundle_word - 1)) == 0);
+
+//     return ((end - from) / num_heap_bytes_represented_by_card_bundle_word) * sizeof (uint32_t);
+// }
+
+// /////DOCUMENT THIS
+// uint32_t* translate_card_bundle_table (uint32_t* cb)
+// {
+//     /////card_size*card_word_width*card_bundle_size*card_bundle_word_width is the number of bytes of heap mem represented by a card bundle word
+    
+//     ///// g_lowest_address divided by that gives us how many card bundles words into the card bundle table the card bundles word for the lowest address would be
+
+//     ///// each card bundle word is 32 bits, so multiplying by sizeof(32) gives us the number of bits into the card bundle table the word for the lowest address is
+
+//     ///// It looks like callers to this function are passing in the card bundle table for a card table as 'cb'. The value we return will thus represent the distance
+//     ///// (in bytes) between the card bundle word representing the lowest address and the address that's the current start the card bundle table. That delta will
+//     ///// then be used as the start of the card bundle table. This means that the first card bundle word in this "translated" table will be the one that represents
+//     ///// g_lowest_address.
+//     return (uint32_t*)((uint8_t*)cb - ((((size_t)g_gc_lowest_address) / (card_size*card_word_width*card_bundle_size*card_bundle_word_width)) * sizeof (uint32_t)));
+// }
+
+// void gc_heap::enable_card_bundles ()
+// {
+//     if (can_use_write_watch_for_card_table() && (!card_bundles_enabled()))
+//     {
+//         dprintf (3, ("Enabling card bundles"));
+//         //set all of the card bundles
+//         card_bundles_set (cardw_card_bundle (card_word (card_of (lowest_address))),
+//                           cardw_card_bundle (align_cardw_on_bundle (card_word (card_of (highest_address)))));
+//         settings.card_bundles = TRUE;
+//     }
+// }
+
+// BOOL gc_heap::card_bundles_enabled ()
+// {
+//     return settings.card_bundles;
+// }
+
+// #endif // CARD_BUNDLE
 
 // We don't store seg_mapping_table in card_table_info because there's only always one view.
 class card_table_info
@@ -19633,7 +19776,11 @@ void gc_heap::mark_phase (int condemned_gen_number, BOOL mark_only_p)
 #endif //MULTIPLE_HEAPS
 
                 ///////// THIS IS WHERE WE UPDATE THE CARD BUNDLE TABLE!!!
-                update_card_table_bundle ();
+                ///// We don't need to do this because in the case where we're not using os WW on the card table, every write to the CT
+                ///// is already tracked in the CB
+            // #ifndef ZZZZMYTHING  //// fix this
+            //     update_card_table_bundle ();
+            // #endif
 
 #ifdef MULTIPLE_HEAPS
                 gc_t_join.r_restart();

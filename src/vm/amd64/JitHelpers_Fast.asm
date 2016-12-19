@@ -27,6 +27,8 @@ EXTERN  g_lowest_address:QWORD
 EXTERN  g_highest_address:QWORD
 EXTERN  g_card_table:QWORD
 
+EXTERN  g_card_bundle:QWORD ;;;;;;;;;;
+
 ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
 EXTERN  g_sw_ww_table:QWORD
 EXTERN  g_sw_ww_enabled_for_gc_heap:BYTE
@@ -526,6 +528,7 @@ ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
         mov     byte ptr [rcx + rax], 0FFh
         ret
 
+;;;;; CARDBUNDLEUPDATE also update the card bundle here
     align 16
     Exit:
         REPRET
@@ -573,6 +576,7 @@ else
         mov     byte ptr [rcx + rax], 0FFh
         ret
 
+;;;;; CARDBUNDLEUPDATE also update the card bundle here
     align 16
     Exit:
         REPRET
@@ -759,6 +763,8 @@ endif
     UpdateCardTable:
         mov     byte ptr [rcx], 0FFh
         ret
+
+        ;;;;; CARDBUNDLEUPDATE also update the card bundle here
 
     align 16
     NotInHeap:

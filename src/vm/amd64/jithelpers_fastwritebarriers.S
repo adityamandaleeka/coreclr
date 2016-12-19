@@ -42,6 +42,8 @@ PATCH_LABEL JIT_WriteBarrier_PreGrow64_Patch_Label_CardTable
         mov     byte ptr [rdi + rax], 0FFh
         ret
 
+        /// CARDBUNDLEUPDATE also update the card bundle here
+
     .balign 16
     Exit_PreGrow64:
         REPRET
@@ -97,6 +99,8 @@ PATCH_LABEL JIT_WriteBarrier_PostGrow64_Patch_Label_CardTable
         mov     byte ptr [rdi + rax], 0FFh
         ret
 
+        ////// CARDBUNDLEUPDATE also update the card bundle here
+
     .balign 16
     Exit_PostGrow64:
         REPRET
@@ -135,6 +139,8 @@ PATCH_LABEL JIT_WriteBarrier_SVR64_PatchLabel_CardTable
     UpdateCardTable_SVR64:
         mov     byte ptr [rdi + rax], 0FFh
         ret
+
+        ///// CARDBUNDLEUPDATE also update the card bundle here
 LEAF_END_MARKED JIT_WriteBarrier_SVR64, _TEXT
 
 #endif
@@ -191,6 +197,7 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_PreGrow64_Patch_Label_CardTable
         mov     byte ptr [rdi + rax], 0FFh
         ret
 
+///// CARDBUNDLEUPDATE also update the card bundle here
     .balign 16
     Exit_WriteWatch_PreGrow64:
         REPRET
@@ -258,7 +265,7 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_PostGrow64_Patch_Label_CardTable
     UpdateCardTable_WriteWatch_PostGrow64:
         mov     byte ptr [rdi + rax], 0FFh
         ret
-
+///// CARDBUNDLEUPDATE also update the card bundle here
     .balign 16
     Exit_WriteWatch_PostGrow64:
         REPRET
@@ -313,6 +320,8 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_SVR64_PatchLabel_CardTable
     UpdateCardTable_WriteWatch_SVR64:
         mov     byte ptr [rdi + r11], 0FFh
         ret
+
+        ///// CARDBUNDLEUPDATE also update the card bundle here
 LEAF_END_MARKED JIT_WriteBarrier_WriteWatch_SVR64, _TEXT
 
 #endif
