@@ -119,6 +119,7 @@ extern "C" {
 GPTR_DECL(uint8_t,g_lowest_address);
 GPTR_DECL(uint8_t,g_highest_address);
 GPTR_DECL(uint32_t,g_card_table);
+GPTR_DECL(uint32_t,g_card_bundle_table); ////
 #ifndef DACCESS_COMPILE
 } 
 #endif // !DACCESS_COMPILE

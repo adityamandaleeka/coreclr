@@ -27,7 +27,7 @@ EXTERN  g_lowest_address:QWORD
 EXTERN  g_highest_address:QWORD
 EXTERN  g_card_table:QWORD
 
-EXTERN  g_card_bundle:QWORD ;;;;;;;;;;
+EXTERN  g_card_bundle_table:QWORD ;;;;;;;;;;
 
 ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
 EXTERN  g_sw_ww_table:QWORD
@@ -526,9 +526,11 @@ ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
 
     UpdateCardTable:
         mov     byte ptr [rcx + rax], 0FFh
+
+        ;;;;; CARDBUNDLEUPDATE also update the card bundle here
+
         ret
 
-;;;;; CARDBUNDLEUPDATE also update the card bundle here
     align 16
     Exit:
         REPRET

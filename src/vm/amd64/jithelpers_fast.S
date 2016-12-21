@@ -65,6 +65,37 @@ LEAF_ENTRY JIT_WriteBarrier, _TEXT
 #ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
         // JIT_WriteBarrier_WriteWatch_PostGrow64
 
+        /// adding these just to make this WB big until all the CB stuff is added
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+NOP_2_BYTE
+
+
         // Regarding patchable constants:
         // - 64-bit constants have to be loaded into a register
         // - The constants have to be aligned to 8 bytes so that they can be patched easily
@@ -119,6 +150,8 @@ LEAF_ENTRY JIT_WriteBarrier, _TEXT
 
     UpdateCardTable:
         mov     byte ptr [rdi + rax], 0FFh
+
+        /////// CARDBUNDLE UPDATE
         ret
 
     .balign 16
@@ -169,6 +202,8 @@ LEAF_ENTRY JIT_WriteBarrier, _TEXT
 
     UpdateCardTable:
         mov     byte ptr [rdi + rax], 0FFh
+
+        /////// CARDBUNDLE UPDATE CARD BUNDLE
         ret
 
     .balign 16
@@ -300,6 +335,9 @@ LEAF_ENTRY JIT_ByRefWriteBarrier, _TEXT
         add     rsi, 8h
         add     rdi, 8h
 
+        ///// also move rcx into rdx because we're going to shift rcx
+        mov     rdx, rcx
+
         // Check if we need to update the card table
         // Calc pCardByte
         shr     rcx, 0x0B
@@ -313,6 +351,21 @@ LEAF_ENTRY JIT_ByRefWriteBarrier, _TEXT
 
     UpdateCardTable_ByRefWriteBarrier:
         mov     byte ptr [rcx], 0FFh
+        
+        ///////// CARDBUNDLE UPDATE CARD BUNDLE
+        // addr >> 0x15 is the card bundle byte for addr
+        shr     rdx, 0x15
+        PREPARE_EXTERNAL_VAR g_card_bundle_table, rax
+        add     rdx, [rax]
+
+        // Check if this bundle byte is dirty
+        cmp     byte ptr [rdx], 0FFh
+        jne     UpdateCardBundle_ByRefWriteBarrier
+        REPRET
+
+    UpdateCardBundle_ByRefWriteBarrier:
+        mov     byte ptr [rdx], 0FFh
+
         ret
 
     .balign 16

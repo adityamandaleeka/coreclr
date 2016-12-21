@@ -2188,7 +2188,10 @@ void stomp_write_barrier_resize(bool is_runtime_suspended, bool requires_upper_b
     args.operation = WriteBarrierOp::StompResize;
     args.is_runtime_suspended = is_runtime_suspended;
     args.requires_upper_bounds_check = requires_upper_bounds_check;
+    
     args.card_table = g_gc_card_table;
+    args.card_bundle_table = g_gc_card_bundle_table;
+
     args.lowest_address = g_gc_lowest_address;
     args.highest_address = g_gc_highest_address;
     GCToEEInterface::StompWriteBarrier(&args);
@@ -2221,7 +2224,10 @@ void stomp_write_barrier_initialize()
     args.operation = WriteBarrierOp::Initialize;
     args.is_runtime_suspended = true;
     args.requires_upper_bounds_check = false;
+    
     args.card_table = g_gc_card_table;
+    args.card_bundle_table = g_gc_card_bundle_table;
+
     args.lowest_address = g_gc_lowest_address;
     args.highest_address = g_gc_highest_address;
     GCToEEInterface::StompWriteBarrier(&args);
@@ -7077,6 +7083,7 @@ void release_card_table (uint32_t* c_table)
             if (&g_gc_card_table[card_word (gcard_of(g_gc_lowest_address))] == c_table)
             {
                 g_gc_card_table = 0;
+                g_gc_card_bundle_table = 0;
 #ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
                 SoftwareWriteWatch::StaticClose();
 #endif // FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
@@ -7222,7 +7229,8 @@ uint32_t* gc_heap::make_card_table (uint8_t* start, uint8_t* end)
         card_table_mark_array (ct) = NULL;
 #endif //MARK_ARRAY
 
-    return translate_card_table(ct);
+    // return translate_card_table(ct);
+    return ct;
 }
 
 void gc_heap::set_fgm_result (failure_get_memory f, size_t s, BOOL loh_p)
@@ -7491,6 +7499,8 @@ int gc_heap::grow_brick_card_tables (uint8_t* start,
             }
 
             g_gc_card_table = translated_ct;
+            g_gc_card_bundle_table = translate_card_bundle_table(card_table_card_bundle_table(ct));///
+
             g_gc_lowest_address = saved_g_lowest_address;
             g_gc_highest_address = saved_g_highest_address;
 
@@ -7516,6 +7526,7 @@ int gc_heap::grow_brick_card_tables (uint8_t* start,
 #endif // FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
         {
             g_gc_card_table = translated_ct;
+            g_gc_card_bundle_table = translate_card_bundle_table(card_table_card_bundle_table(ct));///
         }
 
         g_gc_lowest_address = saved_g_lowest_address;
@@ -10091,7 +10102,13 @@ HRESULT gc_heap::initialize_gc (size_t segment_size,
 
     settings.first_init();
 
-    g_gc_card_table = make_card_table (g_gc_lowest_address, g_gc_highest_address);
+    uint32_t* untranslated_card_table = make_card_table (g_gc_lowest_address, g_gc_highest_address);
+
+#ifdef CARD_BUNDLE
+    g_gc_card_bundle_table = translate_card_bundle_table(card_table_card_bundle_table(untranslated_card_table));
+#endif
+
+    g_gc_card_table = translate_card_table(untranslated_card_table);
 
     if (!g_gc_card_table)
         return E_OUTOFMEMORY;
@@ -33601,6 +33618,7 @@ HRESULT GCHeap::Shutdown ()
     {
         destroy_card_table (ct);
         g_gc_card_table = 0;
+        g_gc_card_bundle_table = 0;
 #ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
         SoftwareWriteWatch::StaticClose();
 #endif // FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
@@ -36071,6 +36089,12 @@ GCHeap::SetCardsAfterBulkCopy( Object **StartPoint, size_t len )
             Interlocked::Or (&g_gc_card_table[card/card_word_width], (1U << (card % card_word_width)));
             // Skip to next card for the object
             rover = (Object**)align_on_card ((uint8_t*)(rover+1));
+
+
+
+
+
+            ////////////// UPDATE CARD BUNDLE HERE???
         }
         else
         {
