@@ -1274,6 +1274,7 @@ extern "C" HCIMPL2_RAW(VOID, JIT_CheckedWriteBarrier, Object **dst, Object *ref)
 #endif
             *pCardByte = 0xFF;
 
+            printf("JIT_CheckedWriteBarrier skadjhfkjs\n");
             ////// ZZZZZ UPDATE BUNDLE
             /// g_card_bundle_table [kjdkjashd]
         }

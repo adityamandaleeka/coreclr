@@ -91,7 +91,8 @@ PATCH_LABEL JIT_WriteBarrier_PostGrow64_Patch_Label_Lower
 
         // Check the lower and upper ephemeral region bounds
         cmp     rsi, rax
-        .byte 0x72,0x33
+        ///.byte 0x72,0x33
+        .byte 0x72,0x53
         // jb      Exit_PostGrow64
 
         nop // padding for alignment of constant
@@ -100,7 +101,8 @@ PATCH_LABEL JIT_WriteBarrier_PostGrow64_Patch_Label_Upper
         movabs  r8, 0xF0F0F0F0F0F0F0F0
 
         cmp     rsi, r8
-        .byte 0x73,0x23
+        ///.byte 0x73,0x23
+        .byte 0x73,0x43
         // jae     Exit_PostGrow64
 
         nop // padding for alignment of constant
@@ -177,9 +179,12 @@ PATCH_LABEL JIT_WriteBarrier_SVR64_PatchLabel_CardTable
 
     UpdateCardTable_SVR64:
         mov     byte ptr [rdi + rax], 0FFh
+        
+        ///// CARDBUNDLEUPDATE also update the card bundle here
+        cmp     byte ptr [0], 0FFh
+
         ret
 
-        ///// CARDBUNDLEUPDATE also update the card bundle here
 LEAF_END_MARKED JIT_WriteBarrier_SVR64, _TEXT
 
 #endif
@@ -219,7 +224,8 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_PreGrow64_Patch_Label_Lower
     CheckCardTable_WriteWatch_PreGrow64:
         // Check the lower ephemeral region bound.
         cmp     rsi, r11
-        .byte 0x72, 0x20
+        ////.byte 0x72, 0x20
+        .byte 0x72, 0x48
         // jb      Exit_WriteWatch_PreGrow64
 
         // Touch the card table entry, if not already dirty.
@@ -292,7 +298,8 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_PostGrow64_Patch_Label_Lower
         // Check the lower and upper ephemeral region bounds
     CheckCardTable_WriteWatch_PostGrow64:
         cmp     rsi, r11
-        .byte 0x72, 0x3d
+        ////.byte 0x72, 0x3d
+        .byte 0x72, 0x55
         // jb      Exit_WriteWatch_PostGrow64
 
         NOP_3_BYTE // padding for alignment of constant
@@ -301,7 +308,8 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_PostGrow64_Patch_Label_Upper
         movabs  r10, 0xF0F0F0F0F0F0F0F0
 
         cmp     rsi, r10
-        .byte 0x73, 0x2b
+        ////.byte 0x73, 0x2b
+        .byte 0x73, 0x43
         // jae     Exit_WriteWatch_PostGrow64
 
         nop // padding for alignment of constant
@@ -355,7 +363,7 @@ LEAF_ENTRY JIT_WriteBarrier_WriteWatch_SVR64, _TEXT
         //
         // SVR GC has multiple heaps, so it cannot provide one single 
         // ephemeral region to bounds check against, so we just skip the
-        // bounds checking all together and do our card table update 
+        // bounds checking altogether and do our card table update 
         // unconditionally.
         //
 
@@ -388,9 +396,13 @@ PATCH_LABEL JIT_WriteBarrier_WriteWatch_SVR64_PatchLabel_CardTable
 
     UpdateCardTable_WriteWatch_SVR64:
         mov     byte ptr [rdi + r11], 0FFh
-        ret
 
         ///// CARDBUNDLEUPDATE also update the card bundle here
+        cmp     byte ptr [0], 0FFh
+
+
+        ret
+
 LEAF_END_MARKED JIT_WriteBarrier_WriteWatch_SVR64, _TEXT
 
 #endif

@@ -7214,7 +7214,6 @@ uint32_t* gc_heap::make_card_table (uint8_t* start, uint8_t* end)
 #endif // FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
 
 
-    ///// INITIALIZE CARD BUNDLE HERE ?
 
 #ifdef GROWABLE_SEG_MAPPING_TABLE
     seg_mapping_table = (seg_mapping*)(mem + st_table_offset_aligned);
@@ -7592,7 +7591,6 @@ void gc_heap::copy_brick_card_range (uint8_t* la, uint32_t* old_card_table,
 {
     ptrdiff_t brick_offset = brick_of (start) - brick_of (la);
 
-
     dprintf (2, ("copying tables for range [%Ix %Ix[", (size_t)start, (size_t)end));
 
     // copy brick table
@@ -7602,7 +7600,6 @@ void gc_heap::copy_brick_card_range (uint8_t* la, uint32_t* old_card_table,
         // segments are always on page boundaries
         memcpy (brick_start, &old_brick_table[brick_offset],
                 size_brick_of (start, end));
-
     }
     else
     {
@@ -7663,6 +7660,10 @@ void gc_heap::copy_brick_card_range (uint8_t* la, uint32_t* old_card_table,
             ptrdiff_t count = count_card_of (start, end);
             for (int x = 0; x < count; x++)
             {
+                printf("asdklfjsadfl copy_brick_card_range \n");
+                //// think about this. for now just set all the bundles on for the dest words
+                card_bundles_set(cardw_card_bundle(card_word(card_of(start))), cardw_card_bundle( align_cardw_on_bundle(card_word(card_of(end)))));
+
                 *dest |= *src;
                 dest++;
                 src++;
@@ -7675,7 +7676,7 @@ void gc_heap::copy_brick_card_range (uint8_t* la, uint32_t* old_card_table,
 //initialize all of the arrays managed by the card table for a page aligned range when an existing ro segment becomes in range
 void gc_heap::init_brick_card_range (heap_segment* seg)
 {
-    dprintf (2, ("initialising tables for range [%Ix %Ix[",
+    dprintf (2, ("initializing tables for range [%Ix %Ix[",
                  (size_t)heap_segment_mem (seg),
                  (size_t)heap_segment_allocated (seg)));
 
@@ -7710,6 +7711,7 @@ void gc_heap::copy_brick_card_table()
     assert (la == card_table_lowest_address (&old_card_table[card_word (card_of (la))]));
     assert (ha == card_table_highest_address (&old_card_table[card_word (card_of (la))]));
 
+verify_card_bundles_are_consistent();
     /* todo: Need a global lock for this */
     uint32_t* ct = &g_gc_card_table[card_word (gcard_of (g_gc_lowest_address))];
     own_card_table (ct);
@@ -7719,6 +7721,8 @@ void gc_heap::copy_brick_card_table()
     lowest_address = card_table_lowest_address (ct);
 
     brick_table = card_table_brick_table (ct);
+
+verify_card_bundles_are_consistent();
 
 #ifdef MARK_ARRAY
     if (gc_can_use_concurrent)
@@ -9577,6 +9581,82 @@ inline void gc_heap::verify_card_bundle_bits_set(size_t first_card_word, size_t 
 #endif
 }
 
+// Verifies that:
+// - Any bundles that are not set represent only cards that are not set.
+//////////////// - Any bundles that are set represent at least one card that is set. zzzzzzremove
+inline void gc_heap::verify_card_bundles_are_consistent()
+{
+#ifdef _DEBUG
+    size_t lowest_card = card_word (card_of (lowest_address));
+    size_t highest_card = card_word (card_of (highest_address));
+    size_t cardb = cardw_card_bundle (lowest_card);
+    size_t end_cardb = cardw_card_bundle (align_cardw_on_bundle (highest_card));
+
+    while (cardb < end_cardb)
+    {
+        uint32_t* card_word = &card_table[max(card_bundle_cardw (cardb), lowest_card)];
+        uint32_t* card_word_end = &card_table[min(card_bundle_cardw (cardb+1), highest_card)];
+
+        //////////
+        uint32_t num_words_represented = (uint32_t)(card_word_end - card_word);
+        uint32_t *zlower_bound = card_word;
+        uint32_t *zupper_bound = card_word_end;
+
+        if (card_bundle_set_p (cardb) == 0)
+        {
+            // Verify that no card is set
+            while (card_word < card_word_end)
+            {
+                if (*card_word != 0)
+                {
+                    dprintf  (3, ("gc: %d, Card word %Ix for address %Ix set, card_bundle %Ix clear",
+                            dd_collection_count (dynamic_data_of (0)), 
+                            (size_t)(card_word-&card_table[0]),
+                            (size_t)(card_address ((size_t)(card_word-&card_table[0]) * card_word_width)), cardb));
+
+                    ///////// REMOVE THIS
+                    // card_bundles_set(cardb, cardb);
+                    ///////////
+
+                    ////////////
+                    printf("THE WORD IS %d IN FROM THE LOWER BOUND", (int)(card_word - zlower_bound));
+
+
+                }
+
+                assert((*card_word)==0);//////// REENABLE THIS
+                card_word++;
+            }
+        }
+        // else /////// MAYBE THIS SHOULDN'T BE CHECKED
+        // {
+        //     // Verify that at least one card is set
+        //     bool found_set_card = false;
+        //     while (card_word < card_word_end)
+        //     {
+        //         if (*card_word != 0)
+        //         {
+        //             found_set_card = true;
+        //             break;
+        //         }
+
+        //         card_word++;
+        //     }
+
+        //     if (!found_set_card)
+        //     {
+        //         dprintf (3, ("gc: %d, Card bundle %Ix is set, but none of its cards are set.",
+        //                 dd_collection_count (dynamic_data_of (0)), cardb));
+        //     }
+
+        // }
+
+        //end of verification
+        cardb++;
+    }
+#endif
+}
+
 // If card bundles are enabled, use write watch to find pages in the card table that have 
 // been dirtied, and set the corresponding card bundle bits.
 void gc_heap::update_card_table_bundle()
@@ -9641,39 +9721,40 @@ void gc_heap::update_card_table_bundle()
         // Now that we've updated the card bundle bits, reset the write-tracking state. 
         GCToOSInterface::ResetWriteWatch (saved_base_address, saved_region_size);
 
-#ifdef _DEBUG
-        size_t lowest_card = card_word (card_of (lowest_address));
-        size_t highest_card = card_word (card_of (highest_address));
-        size_t cardb = cardw_card_bundle (lowest_card);
-        size_t end_cardb = cardw_card_bundle (align_cardw_on_bundle (highest_card));
+        verify_card_bundles_are_consistent();
+// #ifdef _DEBUG
+        // size_t lowest_card = card_word (card_of (lowest_address));
+        // size_t highest_card = card_word (card_of (highest_address));
+        // size_t cardb = cardw_card_bundle (lowest_card);
+        // size_t end_cardb = cardw_card_bundle (align_cardw_on_bundle (highest_card));
 
-        // Find a non null bundle
-        while (cardb < end_cardb)
-        {
-            if (card_bundle_set_p (cardb) == 0)
-            {
-                // Verify that the cards are indeed empty
-                uint32_t* card_word = &card_table[max(card_bundle_cardw (cardb), lowest_card)];
-                uint32_t* card_word_end = &card_table[min(card_bundle_cardw (cardb+1), highest_card)];
-                while (card_word < card_word_end)
-                {
-                    if (*card_word != 0)
-                    {
-                        dprintf  (3, ("gc: %d, Card word %Ix for address %Ix set, card_bundle %Ix clear",
-                                dd_collection_count (dynamic_data_of (0)), 
-                                (size_t)(card_word-&card_table[0]),
-                                (size_t)(card_address ((size_t)(card_word-&card_table[0]) * card_word_width)), cardb));
-                    }
+        // // Find a non null bundle
+        // while (cardb < end_cardb)
+        // {
+        //     if (card_bundle_set_p (cardb) == 0)
+        //     {
+        //         // Verify that the cards are indeed empty
+        //         uint32_t* card_word = &card_table[max(card_bundle_cardw (cardb), lowest_card)];
+        //         uint32_t* card_word_end = &card_table[min(card_bundle_cardw (cardb+1), highest_card)];
+        //         while (card_word < card_word_end)
+        //         {
+        //             if (*card_word != 0)
+        //             {
+        //                 dprintf  (3, ("gc: %d, Card word %Ix for address %Ix set, card_bundle %Ix clear",
+        //                         dd_collection_count (dynamic_data_of (0)), 
+        //                         (size_t)(card_word-&card_table[0]),
+        //                         (size_t)(card_address ((size_t)(card_word-&card_table[0]) * card_word_width)), cardb));
+        //             }
 
-                    assert((*card_word)==0);
-                    card_word++;
-                }
-            }
+        //             assert((*card_word)==0);
+        //             card_word++;
+        //         }
+        //     }
 
-            //end of verification
-            cardb++;
-        }
-#endif //_DEBUG
+        //     //end of verification
+        //     cardb++;
+        // }
+// #endif //_DEBUG
     }
 }
 #endif //CARD_BUNDLE
@@ -9692,9 +9773,6 @@ void gc_heap::reset_write_watch_for_gc_heap(void* base_address, size_t region_si
 void gc_heap::get_write_watch_for_gc_heap(bool reset, void *base_address, size_t region_size, void** dirty_pages, uintptr_t* dirty_page_count_ref, bool is_runtime_suspended)
 {
 #ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
-
-    ///// IF CARD BUNDLE IS ENABLED, USE THAT TO CHECK THE DIRTY STUFF
-
     SoftwareWriteWatch::GetDirty(base_address, region_size, dirty_pages, dirty_page_count_ref, reset, is_runtime_suspended);
 #else // !FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
     UNREFERENCED_PARAMETER(is_runtime_suspended);
@@ -18855,6 +18933,9 @@ void gc_heap::fix_card_table ()
                 dprintf (2,("Set Cards [%Ix:%Ix, %Ix:%Ix[",
                       card_of (g_addresses [i]), (size_t)g_addresses [i],
                       card_of (g_addresses [i]+OS_PAGE_SIZE), (size_t)g_addresses [i]+OS_PAGE_SIZE));
+
+                //// CARDBUNDLE UPDATE CARD BUNDLE???
+printf("GOT HERE fix_card_table \n ");
             }
 
             if (bcount >= array_size){
@@ -19792,6 +19873,7 @@ void gc_heap::mark_phase (int condemned_gen_number, BOOL mark_only_p)
             {
 #endif //MULTIPLE_HEAPS
 
+                verify_card_bundles_are_consistent(); ///////// 
                 ///////// THIS IS WHERE WE UPDATE THE CARD BUNDLE TABLE!!!
                 ///// We don't need to do this because in the case where we're not using os WW on the card table, every write to the CT
                 ///// is already tracked in the CB
@@ -26654,6 +26736,7 @@ void gc_heap::revisit_written_pages (BOOL concurrent_p, BOOL reset_only_p)
                         {
     #ifdef NO_WRITE_BARRIER
                             card_table [card_word (card_of (background_written_addresses [i]))] = ~0u;
+                        printf("asdlfhasdkjf \n");
                             dprintf (3,("Set Cards [%p:%p, %p:%p[",
                                         card_of (background_written_addresses [i]), g_addresses [i],
                                         card_of (background_written_addresses [i]+OS_PAGE_SIZE), background_written_addresses [i]+OS_PAGE_SIZE));
@@ -27240,8 +27323,10 @@ void gc_heap::clear_card_for_addresses (uint8_t* start_address, uint8_t* end_add
 // copy [srccard, ...[ to [dst_card, end_card[
 // This will set the same bit twice. Can be optimized.
 inline
-void gc_heap::copy_cards (size_t dst_card, size_t src_card,
-                 size_t end_card, BOOL nextp)
+void gc_heap::copy_cards (size_t dst_card,
+                          size_t src_card,
+                          size_t end_card, 
+                          BOOL nextp)
 {
     // If the range is empty, this function is a no-op - with the subtlety that
     // either of the accesses card_table[srcwrd] or card_table[dstwrd] could be
@@ -27255,22 +27340,26 @@ void gc_heap::copy_cards (size_t dst_card, size_t src_card,
     size_t dstwrd = card_word (dst_card);
     unsigned int srctmp = card_table[srcwrd];
     unsigned int dsttmp = card_table[dstwrd];
+
     for (size_t card = dst_card; card < end_card; card++)
     {
         if (srctmp & (1 << srcbit))
             dsttmp |= 1 << dstbit;
         else
             dsttmp &= ~(1 << dstbit);
+
         if (!(++srcbit % 32))
         {
             srctmp = card_table[++srcwrd];
             srcbit = 0;
         }
+
         if (nextp)
         {
             if (srctmp & (1 << srcbit))
                 dsttmp |= 1 << dstbit;
         }
+
         if (!(++dstbit % 32))
         {
             card_table[dstwrd] = dsttmp;
@@ -27279,7 +27368,17 @@ void gc_heap::copy_cards (size_t dst_card, size_t src_card,
             dstbit = 0;
         }
     }
+
     card_table[dstwrd] = dsttmp;
+
+    ////////// CARDBUNDLE UPDATE CARD BUNDLE 
+    // update the bundles here in an efficient way
+    // printf("copy_cards \n");
+    if (dsttmp != 0)
+    {
+        size_t bundle_to_set = cardw_card_bundle(dstwrd);
+        card_bundles_set(bundle_to_set, bundle_to_set);
+    }
 }
 
 void gc_heap::copy_cards_for_addresses (uint8_t* dest, uint8_t* src, size_t len)
@@ -27340,6 +27439,13 @@ void gc_heap::copy_cards_for_addresses (uint8_t* dest, uint8_t* src, size_t len)
 
     if (card_set_p (card_of (src + len - 1)))
         set_card (end_dest_card);
+
+
+    //////////////
+    card_bundles_set(cardw_card_bundle(card_word(start_dest_card)), cardw_card_bundle( align_cardw_on_bundle(card_word(end_dest_card))));
+
+    verify_card_bundles_are_consistent();///
+    //////////////
 }
 
 #ifdef BACKGROUND_GC
@@ -36092,7 +36198,7 @@ GCHeap::SetCardsAfterBulkCopy( Object **StartPoint, size_t len )
 
 
 
-
+printf("GOT HERE SetCardsAfterBulkCopy \n");
 
             ////////////// UPDATE CARD BUNDLE HERE???
         }

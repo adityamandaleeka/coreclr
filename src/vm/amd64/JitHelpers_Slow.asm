@@ -157,6 +157,9 @@ endif
 
     UpdateCardTable:
         mov     byte ptr [rcx], 0FFh
+
+        ;;;;
+        mov     byte ptr [0h], 0FFh        
         ret
 
 ;;;;; CARDBUNDLEUPDATE also update the card bundle here

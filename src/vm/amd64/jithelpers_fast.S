@@ -152,6 +152,8 @@ NOP_2_BYTE
         mov     byte ptr [rdi + rax], 0FFh
 
         /////// CARDBUNDLE UPDATE
+        cmp     byte ptr [0], 0FFh
+
         ret
 
     .balign 16
@@ -204,6 +206,8 @@ NOP_2_BYTE
         mov     byte ptr [rdi + rax], 0FFh
 
         /////// CARDBUNDLE UPDATE CARD BUNDLE
+        cmp     byte ptr [0], 0FFh
+        
         ret
 
     .balign 16

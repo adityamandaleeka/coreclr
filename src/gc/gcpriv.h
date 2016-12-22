@@ -1722,6 +1722,8 @@ protected:
     PER_HEAP
     void verify_card_bundle_bits_set(size_t first_card_word, size_t last_card_word);
     PER_HEAP
+    void verify_card_bundles_are_consistent();
+    PER_HEAP
     BOOL card_bundle_set_p (size_t cardb);
     PER_HEAP
     BOOL find_card_dword (size_t& cardw, size_t cardw_end);
