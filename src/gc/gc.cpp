@@ -3987,26 +3987,12 @@ inline size_t unused_array_size(uint8_t * p)
 
 heap_segment* heap_segment_rw (heap_segment* ns)
 {
-
     while (ns != nullptr && heap_segment_read_only_p (ns))
     {
         ns = heap_segment_next (ns);
     }
 
     return ns;
-
-    // if ((ns == 0) || !heap_segment_read_only_p (ns))
-    // {
-    //     return ns;
-    // }
-    // else
-    // {
-    //     do
-    //     {
-    //         ns = heap_segment_next (ns);
-    //     } while ((ns != 0) && heap_segment_read_only_p (ns));
-    //     return ns;
-    // }
 }
 
 //returns the next non ro segment.
@@ -6360,11 +6346,11 @@ void gc_heap::card_bundle_clear (size_t cardb)
 void gc_heap::card_bundles_set (size_t start_cardb, size_t end_cardb)
 {
     /// Added this part. Remove if not needed
-    if (start_cardb == end_cardb)
-    {
-        card_bundle_table [card_bundle_word (start_cardb)] |= (1 << card_bundle_bit (start_cardb));
-        return;
-    }
+    // if (start_cardb == end_cardb)
+    // {
+    //     card_bundle_table [card_bundle_word (start_cardb)] |= (1 << card_bundle_bit (start_cardb));
+    //     return;
+    // }
 
     size_t start_word = card_bundle_word (start_cardb);
     size_t end_word = card_bundle_word (end_cardb);
@@ -6619,147 +6605,6 @@ size_t size_card_of (uint8_t* from, uint8_t* end)
 {
     return count_card_of (from, end) * sizeof(uint32_t);
 }
-
-// #ifdef CARD_BUNDLE
-
-// // The card bundle keeps track of groups of card words.
-// /////// #define card_bundle_word_width ((size_t)32)
-// static const size_t card_bundle_word_width = 32;
-
-// // How do we express the fact that 32 bits (card_word_width) is one uint32_t?
-// #define card_bundle_size ((size_t)(OS_PAGE_SIZE/(sizeof (uint32_t)*card_bundle_word_width)))
-
-// inline
-// size_t card_bundle_word (size_t cardb)
-// {
-//     return cardb / card_bundle_word_width;
-// }
-
-// inline
-// uint32_t card_bundle_bit (size_t cardb)
-// {
-//     return (uint32_t)(cardb % card_bundle_word_width);
-// }
-
-// size_t align_cardw_on_bundle (size_t cardw)
-// {
-//     return ((size_t)(cardw + card_bundle_size - 1) & ~(card_bundle_size - 1 ));
-// }
-
-// // Get the card bundle representing a card word
-// size_t cardw_card_bundle (size_t cardw)
-// {
-//     return cardw / card_bundle_size;
-// }
-
-// // Get the first card word in a card bundle
-// size_t card_bundle_cardw (size_t cardb)
-// {
-//     return cardb * card_bundle_size;
-// }
-
-// // Clear the specified card bundle
-// void gc_heap::card_bundle_clear (size_t cardb)
-// {
-//     card_bundle_table [card_bundle_word (cardb)] &= ~(1 << card_bundle_bit (cardb));
-//     dprintf (3,("Cleared card bundle %Ix [%Ix, %Ix[", cardb, (size_t)card_bundle_cardw (cardb),
-//               (size_t)card_bundle_cardw (cardb+1)));
-// }
-
-// // Set the card bundle bits between start_cardb and end_cardb
-// void gc_heap::card_bundles_set (size_t start_cardb, size_t end_cardb)
-// {
-//     /// Added this part. Remove if not needed
-//     if (start_cardb == end_cardb)
-//     {
-//         card_bundle_table [card_bundle_word (start_cardb)] |= (1 << card_bundle_bit (start_cardb));
-//         return;
-//     }
-
-//     size_t start_word = card_bundle_word (start_cardb);
-//     size_t end_word = card_bundle_word (end_cardb);
-
-// ///////////// Compare the cost of doing this vs just setting the start and end stuff the same way whether the words are diff or not.
-//     if (start_word < end_word)
-//     {
-//         // Set the partial words
-//         card_bundle_table [start_word] |= highbits (~0u, card_bundle_bit (start_cardb));
-
-//         if (card_bundle_bit (end_cardb))
-//             card_bundle_table [end_word] |= lowbits (~0u, card_bundle_bit (end_cardb));
-
-//         // Set the full words
-//         for (size_t i = start_word + 1; i < end_word; i++)
-//             card_bundle_table [i] = ~0u;
-
-//     }
-//     else
-//     {
-//         card_bundle_table [start_word] |= (highbits (~0u, card_bundle_bit (start_cardb)) &
-//                                            lowbits (~0u, card_bundle_bit (end_cardb)));
-//     }
-
-// }
-
-// // Indicates whether the specified bundle is set.
-// BOOL gc_heap::card_bundle_set_p (size_t cardb)
-// {
-//     return (card_bundle_table[card_bundle_word(cardb)] & (1 << card_bundle_bit (cardb)));
-// }
-
-// // Returns the size (in bytes) of a card bundle representing the region from 'from' to 'end'
-// size_t size_card_bundle_of (uint8_t* from, uint8_t* end)
-// {
-//     size_t num_heap_bytes_represented_by_card_bundle_word = card_size*card_word_width*card_bundle_size*card_bundle_word_width;
-
-//     // Align the start of the region down
-//     from = (uint8_t*)((size_t)from & ~(num_heap_bytes_represented_by_card_bundle_word - 1));
-
-//     // Align the end of the region up
-//     end = (uint8_t*)((size_t)(end + (num_heap_bytes_represented_by_card_bundle_word - 1)) &
-//                   ~(num_heap_bytes_represented_by_card_bundle_word - 1));
-
-//     // Make sure they're really aligned
-//     assert (((size_t)from & (num_heap_bytes_represented_by_card_bundle_word - 1)) == 0);
-//     assert (((size_t)end  & (num_heap_bytes_represented_by_card_bundle_word - 1)) == 0);
-
-//     return ((end - from) / num_heap_bytes_represented_by_card_bundle_word) * sizeof (uint32_t);
-// }
-
-// /////DOCUMENT THIS
-// uint32_t* translate_card_bundle_table (uint32_t* cb)
-// {
-//     /////card_size*card_word_width*card_bundle_size*card_bundle_word_width is the number of bytes of heap mem represented by a card bundle word
-    
-//     ///// g_lowest_address divided by that gives us how many card bundles words into the card bundle table the card bundles word for the lowest address would be
-
-//     ///// each card bundle word is 32 bits, so multiplying by sizeof(32) gives us the number of bits into the card bundle table the word for the lowest address is
-
-//     ///// It looks like callers to this function are passing in the card bundle table for a card table as 'cb'. The value we return will thus represent the distance
-//     ///// (in bytes) between the card bundle word representing the lowest address and the address that's the current start the card bundle table. That delta will
-//     ///// then be used as the start of the card bundle table. This means that the first card bundle word in this "translated" table will be the one that represents
-//     ///// g_lowest_address.
-//     return (uint32_t*)((uint8_t*)cb - ((((size_t)g_gc_lowest_address) / (card_size*card_word_width*card_bundle_size*card_bundle_word_width)) * sizeof (uint32_t)));
-// }
-
-// void gc_heap::enable_card_bundles ()
-// {
-//     if (can_use_write_watch_for_card_table() && (!card_bundles_enabled()))
-//     {
-//         dprintf (3, ("Enabling card bundles"));
-//         //set all of the card bundles
-//         card_bundles_set (cardw_card_bundle (card_word (card_of (lowest_address))),
-//                           cardw_card_bundle (align_cardw_on_bundle (card_word (card_of (highest_address)))));
-//         settings.card_bundles = TRUE;
-//     }
-// }
-
-// BOOL gc_heap::card_bundles_enabled ()
-// {
-//     return settings.card_bundles;
-// }
-
-// #endif // CARD_BUNDLE
 
 // We don't store seg_mapping_table in card_table_info because there's only always one view.
 class card_table_info
@@ -7660,9 +7505,12 @@ void gc_heap::copy_brick_card_range (uint8_t* la, uint32_t* old_card_table,
             ptrdiff_t count = count_card_of (start, end);
             for (int x = 0; x < count; x++)
             {
-                printf("asdklfjsadfl copy_brick_card_range \n");
+                printf("We are in copy_brick_card_range \n");
+                
                 //// think about this. for now just set all the bundles on for the dest words
                 card_bundles_set(cardw_card_bundle(card_word(card_of(start))), cardw_card_bundle( align_cardw_on_bundle(card_word(card_of(end)))));
+
+                verify_card_bundles_are_consistent();
 
                 *dest |= *src;
                 dest++;
@@ -9581,9 +9429,7 @@ inline void gc_heap::verify_card_bundle_bits_set(size_t first_card_word, size_t 
 #endif
 }
 
-// Verifies that:
-// - Any bundles that are not set represent only cards that are not set.
-//////////////// - Any bundles that are set represent at least one card that is set. zzzzzzremove
+// Verifies that any bundles that are not set represent only cards that are not set.
 inline void gc_heap::verify_card_bundles_are_consistent()
 {
 #ifdef _DEBUG
@@ -9624,34 +9470,11 @@ inline void gc_heap::verify_card_bundles_are_consistent()
 
                 }
 
-                assert((*card_word)==0);//////// REENABLE THIS
+                assert((*card_word)==0);
                 card_word++;
             }
         }
-        // else /////// MAYBE THIS SHOULDN'T BE CHECKED
-        // {
-        //     // Verify that at least one card is set
-        //     bool found_set_card = false;
-        //     while (card_word < card_word_end)
-        //     {
-        //         if (*card_word != 0)
-        //         {
-        //             found_set_card = true;
-        //             break;
-        //         }
 
-        //         card_word++;
-        //     }
-
-        //     if (!found_set_card)
-        //     {
-        //         dprintf (3, ("gc: %d, Card bundle %Ix is set, but none of its cards are set.",
-        //                 dd_collection_count (dynamic_data_of (0)), cardb));
-        //     }
-
-        // }
-
-        //end of verification
         cardb++;
     }
 #endif
@@ -19874,12 +19697,14 @@ void gc_heap::mark_phase (int condemned_gen_number, BOOL mark_only_p)
 #endif //MULTIPLE_HEAPS
 
                 verify_card_bundles_are_consistent(); ///////// 
-                ///////// THIS IS WHERE WE UPDATE THE CARD BUNDLE TABLE!!!
-                ///// We don't need to do this because in the case where we're not using os WW on the card table, every write to the CT
-                ///// is already tracked in the CB
-            // #ifndef ZZZZMYTHING  //// fix this
-            //     update_card_table_bundle ();
-            // #endif
+                
+                ///// This is where we normally update the card bundle.
+                ///// We don't need to do this because in the case where we're not using OS WW on the card table, every write to the CT
+                ///// should already be accounted for in the CB
+
+                // #ifndef ZZZZMYTHING  //// fix this
+                //     update_card_table_bundle ();
+                // #endif
 
 #ifdef MULTIPLE_HEAPS
                 gc_t_join.r_restart();
@@ -27373,7 +27198,6 @@ void gc_heap::copy_cards (size_t dst_card,
 
     ////////// CARDBUNDLE UPDATE CARD BUNDLE 
     // update the bundles here in an efficient way
-    // printf("copy_cards \n");
     if (dsttmp != 0)
     {
         size_t bundle_to_set = cardw_card_bundle(dstwrd);
@@ -27682,8 +27506,8 @@ BOOL gc_heap::find_card(uint32_t* card_table,
                         size_t&   end_card)
 {
     uint32_t* last_card_word;
-    uint32_t card_word_value; //// rename to card_word_value?
-    uint32_t bit_position; //// rename to bit_position?
+    uint32_t card_word_value;
+    uint32_t bit_position;
     
     // Find the first card which is set
     last_card_word = &card_table [card_word (card)];
@@ -27695,7 +27519,7 @@ BOOL gc_heap::find_card(uint32_t* card_table,
 #ifdef CARD_BUNDLE
         // Using the card bundle, go through the remaining card words between here and 
         // card_word_end until we find one that is non-zero.
-        /////// CAN THIS JUST BE A SEPARATE FUNCTION? WE WANT TO DO THE SAME THING WHETHER WE HAVE THE BUNDLE OR NOT
+        /////// REFACTORING: CAN THIS JUST BE A SEPARATE FUNCTION? WE WANT TO DO THE SAME THING WHETHER WE HAVE THE BUNDLE OR NOT
         size_t lcw = card_word(card) + 1;
         if (gc_heap::find_card_dword (lcw, card_word_end) == FALSE)
         {
@@ -36200,7 +36024,7 @@ GCHeap::SetCardsAfterBulkCopy( Object **StartPoint, size_t len )
 
 printf("GOT HERE SetCardsAfterBulkCopy \n");
 
-            ////////////// UPDATE CARD BUNDLE HERE???
+            ////////////// UPDATE CARD BUNDLE HERE
         }
         else
         {
