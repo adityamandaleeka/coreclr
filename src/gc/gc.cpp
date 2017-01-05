@@ -5232,9 +5232,9 @@ bool gc_heap::create_gc_thread ()
 #if !defined(FEATURE_PAL)
     if (!gc_thread_no_affinitize_p)
     {
-        //We are about to set affinity for GC threads, it is a good place to setup NUMA and
-        //CPU groups, because the process mask, processor number, group number are all
-        //readyly available.
+        // We are about to set affinity for GC threads, it is a good place to setup NUMA and
+        // CPU groups, because the process mask, processor number, group number are all
+        // readily available.
         if (CPUGroupInfo::CanEnableGCCPUGroups()) 
             set_thread_group_affinity_for_heap(heap_number, &affinity);
         else
