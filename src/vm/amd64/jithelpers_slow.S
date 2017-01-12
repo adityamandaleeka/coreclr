@@ -108,6 +108,11 @@ LEAF_ENTRY JIT_WriteBarrier_Debug, _TEXT
     UpdateCardTable_Debug:
         mov     byte ptr [rdi], 0FFh
 
+////////////remove
+        // cmp     byte ptr [rdi], 0FFh
+        // jne     UpdateCardTable_Debug
+//////////remove
+
         ///////// CARDBUNDLE UPDATE CARD BUNDLE
         // addr >> 0x15 is the card bundle byte for addr
         shr     rdx, 0x15

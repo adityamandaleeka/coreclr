@@ -146,7 +146,7 @@ size_t GetHighPrecisionTimeStamp()
 {
     int64_t ts = GCToOSInterface::QueryPerformanceCounter();
     
-    return (size_t)(ts / (qpf / 1000));    
+    return (size_t)(ts / (qpf / 1000));
 }
 #endif
 
@@ -6338,6 +6338,15 @@ size_t card_bundle_cardw (size_t cardb)
 void gc_heap::card_bundle_clear (size_t cardb)
 {
     card_bundle_table [card_bundle_word (cardb)] &= ~(1 << card_bundle_bit (cardb));
+
+    // printf ("Cleared card bundle %Ix [%Ix, %Ix[\n", 
+    //     cardb,
+    //     card_bundle_cardw (cardb),
+    //     card_bundle_cardw (cardb+1));
+
+/////////// trying this
+    // Interlocked::And (&card_bundle_table[card_bundle_word (cardb)], ~(1U << card_bundle_bit(cardb)));
+
     dprintf (3,("Cleared card bundle %Ix [%Ix, %Ix[", cardb, (size_t)card_bundle_cardw (cardb),
               (size_t)card_bundle_cardw (cardb+1)));
 }
@@ -6358,6 +6367,14 @@ void gc_heap::card_bundles_set (size_t start_cardb, size_t end_cardb)
 ///////////// Compare the cost of doing this vs just setting the start and end stuff the same way whether the words are diff or not.
     if (start_word < end_word)
     {
+
+// ///// TEMPORARY DEBUG
+//         for (size_t i = start_word; i <= end_word; i++)
+//              card_bundle_table [i] = ~0u;
+// /////
+
+
+
         // Set the partial words
         card_bundle_table [start_word] |= highbits (~0u, card_bundle_bit (start_cardb));
 
@@ -7161,6 +7178,7 @@ int gc_heap::grow_brick_card_tables (uint8_t* start,
         bool write_barrier_updated = false;
         uint32_t virtual_reserve_flags = VirtualReserveFlags::None;
         uint32_t* saved_g_card_table = g_gc_card_table;
+        uint32_t* saved_g_card_bundle_table = g_gc_card_bundle_table;
         uint32_t* ct = 0;
         uint32_t* translated_ct = 0;
         short* bt = 0;
@@ -7398,6 +7416,7 @@ fail:
         if (mem)
         {
             assert(g_gc_card_table == saved_g_card_table);
+            assert(g_gc_card_bundle_table  == saved_g_card_bundle_table);
 
             //delete (uint32_t*)((uint8_t*)ct - sizeof(card_table_info));
             if (!GCToOSInterface::VirtualRelease (mem, alloc_size_aligned))
@@ -7505,7 +7524,7 @@ void gc_heap::copy_brick_card_range (uint8_t* la, uint32_t* old_card_table,
             ptrdiff_t count = count_card_of (start, end);
             for (int x = 0; x < count; x++)
             {
-                printf("We are in copy_brick_card_range \n");
+                // printf("We are in copy_brick_card_range \n");
                 
                 //// think about this. for now just set all the bundles on for the dest words
                 card_bundles_set(cardw_card_bundle(card_word(card_of(start))), cardw_card_bundle( align_cardw_on_bundle(card_word(card_of(end)))));
@@ -7669,6 +7688,7 @@ verify_card_bundles_are_consistent();
         seg = heap_segment_next (seg);
     }
 
+// verify_card_bundles_are_consistent();
     release_card_table (&old_card_table[card_word (card_of(la))]);
 }
 
@@ -9448,6 +9468,8 @@ inline void gc_heap::verify_card_bundles_are_consistent()
         uint32_t *zlower_bound = card_word;
         uint32_t *zupper_bound = card_word_end;
 
+        bool firstTimeFail = false;
+
         if (card_bundle_set_p (cardb) == 0)
         {
             // Verify that no card is set
@@ -9455,6 +9477,11 @@ inline void gc_heap::verify_card_bundles_are_consistent()
             {
                 if (*card_word != 0)
                 {
+                    printf  ("gc: %d, Card word %Ix for address %Ix set, card_bundle %Ix clear\n",
+                            dd_collection_count (dynamic_data_of (0)), 
+                            (size_t)(card_word-&card_table[0]),
+                            (size_t)(card_address ((size_t)(card_word-&card_table[0]) * card_word_width)), cardb);
+
                     dprintf  (3, ("gc: %d, Card word %Ix for address %Ix set, card_bundle %Ix clear",
                             dd_collection_count (dynamic_data_of (0)), 
                             (size_t)(card_word-&card_table[0]),
@@ -9465,12 +9492,25 @@ inline void gc_heap::verify_card_bundles_are_consistent()
                     ///////////
 
                     ////////////
-                    printf("THE WORD IS %d IN FROM THE LOWER BOUND", (int)(card_word - zlower_bound));
+                    printf("THE WORD IS %d IN FROM THE LOWER BOUND\n", (int)(card_word - zlower_bound));
 
-
+                    if (card_word - zlower_bound == 0)
+                    {
+                        firstTimeFail = true;
+                    }
+                    else
+                    {
+                        if (firstTimeFail == true)
+                            printf("NOT FIRST TIME AND FAILED");
+                    }
+                }
+                else
+                {
+                    if (firstTimeFail == true)
+                        printf("FFTBNN");
                 }
 
-                assert((*card_word)==0);
+                // assert((*card_word)==0);
                 card_word++;
             }
         }
@@ -27435,14 +27475,14 @@ BOOL gc_heap::find_card_dword (size_t& cardw, size_t cardw_end)
         while (1)
         {
             // Find a non-zero bundle
-            while ((cardb < end_cardb) && card_bundle_set_p (cardb) == 0)
+            while ((cardb < end_cardb) && (card_bundle_set_p (cardb) == 0))
             {
                 cardb++;
             }
 
             if (cardb == end_cardb)
                 return FALSE;
-            
+
             // We found a bundle, so go through its words and find a non-zero card word
             uint32_t* card_word = &card_table[max(card_bundle_cardw (cardb),cardw)];
             uint32_t* card_word_end = &card_table[min(card_bundle_cardw (cardb + 1),cardw_end)];
@@ -27456,8 +27496,7 @@ BOOL gc_heap::find_card_dword (size_t& cardw, size_t cardw_end)
                 cardw = (card_word - &card_table[0]);
                 return TRUE;
             }
-            else if ((cardw <= card_bundle_cardw (cardb)) &&
-                     (card_word == &card_table [card_bundle_cardw (cardb+1)]))
+            else if ((cardw <= card_bundle_cardw (cardb)) && (card_word == &card_table [card_bundle_cardw (cardb+1)]))
             {
                 // A whole bundle was explored and is empty, so clear the bundle.
                 dprintf (3, ("gc: %d, find_card_dword clear bundle: %Ix cardw:[%Ix,%Ix[",
@@ -32999,6 +33038,9 @@ gc_heap::verify_free_lists ()
 void
 gc_heap::verify_heap (BOOL begin_gc_p)
 {
+
+    // verify_card_bundles_are_consistent();
+
     int             heap_verify_level = g_pConfig->GetHeapVerifyLevel();
     size_t          last_valid_brick = 0;
     BOOL            bCurrentBrickInvalid = FALSE;
@@ -35984,7 +36026,7 @@ GCHeap::SetCardsAfterBulkCopy( Object **StartPoint, size_t len )
     assert(Aligned ((size_t)StartPoint));
 
 
-    // Don't optimize the Generation 0 case if we are checking for write barrier voilations
+    // Don't optimize the Generation 0 case if we are checking for write barrier violations
     // since we need to update the shadow heap even in the generation 0 case.
 #if defined (WRITE_BARRIER_CHECK) && !defined (SERVER_GC)
     if (g_pConfig->GetHeapVerifyLevel() & EEConfig::HEAPVERIFY_BARRIERCHECK)
@@ -36017,14 +36059,19 @@ GCHeap::SetCardsAfterBulkCopy( Object **StartPoint, size_t len )
             size_t card = gcard_of ((uint8_t*)rover);
 
             Interlocked::Or (&g_gc_card_table[card/card_word_width], (1U << (card % card_word_width)));
+
+            // printf("GOT HERE SetCardsAfterBulkCopy \n");
+            ////////////// UPDATE CARD BUNDLE HERE
+            
+            //// card_bundles_set (cardw_card_bundle (card_word (card)), cardw_card_bundle (card_word (card)));
+            
+            size_t bundle_to_set = cardw_card_bundle (card_word (card));
+            Interlocked::Or (&g_gc_card_bundle_table[card_bundle_word (bundle_to_set)], (1U << card_bundle_bit(bundle_to_set)));
+
+
+
             // Skip to next card for the object
             rover = (Object**)align_on_card ((uint8_t*)(rover+1));
-
-
-
-printf("GOT HERE SetCardsAfterBulkCopy \n");
-
-            ////////////// UPDATE CARD BUNDLE HERE
         }
         else
         {
