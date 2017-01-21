@@ -127,8 +127,8 @@ inline void FATAL_GC_ERROR()
 
 //#define STRESS_PINNING    //Stress pinning by pinning randomly
 
-//#define TRACE_GC          //debug trace gc operation
-//#define SIMPLE_DPRINTF
+#define TRACE_GC          //debug trace gc operation
+#define SIMPLE_DPRINTF
 
 //#define TIME_GC           //time allocation and garbage collection
 //#define TIME_WRITE_WATCH  //time GetWriteWatch and ResetWriteWatch calls
@@ -305,6 +305,7 @@ void GCLog (const char *fmt, ... );
 //#define dprintf(l,x) {if ((l==GTC_LOG) || (l <= 1)) {GCLog x;}}
 //#define dprintf(l,x) {if (trace_gc && ((l <= print_level) || (l==GTC_LOG))) {GCLog x;}}
 //#define dprintf(l,x) {if (l==GTC_LOG) {printf ("\n");printf x ; fflush(stdout);}}
+// #define dprintf(l,x) {GCLog x;}
 #else //SIMPLE_DPRINTF
 
 // The GCTrace output goes to stdout by default but can get sent to the stress log or the logfile if the
@@ -1721,6 +1722,8 @@ protected:
     void card_bundles_set (size_t start_cardb, size_t end_cardb);
     PER_HEAP
     void verify_card_bundle_bits_set(size_t first_card_word, size_t last_card_word);
+    PER_HEAP
+    void print_card_bundles();
     PER_HEAP
     void verify_card_bundles_are_consistent();
     PER_HEAP
