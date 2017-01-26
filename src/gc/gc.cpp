@@ -408,11 +408,11 @@ void log_va_msg(const char *fmt, va_list args)
         gc_buffer_index++;
         if (gc_buffer_index > max_gc_buffers)
         {
-            fseek (gc_log, 0, SEEK_SET);
+            // fseek (gc_log, 0, SEEK_SET);
             gc_buffer_index = 0;
         }
-        fwrite(gc_log_buffer, gc_log_buffer_size, 1, gc_log);
-        fflush(gc_log);
+        // fwrite(gc_log_buffer, gc_log_buffer_size, 1, gc_log);
+        // fflush(gc_log);
         memset (gc_log_buffer, '*', gc_log_buffer_size);
         gc_log_buffer_offset = 0;
     }
@@ -9463,23 +9463,23 @@ void gc_heap::print_card_bundles()
     size_t cardb = cardw_card_bundle (lowest_card);
     size_t end_cardb = cardw_card_bundle (align_cardw_on_bundle (highest_card));
 
+    // printf("---=== CARD BUNDLES START ===---\n");
     dprintf(1, ("---=== CARD BUNDLES START ===---"));
-    printf("---=== CARD BUNDLES START ===---\n");
 
     size_t currCBWord = card_bundle_word(cardb);
     size_t lastCBWord = card_bundle_word(end_cardb);
 
-    printf("Printing CB words from %Ix to %Ix\n", currCBWord, lastCBWord);
+    // printf("Printing CB words from %Ix to %Ix\n", currCBWord, lastCBWord);
     dprintf(1, ("Printing CB words from %Ix to %Ix", currCBWord, lastCBWord));
 
     while (currCBWord < lastCBWord)
     {
-        printf("CB WORD %Ix: %Ix\n", currCBWord, card_bundle_table[currCBWord]);
+        // printf("CB WORD %Ix: %Ix\n", currCBWord, card_bundle_table[currCBWord]);
         dprintf(1, ("CB WORD %Ix: %Ix", currCBWord, card_bundle_table[currCBWord]));
         currCBWord++;
     }
 
-    printf("---=== CARD BUNDLES END ===---\n");
+    // printf("---=== CARD BUNDLES END ===---\n");
     dprintf(1, ("---=== CARD BUNDLES END ===---\n"));
 }
 
@@ -9522,6 +9522,9 @@ inline void gc_heap::verify_card_bundles_are_consistent()
                             (size_t)(card_word-&card_table[0]),
                             (size_t)(card_address ((size_t)(card_word-&card_table[0]) * card_word_width)), cardb));
 
+                    dprintf  (1, ("PRINTING CB AT POINT OF FAILURE \n"));
+                    print_card_bundles();
+
                     ///////// REMOVE THIS
                     // card_bundles_set(cardb, cardb);
                     ///////////
@@ -9540,6 +9543,7 @@ inline void gc_heap::verify_card_bundles_are_consistent()
                 //         printf("FFTBNN");
                 // }
 
+
                 assert((*card_word)==0);
                 card_word++;
             }
@@ -9548,6 +9552,10 @@ inline void gc_heap::verify_card_bundles_are_consistent()
         cardb++;
     }
 #endif
+
+///////
+    print_card_bundles();
+//////////
 
     dprintf  (1, ("CB CHECK PASSED \n"));
 }
@@ -16571,6 +16579,8 @@ void gc_heap::init_records()
 
 int gc_heap::garbage_collect (int n)
 {
+    verify_card_bundles_are_consistent();
+
     //reset the number of alloc contexts
     alloc_contexts_used = 0;
 
@@ -16579,7 +16589,7 @@ int gc_heap::garbage_collect (int n)
     clear_gen0_bricks();
 #endif //MULTIPLE_HEAPS
 
-    verify_card_bundles_are_consistent();
+    // verify_card_bundles_are_consistent();
 
     if ((settings.pause_mode == pause_no_gc) && current_no_gc_region_info.minimal_gc_p)
     {
@@ -18818,7 +18828,7 @@ void gc_heap::fix_card_table ()
 #endif //TIME_WRITE_WATCH
 
             assert( ((card_size * card_word_width)&(OS_PAGE_SIZE-1))==0 );
-            dprintf (3,("Found %Id pages written", bcount));
+            dprintf (1,("Found %Id pages written", bcount));
             for (unsigned i = 0; i < bcount; i++)
             {
                 // Set the card words corresponding to the entire page.
@@ -18827,7 +18837,7 @@ void gc_heap::fix_card_table ()
                     card_table [card_word (card_of (g_addresses [i]))+j] = ~0u;
                 }
 
-                dprintf (2,("Set Cards [%Ix:%Ix, %Ix:%Ix[",
+                dprintf (1,("Set Cards [%Ix:%Ix, %Ix:%Ix[",
                       card_of (g_addresses [i]), (size_t)g_addresses [i],
                       card_of (g_addresses [i]+OS_PAGE_SIZE), (size_t)g_addresses [i]+OS_PAGE_SIZE));
 
@@ -19583,7 +19593,7 @@ void gc_heap::mark_phase (int condemned_gen_number, BOOL mark_only_p)
     dprintf(1,("---- Mark Phase condemning %d ----", condemned_gen_number));
     BOOL  full_p = (condemned_gen_number == max_generation);
 
-verify_card_bundles_are_consistent();
+// verify_card_bundles_are_consistent();
 
 #ifdef TIME_GC
     unsigned start;
@@ -19775,7 +19785,7 @@ verify_card_bundles_are_consistent();
             {
 #endif //MULTIPLE_HEAPS
 
-                verify_card_bundles_are_consistent(); ///////// 
+                // verify_card_bundles_are_consistent(); ///////// 
                 
                 ///// This is where we normally update the card bundle.
                 ///// We don't need to do this because in the case where we're not using OS WW on the card table, every write to the CT
@@ -25397,7 +25407,7 @@ BOOL gc_heap::commit_mark_array_new_seg (gc_heap* hp,
             uint32_t* ct = &new_card_table[card_word (gcard_of (new_lowest_address))];
             uint32_t* ma = (uint32_t*)((uint8_t*)card_table_mark_array (ct) - size_mark_array_of (0, new_lowest_address));
 
-            dprintf (GC_TABLE_LOG, ("table realloc-ed: %Ix->%Ix, MA: %Ix->%Ix", 
+            dprintf (1, ("table realloc-ed: %Ix->%Ix, MA: %Ix->%Ix", 
                                     hp->card_table, new_card_table,
                                     hp->mark_array, ma));
 
@@ -26645,7 +26655,7 @@ void gc_heap::revisit_written_pages (BOOL concurrent_p, BOOL reset_only_p)
     #ifdef NO_WRITE_BARRIER
                             card_table [card_word (card_of (background_written_addresses [i]))] = ~0u;
                         printf("asdlfhasdkjf \n");
-                            dprintf (3,("Set Cards [%p:%p, %p:%p[",
+                            dprintf (1,("Set Cards [%p:%p, %p:%p[",
                                         card_of (background_written_addresses [i]), g_addresses [i],
                                         card_of (background_written_addresses [i]+OS_PAGE_SIZE), background_written_addresses [i]+OS_PAGE_SIZE));
     #endif //NO_WRITE_BARRIER
@@ -27848,7 +27858,7 @@ BOOL gc_heap::card_transition (uint8_t* po, uint8_t* end, size_t card_word_end,
         {
             n_card_set += end_card - card;
             start_address = card_address (card);
-            dprintf (3, ("NewC: %Ix, start: %Ix, end: %Ix",
+            dprintf (1, ("NewC: %Ix, start: %Ix, end: %Ix",
                         (size_t)card, (size_t)start_address,
                         (size_t)card_address (end_card)));
         }
@@ -28169,8 +28179,8 @@ go_through_refs:
 
     
     dprintf(1, ("End of mark_through_cards_for_segments"));
-    print_card_bundles();
-    verify_card_bundles_are_consistent();
+    // print_card_bundles();
+    // verify_card_bundles_are_consistent();
 
 }
 
@@ -36133,6 +36143,7 @@ GCHeap::SetCardsAfterBulkCopy( Object **StartPoint, size_t len )
             Interlocked::Or (&g_gc_card_table[card/card_word_width], (1U << (card % card_word_width)));
 
             printf("GOT HERE SetCardsAfterBulkCopy \n");
+            dprintf(1, ("GOT HERE SetCardsAfterBulkCopy \n"));
             ////////////// UPDATE CARD BUNDLE HERE
             
             //// card_bundles_set (cardw_card_bundle (card_word (card)), cardw_card_bundle (card_word (card)));
