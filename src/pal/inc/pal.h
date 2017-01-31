@@ -3600,6 +3600,16 @@ VirtualAlloc(
          IN DWORD flProtect);
 
 PALIMPORT
+LPVOID
+PALAPI
+VirtualAlloc2(
+	     IN LPVOID lpAddress,
+	     IN SIZE_T dwSize,
+	     IN DWORD flAllocationType,
+	     IN DWORD flProtect);
+
+
+PALIMPORT
 BOOL
 PALAPI
 VirtualFree(

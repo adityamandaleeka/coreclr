@@ -6422,11 +6422,11 @@ size_t size_card_bundle_of (uint8_t* from, uint8_t* end)
 }
 
 /////DOCUMENT THIS
-uint32_t* translate_card_bundle_table (uint32_t* cb)
+uint32_t* translate_card_bundle_table (uint32_t* cb, uint8_t* lowest_address)
 {
     /////card_size*card_word_width*card_bundle_size*card_bundle_word_width is the number of bytes of heap mem represented by a card bundle word
     
-    ///// g_lowest_address divided by that gives us how many card bundles words into the card bundle table the card bundles word for the lowest address would be
+    ///// g_lowest_address divided by that gives us how many card bundles words into the card bundle table the card bundle word for the lowest address would be
 
     ///// each card bundle word is 32 bits, so multiplying by sizeof(32) gives us the number of bits into the card bundle table the word for the lowest address is
 
@@ -6434,7 +6434,9 @@ uint32_t* translate_card_bundle_table (uint32_t* cb)
     ///// (in bytes) between the card bundle word representing the lowest address and the address that's the current start the card bundle table. That delta will
     ///// then be used as the start of the card bundle table. This means that the first card bundle word in this "translated" table will be the one that represents
     ///// g_lowest_address.
-    return (uint32_t*)((uint8_t*)cb - ((((size_t)g_gc_lowest_address) / (card_size*card_word_width*card_bundle_size*card_bundle_word_width)) * sizeof (uint32_t)));
+    
+    //return (uint32_t*)((uint8_t*)cb - ((((size_t)g_gc_lowest_address) / (card_size*card_word_width*card_bundle_size*card_bundle_word_width)) * sizeof (uint32_t)));
+    return (uint32_t*)((uint8_t*)cb - (((size_t)lowest_address / (card_size*card_word_width*card_bundle_size*card_bundle_word_width)) * sizeof (uint32_t)));
 }
 
 void gc_heap::enable_card_bundles ()
@@ -7368,7 +7370,9 @@ int gc_heap::grow_brick_card_tables (uint8_t* start,
             }
 
             g_gc_card_table = translated_ct;
-            g_gc_card_bundle_table = translate_card_bundle_table(card_table_card_bundle_table(ct));///
+            g_gc_card_bundle_table = translate_card_bundle_table(card_table_card_bundle_table(ct), saved_g_lowest_address);///
+
+            printf("ZZSetting g_gc_card_bundle_table to %x\n", (uint64_t)g_gc_card_bundle_table);
 
             g_gc_lowest_address = saved_g_lowest_address;
             g_gc_highest_address = saved_g_highest_address;
@@ -7395,7 +7399,9 @@ int gc_heap::grow_brick_card_tables (uint8_t* start,
 #endif // FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
         {
             g_gc_card_table = translated_ct;
-            g_gc_card_bundle_table = translate_card_bundle_table(card_table_card_bundle_table(ct));///
+            g_gc_card_bundle_table = translate_card_bundle_table(card_table_card_bundle_table(ct), saved_g_lowest_address);///
+
+            printf("YYsetting g_gc_card_bundle_table to %x\n", (uint64_t)g_gc_card_bundle_table);
         }
 
         g_gc_lowest_address = saved_g_lowest_address;
@@ -7617,7 +7623,10 @@ verify_card_bundles_are_consistent();
     size_t st = 0;
 #endif //GROWABLE_SEG_MAPPING_TABLE
 #endif //MARK_ARRAY && _DEBUG
-    card_bundle_table = translate_card_bundle_table (card_table_card_bundle_table (ct));
+    card_bundle_table = translate_card_bundle_table (card_table_card_bundle_table (ct), g_gc_lowest_address);
+
+    printf("AAsetting card_bundle_table to %x\n", (uint64_t)card_bundle_table);
+    printf("AA g_gc_card_bundle_table is %x\n", (uint64_t)g_gc_card_bundle_table);
 
     // Check that the card bundle word representing g_gc_lowest_address is located at the start of the card bundle table.
     assert (&card_bundle_table [card_bundle_word (cardw_card_bundle (card_word (card_of (g_gc_lowest_address))))] ==
@@ -10086,7 +10095,7 @@ HRESULT gc_heap::initialize_gc (size_t segment_size,
     uint32_t* untranslated_card_table = make_card_table (g_gc_lowest_address, g_gc_highest_address);
 
 #ifdef CARD_BUNDLE
-    g_gc_card_bundle_table = translate_card_bundle_table(card_table_card_bundle_table(untranslated_card_table));
+    g_gc_card_bundle_table = translate_card_bundle_table(card_table_card_bundle_table(untranslated_card_table), g_gc_lowest_address);
 #endif
 
     g_gc_card_table = translate_card_table(untranslated_card_table);
@@ -10584,7 +10593,7 @@ gc_heap::init_gc_heap (int  h_number)
     lowest_address = card_table_lowest_address (ct);
 
 #ifdef CARD_BUNDLE
-    card_bundle_table = translate_card_bundle_table (card_table_card_bundle_table (ct));
+    card_bundle_table = translate_card_bundle_table (card_table_card_bundle_table (ct), g_gc_lowest_address);
     assert (&card_bundle_table [card_bundle_word (cardw_card_bundle (card_word (card_of (g_gc_lowest_address))))] ==
             card_table_card_bundle_table (ct));
 #endif //CARD_BUNDLE
@@ -15456,6 +15465,7 @@ void gc_heap::gc1()
     vm_heap->GcCondemnedGeneration = settings.condemned_generation;
 
     assert (g_gc_card_table == card_table);
+    assert (g_gc_card_bundle_table == card_bundle_table);
 
     {
         if (n == max_generation)
@@ -16579,6 +16589,20 @@ void gc_heap::init_records()
 
 int gc_heap::garbage_collect (int n)
 {
+
+dprintf(1, ("CHANGING PROTECTION BACK TO WRITE\n"));
+
+
+    // if (brick_table != nullptr  && g_gc_card_table != nullptr)
+    // {
+    //     size_t startAddr = (size_t)&(g_gc_card_table[card_word(card_of(g_gc_lowest_address))]); 
+    //     size_t numBytesFromPageStart = (((uint64_t)startAddr) % OS_PAGE_SIZE);
+    //     size_t sizeToAlloc = (size_t)brick_table - startAddr + numBytesFromPageStart;
+
+    //     VirtualAlloc2((LPVOID)(startAddr - numBytesFromPageStart), sizeToAlloc, MEM_COMMIT, PAGE_READWRITE);
+    // }
+
+
     verify_card_bundles_are_consistent();
 
     //reset the number of alloc contexts
@@ -16692,6 +16716,10 @@ int gc_heap::garbage_collect (int n)
         // check for card table growth
         if (g_gc_card_table != card_table)
             copy_brick_card_table();
+
+/////////valid asserts?
+        assert(g_gc_card_table == card_table);
+        assert(g_gc_card_bundle_table == card_bundle_table);
 
 #endif //MULTIPLE_HEAPS
 
@@ -23466,7 +23494,12 @@ void gc_heap::make_unused_array (uint8_t* x, size_t size, BOOL clearp, BOOL rese
 #endif
 
     if (clearp)
+      {
+	if (x + Align(size) < x)
+	  printf("why is this less?\n");
+
         clear_card_for_addresses (x, x + Align(size));
+      }
 }
 
 // Clear memory set by make_unused_array.
@@ -35301,6 +35334,19 @@ void gc_heap::do_post_gc()
 
 dprintf(1, ("END OF A GC!!! Verifying CB consistency..."));
 hp->verify_card_bundles_are_consistent();
+
+dprintf(1, ("CHANGING PROTECTION TO READ ONLY\n"));
+
+    // if (hp->brick_table != nullptr  && g_gc_card_table != nullptr)
+    // {
+    //     size_t startAddr = (size_t)&(g_gc_card_table[card_word(hp->card_of(g_gc_lowest_address))]); 
+    //     size_t numBytesFromPageStart = (((uint64_t)startAddr) % OS_PAGE_SIZE);
+    //     size_t sizeToAlloc = (size_t)hp->brick_table - startAddr + numBytesFromPageStart;
+
+    //     VirtualAlloc2((LPVOID)(startAddr - numBytesFromPageStart), sizeToAlloc, MEM_COMMIT, PAGE_READONLY);
+    // }
+
+
 
     //dprintf (1, (" ****end of Garbage Collection**** %d(gen0:%d)(%d)", 
     dprintf (1, ("*EGC* %d(gen0:%d)(%d)(%s)", 

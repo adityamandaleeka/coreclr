@@ -1280,6 +1280,28 @@ done:
     return pRetVal;
 }
 
+LPVOID
+PALAPI
+VirtualAlloc2(
+         IN LPVOID lpAddress,       /* Region to reserve or commit */
+         IN SIZE_T dwSize,          /* Size of Region */
+         IN DWORD flAllocationType, /* Type of allocation */
+         IN DWORD flProtect)        /* Type of access protection */
+{
+
+    int protToSet  = PROT_READ;
+    if (flProtect == PAGE_READWRITE)
+      protToSet |= PROT_WRITE;
+
+    LPVOID pRetVal =  mmap(lpAddress, dwSize, protToSet, MAP_FIXED|MAP_ANON|MAP_PRIVATE, -1, 0);
+
+    if ((int)pRetVal == -1)
+      printf("errno is %d\n", errno);
+  
+    return pRetVal;
+  
+}
+
 
 /*++
 Function:
@@ -1572,7 +1594,7 @@ VirtualProtect(
         {
             SetLastError( ERROR_INVALID_ADDRESS );
         }
-        else if ( errno == EACCES )
+	else if ( errno == EACCES )
         {
             SetLastError( ERROR_INVALID_ACCESS );
         }
