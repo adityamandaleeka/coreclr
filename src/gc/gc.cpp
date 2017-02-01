@@ -7602,7 +7602,7 @@ verify_card_bundles_are_consistent();
 
     brick_table = card_table_brick_table (ct);
 
-verify_card_bundles_are_consistent();
+// verify_card_bundles_are_consistent();
 
 #ifdef MARK_ARRAY
     if (gc_can_use_concurrent)
@@ -9507,10 +9507,10 @@ inline void gc_heap::verify_card_bundles_are_consistent()
         uint32_t* card_word = &card_table[max(card_bundle_cardw (cardb), lowest_card)];
         uint32_t* card_word_end = &card_table[min(card_bundle_cardw (cardb+1), highest_card)];
 
-        //////////
-        uint32_t num_words_represented = (uint32_t)(card_word_end - card_word);
-        uint32_t *zlower_bound = card_word;
-        uint32_t *zupper_bound = card_word_end;
+        // //////////
+        // uint32_t num_words_represented = (uint32_t)(card_word_end - card_word);
+        // uint32_t *zlower_bound = card_word;
+        // uint32_t *zupper_bound = card_word_end;
 
         // bool firstTimeFail = false;
 
@@ -9519,33 +9519,35 @@ inline void gc_heap::verify_card_bundles_are_consistent()
             // Verify that no card is set
             while (card_word < card_word_end)
             {
-                if (*card_word != 0)
-                {
-                    printf  ("gc: %d, Card word %Ix for address %Ix set, card_bundle %Ix clear\n",
-                            dd_collection_count (dynamic_data_of (0)), 
-                            (size_t)(card_word-&card_table[0]),
-                            (size_t)(card_address ((size_t)(card_word-&card_table[0]) * card_word_width)), cardb);
+                // if (*card_word != 0)
+                // {
+                //     printf  ("gc: %d, Card word %Ix for address %Ix set, card_bundle %Ix clear\n",
+                //             dd_collection_count (dynamic_data_of (0)), 
+                //             (size_t)(card_word-&card_table[0]),
+                //             (size_t)(card_address ((size_t)(card_word-&card_table[0]) * card_word_width)), cardb);
 
-                    dprintf  (1, ("gc: %d, Card word %Ix for address %Ix set, card_bundle %Ix clear",
-                            dd_collection_count (dynamic_data_of (0)), 
-                            (size_t)(card_word-&card_table[0]),
-                            (size_t)(card_address ((size_t)(card_word-&card_table[0]) * card_word_width)), cardb));
+                //     dprintf  (1, ("gc: %d, Card word %Ix for address %Ix set, card_bundle %Ix clear",
+                //             dd_collection_count (dynamic_data_of (0)), 
+                //             (size_t)(card_word-&card_table[0]),
+                //             (size_t)(card_address ((size_t)(card_word-&card_table[0]) * card_word_width)), cardb));
 
-                    dprintf  (1, ("PRINTING CB AT POINT OF FAILURE \n"));
-                    print_card_bundles();
+                //     dprintf  (1, ("PRINTING CB AT POINT OF FAILURE \n"));
+                //     print_card_bundles();
 
-                    ///////// REMOVE THIS
-                    // card_bundles_set(cardb, cardb);
-                    ///////////
+                //     ///////// REMOVE THIS
+                //     // card_bundles_set(cardb, cardb);
+                //     ///////////
 
-                    ////////////
-                    // printf("THE WORD IS %d IN FROM THE LOWER BOUND\n", (int)(card_word - zlower_bound));
+                //     ////////////
+                //     // printf("THE WORD IS %d IN FROM THE LOWER BOUND\n", (int)(card_word - zlower_bound));
 
-                    // if (card_word - zlower_bound != 0)
-                    // {
-                    //     printf("NOT FIRST TIME AND FAILED\n");
-                    // }
-                }
+                //     // if (card_word - zlower_bound != 0)
+                //     // {
+                //     //     printf("NOT FIRST TIME AND FAILED\n");
+                //     // }
+                // }
+
+
                 // else
                 // {
                 //     if (firstTimeFail == true)
@@ -9563,7 +9565,7 @@ inline void gc_heap::verify_card_bundles_are_consistent()
 #endif
 
 ///////
-    print_card_bundles();
+    // print_card_bundles();
 //////////
 
     dprintf  (1, ("CB CHECK PASSED \n"));
@@ -10594,6 +10596,7 @@ gc_heap::init_gc_heap (int  h_number)
 
 #ifdef CARD_BUNDLE
     card_bundle_table = translate_card_bundle_table (card_table_card_bundle_table (ct), g_gc_lowest_address);
+    printf("QQSetting card_bundle_table to %p\n", (uint64_t)card_bundle_table);
     assert (&card_bundle_table [card_bundle_word (cardw_card_bundle (card_word (card_of (g_gc_lowest_address))))] ==
             card_table_card_bundle_table (ct));
 #endif //CARD_BUNDLE
@@ -27407,7 +27410,7 @@ void gc_heap::copy_cards_for_addresses (uint8_t* dest, uint8_t* src, size_t len)
     //////////////
     card_bundles_set(cardw_card_bundle(card_word(card_of(dest))), cardw_card_bundle( align_cardw_on_bundle(card_word(end_dest_card))));
 
-    verify_card_bundles_are_consistent();///
+    // verify_card_bundles_are_consistent();///
     //////////////
 }
 
