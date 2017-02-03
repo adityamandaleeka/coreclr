@@ -1533,16 +1533,32 @@ SetCardsAfterBulkCopy(Object **start, size_t len)
         if (*card != 0xff)
         {
             *card = 0xff;
-
-#ifdef FEATURE_MANUALLY_MANAGED_CARD_BUNDLES
-            //// set the bundle here
-#endif
         }
 
         card++;
         clumpCount--;
     }
     while (clumpCount != 0);
+
+#ifdef FEATURE_MANUALLY_MANAGED_CARD_BUNDLES
+    size_t startBundleByte = startAddress >> card_bundle_byte_shift;
+    size_t endBundleByte = (endAddress + (1 << card_bundle_byte_shift) - 1) >> card_bundle_byte_shift;
+    size_t bundleByteCount = endBundleByte - startBundleByte;
+
+    uint8_t* pBundleByte = ((uint8_t*)VolatileLoadWithoutBarrier(&g_card_bundle_table)) + startBundleByte;
+
+    do
+    {
+        if (*pBundleByte != 0xFF)
+        {
+            *pBundleByte = 0xFF;
+        }
+
+        pBundleByte++;
+        bundleByteCount--;
+    }
+    while (bundleByteCount != 0);
+#endif
 }
 
 #if defined(_MSC_VER) && defined(_TARGET_X86_)
