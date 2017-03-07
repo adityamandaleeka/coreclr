@@ -34242,7 +34242,7 @@ BOOL GCHeap::StressHeap(gc_alloc_context * context)
         }
 
         // Get the current string
-        str = (StringObject*) OBJECTREFToObject(ObjectFromHandle(m_StressObjs[m_CurStressObj]));
+        str = (StringObject*) ObjectFromHandle(m_StressObjs[m_CurStressObj]);
         if (str)
         {
             // Chop off the end of the string and form a new object out of it.

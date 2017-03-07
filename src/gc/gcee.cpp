@@ -437,6 +437,11 @@ CLREvent * GCHeap::GetWaitForGCEvent()
     return WaitForGCEvent;
 }
 
+Object* GCHeap::ObjectFromHandle(OBJECTHANDLE handle)
+{
+    return HndFetchHandle(handle);
+}
+
 void GCHeap::WaitUntilConcurrentGCComplete()
 {
 #ifdef BACKGROUND_GC

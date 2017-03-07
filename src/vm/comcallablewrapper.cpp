@@ -31,7 +31,7 @@
 #include "cgensys.h"
 #include "comtoclrcall.h"
 #include "clrtocomcall.h"
-#include "objecthandle.h"
+// #include "objecthandle.h"
 #include "comutilnative.h"
 #include "eeconfig.h"
 #include "interoputil.h"

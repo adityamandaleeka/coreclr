@@ -15,6 +15,7 @@
 #define INVALID_RESUME_ADDRESS 0x000000000000bad0
 
 #include "exstatecommon.h"
+#include "gcheaputilities.h"
 
 LONG WINAPI CLRVectoredExceptionHandlerShim(PEXCEPTION_POINTERS pExceptionInfo);
 
@@ -253,7 +254,12 @@ public:
 
         if (NULL != m_hThrowable)
         {
-            return ObjectFromHandle(m_hThrowable);
+#ifndef DACCESS_COMPILE
+            IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+            return (OBJECTREF)pHeap->ObjectFromHandle(m_hThrowable);
+#else
+            assert("akjufhsdjk0");
+#endif
         }
 
         return NULL;
@@ -422,7 +428,8 @@ private:
         // Never, ever destroy a preallocated exception handle.
         if ((m_hThrowable != NULL) && !CLRException::IsPreallocatedExceptionHandle(m_hThrowable))
         {
-            DestroyHandle(m_hThrowable);
+            IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+            pHeap->DestroyHandle(m_hThrowable);
         }
 
         m_hThrowable = NULL;

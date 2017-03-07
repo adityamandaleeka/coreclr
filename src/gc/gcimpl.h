@@ -291,6 +291,36 @@ protected:
 
     virtual void DiagWalkHeap(walk_fn fn, void* context, int gen_number, BOOL walk_large_object_heap_p);
 
+
+    ////////////
+    virtual Object* ObjectFromHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyHandle(OBJECTHANDLE handle);
+
+    virtual BOOL IsHandleNullUnchecked(OBJECTHANDLE handle);
+
+    virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, int type);
+
+    virtual int GetCurrentThreadHomeHeapNumber();
+
+    virtual OBJECTHANDLE CreateHandle(HHANDLETABLE table, Object* object);
+
+    virtual OBJECTHANDLE CreateWeakHandle(HHANDLETABLE table, Object* object);
+
+    virtual OBJECTHANDLE CreateShortWeakHandle(HHANDLETABLE table, Object* object);
+
+    virtual OBJECTHANDLE CreateLongWeakHandle(HHANDLETABLE table, Object* object);
+
+    virtual OBJECTHANDLE CreateStrongHandle(HHANDLETABLE table, Object* object);
+
+    virtual OBJECTHANDLE CreatePinningHandle(HHANDLETABLE table, Object* object);
+
+    virtual OBJECTHANDLE CreateSizedRefHandle(HHANDLETABLE table, Object* object);
+
+    virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type);
+
+    virtual OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary);
+
 public:
     Object * NextObj (Object * object);
 #if defined (FEATURE_BASICFREEZE) && defined (VERIFY_HEAP)
