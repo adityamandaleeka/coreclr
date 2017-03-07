@@ -67,11 +67,11 @@ public:
 
     OBJECTREF CreateManagedPsetObject(DWORD dwAction, bool createEmptySet = false);
     
-    OBJECTREF GetManagedPsetObject()
-    {
-        WRAPPER_NO_CONTRACT;
-        return ObjectFromHandle(m_handle); 
-    }
+    // OBJECTREF GetManagedPsetObject()
+    // {
+    //     WRAPPER_NO_CONTRACT;
+    //     return ObjectFromHandle(m_handle); 
+    // }
 
     bool ContainsBuiltinCASPermsOnly (DWORD dwAction);
     PsetCacheEntry() {m_pKey = NULL;}
