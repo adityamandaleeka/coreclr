@@ -280,7 +280,7 @@ inline OBJECTHANDLE CreateDuplicateHandle(OBJECTHANDLE handle) {
     WRAPPER_NO_CONTRACT;
 
     // Create a new STRONG handle in the same table as an existing handle.  
-    return HndCreateHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, ObjectFromHandle(handle));
+    return HndCreateHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, ObzjectFromHandle(handle));
 }
 
 

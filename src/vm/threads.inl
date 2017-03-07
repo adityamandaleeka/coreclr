@@ -168,7 +168,7 @@ inline OBJECTREF Thread::GetExposedObjectRaw()
     }
     CONTRACTL_END;
 
-    return ObjectFromHandle(m_ExposedObject);
+    return ObzjectFromHandle(m_ExposedObject);
 }
 
 inline void Thread::FinishSOWork()
