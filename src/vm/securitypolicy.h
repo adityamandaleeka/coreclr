@@ -10,7 +10,7 @@
 #define __SECURITYPOLICY_H__
 
 #include "crst.h"
-#include "objecthandle.h"
+// #include "objecthandle.h"
 #include "securityattributes.h"
 #include "securitydeclarativecache.h"
 #include "declsec.h"
