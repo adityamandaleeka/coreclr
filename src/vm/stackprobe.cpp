@@ -512,7 +512,8 @@ BOOL ShouldValidateSOToleranceOnThisThread()
         return FALSE;
     }
 
-    if (! IsHandleNullUnchecked(pThread->GetThrowableAsHandle()))
+    IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+    if (!pHeap->IsHandleNullUnchecked(pThread->GetThrowableAsHandle()))
     {
         return FALSE;
     }

@@ -202,7 +202,6 @@ FORCEINLINE OBJECTREF HndFetchHandle(OBJECTHANDLE handle)
     return UNCHECKED_OBJECTREF_TO_OBJECTREF(*PTR_UNCHECKED_OBJECTREF(handle));
 }
 
-
 /*
  * inline null testing (needed in certain cases where we're in the wrong GC mod)
  */

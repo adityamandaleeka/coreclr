@@ -2447,7 +2447,8 @@ public:
     BOOL IsThrowableNull()
     {
         WRAPPER_NO_CONTRACT;
-        return IsHandleNullUnchecked(m_ExceptionState.GetThrowableAsHandle());
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->IsHandleNullUnchecked(m_ExceptionState.GetThrowableAsHandle());
     }
 
     BOOL IsExceptionInProgress()
@@ -2676,7 +2677,9 @@ public:
             MODE_COOPERATIVE;
         }
         CONTRACTL_END;
-        return (ObjectFromHandle(m_ExposedObject) != NULL) ;
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return (pHeap->ObjectFromHandle(m_ExposedObject) != NULL) ;
     }
 
     void GetSynchronizationContext(OBJECTREF *pSyncContextObj)
@@ -4074,9 +4077,12 @@ public:
         }
         else
         {
+            IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+            OBJECTREF lastThrownObj = (OBJECTREF)pHeap->ObjectFromHandle(m_LastThrownObjectHandle);
+
             // We only have a handle if we have an object to keep in it.
-            _ASSERTE(ObjectFromHandle(m_LastThrownObjectHandle) != NULL);
-            return ObjectFromHandle(m_LastThrownObjectHandle);
+            _ASSERTE(lastThrownObj != NULL);
+            return lastThrownObj;
         }
     }
 

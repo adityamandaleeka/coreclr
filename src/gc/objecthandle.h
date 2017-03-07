@@ -27,12 +27,13 @@
  * non-NULL.  In other words, if this handle is being initialized for the first
  * time.
  */
-#define ObjectFromHandle(handle)                   HndFetchHandle(handle)
+// #define ObjectFromHandle(handle)                   HndFetchHandle(handle)
+#define ObzjectFromHandle(handle)                   HndFetchHandle(handle)
 #define StoreObjectInHandle(handle, object)        HndAssignHandle(handle, object)
 #define InterlockedCompareExchangeObjectInHandle(handle, object, oldObj)        HndInterlockedCompareExchangeHandle(handle, object, oldObj)
 #define StoreFirstObjectInHandle(handle, object)   HndFirstAssignHandle(handle, object)
 #define ObjectHandleIsNull(handle)                 HndIsNull(handle)
-#define IsHandleNullUnchecked(handle)              HndCheckForNullUnchecked(handle)
+// #define IsHandleNullUnchecked(handle)              HndCheckForNullUnchecked(handle)
 
 
 /*
@@ -209,16 +210,16 @@ GVAL_DECL(HandleTableMap, g_HandleTableMap);
 
 #define INITIAL_HANDLE_TABLE_ARRAY_SIZE 10
 
-// struct containing g_SystemInfo.dwNumberOfProcessors HHANDLETABLEs and current table index
-// instead of just single HHANDLETABLE for on-fly balancing while adding handles on multiproc machines
+// // struct containing g_SystemInfo.dwNumberOfProcessors HHANDLETABLEs and current table index
+// // instead of just single HHANDLETABLE for on-fly balancing while adding handles on multiproc machines
 
-struct HandleTableBucket
-{
-    PTR_HHANDLETABLE pTable;
-    uint32_t         HandleTableIndex;
+// struct HandleTableBucket
+// {
+//     PTR_HHANDLETABLE pTable;
+//     uint32_t         HandleTableIndex;
 
-    bool Contains(OBJECTHANDLE handle);
-};
+//     bool Contains(OBJECTHANDLE handle);
+// };
 
 
 /*

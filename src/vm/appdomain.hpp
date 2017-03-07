@@ -1238,39 +1238,51 @@ public:
     OBJECTHANDLE CreateTypedHandle(OBJECTREF object, int type)
     {
         WRAPPER_NO_CONTRACT;
-        return ::CreateTypedHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], object, type);
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreateTypedHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(object), type);
     }
 
     OBJECTHANDLE CreateHandle(OBJECTREF object)
     {
         WRAPPER_NO_CONTRACT;
         CONDITIONAL_CONTRACT_VIOLATION(ModeViolation, object == NULL)
-        return ::CreateHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], object);
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreateHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(object));
     }
 
     OBJECTHANDLE CreateWeakHandle(OBJECTREF object)
     {
         WRAPPER_NO_CONTRACT;
-        return ::CreateWeakHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], object);
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreateWeakHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(object));
     }
 
     OBJECTHANDLE CreateShortWeakHandle(OBJECTREF object)
     {
         WRAPPER_NO_CONTRACT;
-        return ::CreateShortWeakHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], object);
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreateShortWeakHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(object));
     }
 
     OBJECTHANDLE CreateLongWeakHandle(OBJECTREF object)
     {
         WRAPPER_NO_CONTRACT;
         CONDITIONAL_CONTRACT_VIOLATION(ModeViolation, object == NULL)
-        return ::CreateLongWeakHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], object);
+        
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreateLongWeakHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(object));
     }
 
     OBJECTHANDLE CreateStrongHandle(OBJECTREF object)
     {
         WRAPPER_NO_CONTRACT;
-        return ::CreateStrongHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], object);
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreateStrongHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(object));
     }
 
     OBJECTHANDLE CreatePinningHandle(OBJECTREF object)
@@ -1280,15 +1292,20 @@ public:
         if(IsAppDomain())
             object->TryAssignAppDomain((AppDomain*)this,TRUE);
 #endif
-        return ::CreatePinningHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], object);
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreatePinningHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(object));
     }
 
     OBJECTHANDLE CreateSizedRefHandle(OBJECTREF object)
     {
         WRAPPER_NO_CONTRACT;
-        OBJECTHANDLE h = ::CreateSizedRefHandle(
-            m_hHandleTableBucket->pTable[GCHeapUtilities::IsServerHeap() ? (m_dwSizedRefHandles % m_iNumberOfProcessors) : GetCurrentThreadHomeHeapNumber()], 
-            object);
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        OBJECTHANDLE h = pHeap->CreateSizedRefHandle(
+            m_hHandleTableBucket->pTable[GCHeapUtilities::IsServerHeap() ? 
+                (m_dwSizedRefHandles % m_iNumberOfProcessors) : pHeap->GetCurrentThreadHomeHeapNumber()], 
+            OBJECTREFToObject(object));
         InterlockedIncrement((LONG*)&m_dwSizedRefHandles);
         return h;
     }
@@ -1297,7 +1314,9 @@ public:
     OBJECTHANDLE CreateRefcountedHandle(OBJECTREF object)
     {
         WRAPPER_NO_CONTRACT;
-        return ::CreateRefcountedHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], object);
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreateRefcountedHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(object));
     }
 
     OBJECTHANDLE CreateWinRTWeakHandle(OBJECTREF object, IWeakReference* pWinRTWeakReference)
@@ -1310,20 +1329,25 @@ public:
         }
         CONTRACTL_END;
 
-        return ::CreateWinRTWeakHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], object, pWinRTWeakReference);
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreateWinRTWeakHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(object), pWinRTWeakReference);
     }
 #endif // FEATURE_COMINTEROP
 
     OBJECTHANDLE CreateVariableHandle(OBJECTREF object, UINT type)
     {
         WRAPPER_NO_CONTRACT;
-        return ::CreateVariableHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], object, type);
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreateVariableHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(object), type);
     }
 
     OBJECTHANDLE CreateDependentHandle(OBJECTREF primary, OBJECTREF secondary)
     {
         WRAPPER_NO_CONTRACT;
-        return ::CreateDependentHandle(m_hHandleTableBucket->pTable[GetCurrentThreadHomeHeapNumber()], primary, secondary);
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return pHeap->CreateDependentHandle(m_hHandleTableBucket->pTable[pHeap->GetCurrentThreadHomeHeapNumber()], OBJECTREFToObject(primary), OBJECTREFToObject(secondary));
     }
 #endif // DACCESS_COMPILE && !CROSSGEN_COMPILE
 
@@ -2011,12 +2035,14 @@ public:
             MODE_COOPERATIVE;
         }
         CONTRACTL_END;
-        if (m_ExposedObject) {
-            return ObjectFromHandle(m_ExposedObject);
-        }
-        else {
+
+        if (!m_ExposedObject)
+        {
             return NULL;
         }
+
+        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+        return (OBJECTREF)pHeap->ObjectFromHandle(m_ExposedObject);
     }
 
     OBJECTHANDLE GetRawExposedObjectHandleForDebugger() { LIMITED_METHOD_DAC_CONTRACT; return m_ExposedObject; }
