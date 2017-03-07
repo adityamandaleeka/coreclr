@@ -439,7 +439,7 @@ CLREvent * GCHeap::GetWaitForGCEvent()
 
 Object* GCHeap::ObjectFromHandle(OBJECTHANDLE handle)
 {
-    return HndFetchHandle(handle);
+    return OBJECTREFToObject(HndFetchHandle(handle));
 }
 
 void GCHeap::WaitUntilConcurrentGCComplete()
