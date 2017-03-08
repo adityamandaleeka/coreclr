@@ -34216,11 +34216,11 @@ BOOL GCHeap::StressHeap(gc_alloc_context * context)
         StringObject* str;
 
         // If the current string is used up
-        if (ObjectFromHandle(m_StressObjs[m_CurStressObj]) == 0)
+        if (ObzjectFromHandle(m_StressObjs[m_CurStressObj]) == 0)
         {
             // Populate handles with strings
             int i = m_CurStressObj;
-            while(ObjectFromHandle(m_StressObjs[i]) == 0)
+            while(ObzjectFromHandle(m_StressObjs[i]) == 0)
             {
                 _ASSERTE(m_StressObjs[i] != 0);
                 unsigned strLen = (LARGE_OBJECT_SIZE - 32) / sizeof(WCHAR);
@@ -34252,7 +34252,7 @@ BOOL GCHeap::StressHeap(gc_alloc_context * context)
         }
 
         // Get the current string
-        str = (StringObject*) ObjectFromHandle(m_StressObjs[m_CurStressObj]);
+        str = (StringObject*) OBJECTREFToObject(ObzjectFromHandle(m_StressObjs[m_CurStressObj]));
         if (str)
         {
             // Chop off the end of the string and form a new object out of it.

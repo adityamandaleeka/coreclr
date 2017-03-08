@@ -97,7 +97,7 @@ public:
 
     virtual DWORD StringObjectGetStringLength(StringObject* so) = 0;
 
-    virtual void *GetObjectFromHandle(OBJECTHANDLE handle) = 0;
+    virtual void *GetObzjectFromHandle(OBJECTHANDLE handle) = 0;
 
     virtual OBJECTHANDLE GetHandleFromObject(void *obj,
                                       bool fStrongNewRef,

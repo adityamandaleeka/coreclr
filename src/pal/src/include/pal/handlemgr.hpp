@@ -128,7 +128,7 @@ namespace CorUnix
         //
 
         PAL_ERROR
-        GetObjectFromHandle(
+        GetObzjectFromHandle(
             CPalThread *pThread,
             HANDLE h,
             DWORD *pdwRightsGranted,

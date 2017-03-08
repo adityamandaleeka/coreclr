@@ -3844,7 +3844,7 @@ ExceptionTracker* ExceptionTracker::GetOrCreateTracker(
         {
             if (fIsRethrow)
             {
-                oThrowable = ObjectFromHandle(pTracker->m_hThrowable);
+                oThrowable = ObzjectFromHandle(pTracker->m_hThrowable);
             }
             else
             {

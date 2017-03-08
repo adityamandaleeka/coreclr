@@ -59,7 +59,7 @@ FCIMPL2(VOID, DependentHandle::nGetPrimary, OBJECTHANDLE handle, Object **outPri
 {
     FCALL_CONTRACT;
     _ASSERTE(handle != NULL && outPrimary != NULL);
-    *outPrimary = OBJECTREFToObject(ObjectFromHandle(handle));
+    *outPrimary = OBJECTREFToObject(ObzjectFromHandle(handle));
 }
 FCIMPLEND
 
@@ -69,7 +69,7 @@ FCIMPL3(VOID, DependentHandle::nGetPrimaryAndSecondary, OBJECTHANDLE handle, Obj
 {
     FCALL_CONTRACT;
     _ASSERTE(handle != NULL && outPrimary != NULL && outSecondary != NULL);
-    *outPrimary = OBJECTREFToObject(ObjectFromHandle(handle));
+    *outPrimary = OBJECTREFToObject(ObzjectFromHandle(handle));
     *outSecondary = OBJECTREFToObject(GetDependentHandleSecondary(handle));
 }
 FCIMPLEND
