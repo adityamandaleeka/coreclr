@@ -444,7 +444,7 @@ Object* GCHeap::ObjectFromHandle(OBJECTHANDLE handle)
 
 void GCHeap::DestroyHandle(OBJECTHANDLE handle)
 {
-    return DestroyHandle(handle);
+    return ::DestroyHandle(handle);
 }
 
 BOOL GCHeap::IsHandleNullUnchecked(OBJECTHANDLE handle) 
