@@ -13,7 +13,7 @@ inline LOADERALLOCATORREF LoaderAllocator::GetExposedObject()
 { 
     LIMITED_METHOD_CONTRACT;
 
-    // OBJECTREF loaderAllocatorObject = (m_hLoaderAllocatorObjectHandle != NULL) ? ObjectFromHandle(m_hLoaderAllocatorObjectHandle) : NULL;
+    // OBJECTREF loaderAllocatorObject = (m_hLoaderAllocatorObjectHandle != NULL) ? ObzjectFromHandle(m_hLoaderAllocatorObjectHandle) : NULL;
 
     OBJECTREF loaderAllocatorObject = NULL;
     if (m_hLoaderAllocatorObjectHandle != NULL)

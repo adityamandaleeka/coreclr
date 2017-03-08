@@ -5725,7 +5725,7 @@ BOOL DacDbiInterfaceImpl::IsVmObjectHandleValid(VMPTR_OBJECTHANDLE vmHandle)
     // SEH exceptions will be caught
     EX_TRY
     {
-        OBJECTREF objRef = ObjectFromHandle((OBJECTHANDLE)vmHandle.GetDacPtr());
+        OBJECTREF objRef = ObzjectFromHandle((OBJECTHANDLE)vmHandle.GetDacPtr());
 
         // NULL is certinally valid...
         if (objRef != NULL)

@@ -455,7 +455,7 @@ BOOL Thread::SetThreadPriority(
     if (fRet)
     {
         GCX_COOP();
-        THREADBASEREF pObject = (THREADBASEREF)ObjectFromHandle(m_ExposedObject);
+        THREADBASEREF pObject = (THREADBASEREF)ObzjectFromHandle(m_ExposedObject);
         if (pObject != NULL)
         {
             // TODO: managed ThreadPriority only supports up to 4.
@@ -2811,7 +2811,7 @@ int Thread::IncExternalCount()
         {
             GCX_COOP();
             // Store the object in the strong handle.
-            StoreObjectInHandle(m_StrongHndToExposedObject, ObjectFromHandle(m_ExposedObject));
+            StoreObjectInHandle(m_StrongHndToExposedObject, ObzjectFromHandle(m_ExposedObject));
         }
     }
 
@@ -4772,7 +4772,7 @@ OBJECTREF Thread::GetExposedObject()
 
     _ASSERTE(pCurThread->PreemptiveGCDisabled());
 
-    if (ObjectFromHandle(m_ExposedObject) == NULL)
+    if (ObzjectFromHandle(m_ExposedObject) == NULL)
     {
         // Allocate the exposed thread object.
         THREADBASEREF attempt = (THREADBASEREF) AllocateObject(g_pThreadClass);
@@ -4788,7 +4788,7 @@ OBJECTREF Thread::GetExposedObject()
         ThreadStoreLockHolder tsHolder(fNeedThreadStore);
 
         // Check to see if another thread has not already created the exposed object.
-        if (ObjectFromHandle(m_ExposedObject) == NULL)
+        if (ObzjectFromHandle(m_ExposedObject) == NULL)
         {
             // Keep a weak reference to the exposed object.
             StoreObjectInHandle(m_ExposedObject, (OBJECTREF) attempt);
@@ -4829,7 +4829,7 @@ OBJECTREF Thread::GetExposedObject()
 
         GCPROTECT_END();
     }
-    return ObjectFromHandle(m_ExposedObject);
+    return ObzjectFromHandle(m_ExposedObject);
 }
 
 
@@ -4847,7 +4847,7 @@ void Thread::SetExposedObject(OBJECTREF exposed)
     {
         _ASSERTE (GetThread() != this);
         _ASSERTE(IsUnstarted());
-        _ASSERTE(ObjectFromHandle(m_ExposedObject) == NULL);
+        _ASSERTE(ObzjectFromHandle(m_ExposedObject) == NULL);
         // The exposed object keeps us alive until it is GC'ed.  This doesn't mean the
         // physical thread continues to run, of course.
         StoreObjectInHandle(m_ExposedObject, exposed);
@@ -10440,7 +10440,7 @@ INT32 Thread::ResetManagedThreadObjectInCoopMode(INT32 nPriority)
     }
     CONTRACTL_END;
 
-    THREADBASEREF pObject = (THREADBASEREF)ObjectFromHandle(m_ExposedObject);
+    THREADBASEREF pObject = (THREADBASEREF)ObzjectFromHandle(m_ExposedObject);
     if (pObject != NULL)
     {
         pObject->ResetCulture();
@@ -10490,7 +10490,7 @@ BOOL Thread::IsRealThreadPoolResetNeeded()
     if(!IsBackground())
         return TRUE;
 
-    THREADBASEREF pObject = (THREADBASEREF)ObjectFromHandle(m_ExposedObject);
+    THREADBASEREF pObject = (THREADBASEREF)ObzjectFromHandle(m_ExposedObject);
 
     if(pObject != NULL)
     {

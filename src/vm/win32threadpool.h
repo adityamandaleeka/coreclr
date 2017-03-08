@@ -758,7 +758,7 @@ private:
                     ENTER_DOMAIN_ID(owningAD);
                     {
                         // Read the GC handle
-                        refSH = (SAFEHANDLEREF) ObjectToOBJECTREF(ObjectFromHandle(hndSafeHandle));
+                        refSH = (SAFEHANDLEREF) ObjectToOBJECTREF(ObzjectFromHandle(hndSafeHandle));
 
                         // Destroy the GC handle
                         DestroyHandle(hndSafeHandle);

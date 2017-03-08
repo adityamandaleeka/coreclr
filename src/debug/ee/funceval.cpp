@@ -863,7 +863,7 @@ static void GetFuncEvalArgValue(DebuggerEval *pDE,
                         _ASSERTE(dataLocation & DL_BufferForArgsArray);
 
                         OBJECTHANDLE oh = *((OBJECTHANDLE*)(pBufferArg));  // Always comes from buffer
-                        *pArgument = PtrToArgSlot(g_pEEInterface->GetObjectFromHandle(oh));
+                        *pArgument = PtrToArgSlot(g_pEEInterface->GetObzjectFromHandle(oh));
                     }
                     else
                     {
