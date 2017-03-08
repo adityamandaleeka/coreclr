@@ -309,14 +309,14 @@ PTRARRAYREF DispatchMemberInfo::GetParameters()
     {
         case Method:
         {
-            pGetParamsMD = DispatchInfo::GetMethodInfoMD(METHOD__METHOD__GET_PARAMETERS, ObjectFromHandle(m_hndMemberInfo)->GetTypeHandle());
+            pGetParamsMD = DispatchInfo::GetMethodInfoMD(METHOD__METHOD__GET_PARAMETERS, ObzjectFromHandle(m_hndMemberInfo)->GetTypeHandle());
             _ASSERTE(pGetParamsMD && "Unable to find method MemberBase::GetParameters");
             break;
         }
 
         case Property:
         {
-            pGetParamsMD = DispatchInfo::GetPropertyInfoMD(METHOD__PROPERTY__GET_INDEX_PARAMETERS, ObjectFromHandle(m_hndMemberInfo)->GetTypeHandle());
+            pGetParamsMD = DispatchInfo::GetPropertyInfoMD(METHOD__PROPERTY__GET_INDEX_PARAMETERS, ObzjectFromHandle(m_hndMemberInfo)->GetTypeHandle());
             _ASSERTE(pGetParamsMD && "Unable to find method PropertyInfo::GetIndexParameters");
             break;
         }
@@ -329,7 +329,7 @@ PTRARRAYREF DispatchMemberInfo::GetParameters()
 
         ARG_SLOT GetParamsArgs[] =
         { 
-            ObjToArgSlot(ObjectFromHandle(m_hndMemberInfo))
+            ObjToArgSlot(ObzjectFromHandle(m_hndMemberInfo))
         };
         
         ParamArray = (PTRARRAYREF) getParams.Call_RetOBJECTREF(GetParamsArgs);
@@ -567,7 +567,7 @@ void DispatchMemberInfo::DetermineMemberType()
     }
     CONTRACTL_END;
 
-    OBJECTREF MemberInfoObj = ObjectFromHandle(m_hndMemberInfo);
+    OBJECTREF MemberInfoObj = ObzjectFromHandle(m_hndMemberInfo);
 
     // Check to see if the member info is of a type we have already seen.
     TypeHandle pMemberInfoClass   = MemberInfoObj->GetTypeHandle();
@@ -619,7 +619,7 @@ void DispatchMemberInfo::DetermineParamCount()
 
     MethodDesc *pGetParamsMD = NULL;
 
-    OBJECTREF MemberInfoObj = ObjectFromHandle(m_hndMemberInfo);
+    OBJECTREF MemberInfoObj = ObzjectFromHandle(m_hndMemberInfo);
     GCPROTECT_BEGIN(MemberInfoObj);
     {
         // Retrieve the method to use to retrieve the array of parameters.
@@ -627,14 +627,14 @@ void DispatchMemberInfo::DetermineParamCount()
         {
             case Method:
             {
-                pGetParamsMD = DispatchInfo::GetMethodInfoMD(METHOD__METHOD__GET_PARAMETERS, ObjectFromHandle(m_hndMemberInfo)->GetTypeHandle());
+                pGetParamsMD = DispatchInfo::GetMethodInfoMD(METHOD__METHOD__GET_PARAMETERS, ObzjectFromHandle(m_hndMemberInfo)->GetTypeHandle());
                 _ASSERTE(pGetParamsMD && "Unable to find method MemberBase::GetParameters");
                 break;
             }
 
             case Property:
             {
-                pGetParamsMD = DispatchInfo::GetPropertyInfoMD(METHOD__PROPERTY__GET_INDEX_PARAMETERS, ObjectFromHandle(m_hndMemberInfo)->GetTypeHandle());
+                pGetParamsMD = DispatchInfo::GetPropertyInfoMD(METHOD__PROPERTY__GET_INDEX_PARAMETERS, ObzjectFromHandle(m_hndMemberInfo)->GetTypeHandle());
                 _ASSERTE(pGetParamsMD && "Unable to find method PropertyInfo::GetIndexParameters");
                 break;
             }
@@ -647,7 +647,7 @@ void DispatchMemberInfo::DetermineParamCount()
             
             ARG_SLOT GetParamsArgs[] =
             {
-                ObjToArgSlot(ObjectFromHandle(m_hndMemberInfo))
+                ObjToArgSlot(ObzjectFromHandle(m_hndMemberInfo))
             };
             
             PTRARRAYREF ParamArray = (PTRARRAYREF) getParams.Call_RetOBJECTREF(GetParamsArgs);
@@ -678,7 +678,7 @@ void DispatchMemberInfo::DetermineCultureAwareness()
     MethodTable * pLcIdConvAttrClass = MscorlibBinder::GetClass(CLASS__LCID_CONVERSION_TYPE);
 
     // Check to see if the attribute is set.
-    OBJECTREF MemberInfoObj = ObjectFromHandle(m_hndMemberInfo);
+    OBJECTREF MemberInfoObj = ObzjectFromHandle(m_hndMemberInfo);
     GCPROTECT_BEGIN(MemberInfoObj);
     {
         // Retrieve the method to use to determine if the DispIdAttribute custom attribute is set.
@@ -734,7 +734,7 @@ void DispatchMemberInfo::SetUpParamMarshalerInfo()
     BOOL bSetUpReturnValueOnly = FALSE;
     OBJECTREF SetterObj = NULL;
     OBJECTREF GetterObj = NULL;
-    OBJECTREF MemberInfoObj = ObjectFromHandle(m_hndMemberInfo);   
+    OBJECTREF MemberInfoObj = ObzjectFromHandle(m_hndMemberInfo);   
 
     GCPROTECT_BEGIN(SetterObj);
     GCPROTECT_BEGIN(GetterObj);
@@ -1127,7 +1127,7 @@ DispatchMemberInfo* DispatchInfo::FindMember(SString& strName, BOOL bCaseSensiti
     DispatchMemberInfo *pCurrMemberInfo = m_pFirstMemberInfo;
     while (pCurrMemberInfo)
     {
-        if (ObjectFromHandle(pCurrMemberInfo->m_hndMemberInfo) != NULL)
+        if (ObzjectFromHandle(pCurrMemberInfo->m_hndMemberInfo) != NULL)
         {
             // Compare the 2 strings.
             if (bCaseSensitive ? 
@@ -1586,7 +1586,7 @@ void DispatchInfo::InvokeMemberWorker(DispatchMemberInfo*   pDispMemberInfo,
         }
 
         // Retrieve the member info object and the type of the member.
-        pObjs->MemberInfo = ObjectFromHandle(pDispMemberInfo->m_hndMemberInfo);
+        pObjs->MemberInfo = ObzjectFromHandle(pDispMemberInfo->m_hndMemberInfo);
         MemberType = pDispMemberInfo->GetMemberType();
     
         // Determine whether the member has a link time security check. If so we
@@ -2839,7 +2839,7 @@ BOOL DispatchInfo::SynchWithManagedView()
                     while (pCurrMemberInfo)
                     {
                         // We can simply compare the OBJECTREF's.
-                        if (CurrMemberInfoObj == ObjectFromHandle(pCurrMemberInfo->m_hndMemberInfo))
+                        if (CurrMemberInfoObj == ObzjectFromHandle(pCurrMemberInfo->m_hndMemberInfo))
                         {
                             // We have found a match.
                             bMatch = TRUE;
@@ -2944,7 +2944,7 @@ OBJECTREF DispatchInfo::GetOleAutBinder()
 
     // If we have already create the instance of the OleAutBinder then simply return it.
     if (m_hndOleAutBinder)
-        return ObjectFromHandle(m_hndOleAutBinder);
+        return ObzjectFromHandle(m_hndOleAutBinder);
 
     MethodTable *pOleAutBinderClass = MscorlibBinder::GetClass(CLASS__OLE_AUT_BINDER);
 
@@ -3398,7 +3398,7 @@ DispatchMemberInfo* DispatchExInfo::GetFirstMember()
     }
 
     // Now we need to make sure we skip any members that are deleted.
-    while ((*ppNextMemberInfo) && !ObjectFromHandle((*ppNextMemberInfo)->m_hndMemberInfo))
+    while ((*ppNextMemberInfo) && !ObzjectFromHandle((*ppNextMemberInfo)->m_hndMemberInfo))
         ppNextMemberInfo = &((*ppNextMemberInfo)->m_pNext);
 
     RETURN *ppNextMemberInfo;
@@ -3438,7 +3438,7 @@ DispatchMemberInfo* DispatchExInfo::GetNextMember(DISPID CurrMemberDispID)
     }
 
     // Now we need to make sure we skip any members that are deleted.
-    while ((*ppNextMemberInfo) && !ObjectFromHandle((*ppNextMemberInfo)->m_hndMemberInfo))
+    while ((*ppNextMemberInfo) && !ObzjectFromHandle((*ppNextMemberInfo)->m_hndMemberInfo))
         ppNextMemberInfo = &((*ppNextMemberInfo)->m_pNext);
 
     RETURN *ppNextMemberInfo;
@@ -3547,7 +3547,7 @@ void DispatchExInfo::DeleteMember(DISPID DispID)
         CrstHolder ch(&m_lock);
 
         // If the member does not exist, it is static or has been deleted then we have nothing more to do.
-        if (pDispMemberInfo && (ObjectFromHandle(pDispMemberInfo->m_hndMemberInfo) != NULL))
+        if (pDispMemberInfo && (ObzjectFromHandle(pDispMemberInfo->m_hndMemberInfo) != NULL))
         {
             OBJECTREF TargetObj = GetReflectionObject();
             GCPROTECT_BEGIN(TargetObj);
@@ -3556,7 +3556,7 @@ void DispatchExInfo::DeleteMember(DISPID DispID)
             MethodDesc *pMD = GetIExpandoMD(METHOD__IEXPANDO__REMOVE_MEMBER);
             MethodDescCallSite removeMember(pMD, &TargetObj);
 
-            OBJECTREF MemberInfoObj = ObjectFromHandle(pDispMemberInfo->m_hndMemberInfo);
+            OBJECTREF MemberInfoObj = ObzjectFromHandle(pDispMemberInfo->m_hndMemberInfo);
 
             // Prepare the arguments that will be passed to RemoveMember.
             ARG_SLOT Args[] =

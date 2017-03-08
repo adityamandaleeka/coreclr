@@ -869,8 +869,10 @@ void EEStartupHelper(COINITIEE fFlags)
 
         GCInterface::m_MemoryPressureLock.Init(CrstGCMemoryPressure);
 
+        InitializeGarbageCollector();
 
 #endif // CROSSGEN_COMPILE
+
 
         // Setup the domains. Threads are started in a default domain.
 
@@ -991,7 +993,7 @@ void EEStartupHelper(COINITIEE fFlags)
         }
 #endif
 
-        InitializeGarbageCollector();
+        // InitializeGarbageCollector();
 
         InitializePinHandleTable();
 

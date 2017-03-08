@@ -5019,7 +5019,7 @@ void GetComClassFromProgID(STRINGREF srefProgID, STRINGREF srefServer, OBJECTREF
         
         if (pClassFactHash->GetValue(&ClassFactInfo, (HashDatum *)&hRef))
         {
-            *pRef = ObjectFromHandle(hRef);
+            *pRef = ObzjectFromHandle(hRef);
         }
         else
         {
@@ -5106,7 +5106,7 @@ void GetComClassFromCLSID(REFCLSID clsid, STRINGREF srefServer, OBJECTREF *pRef)
         
         if (pClassFactHash->GetValue(&ClassFactInfo, (HashDatum*) &hRef))
         {
-            *pRef = ObjectFromHandle(hRef);
+            *pRef = ObzjectFromHandle(hRef);
         }
         else
         {
@@ -5141,7 +5141,7 @@ void GetComClassHelper(OBJECTREF *pRef, EEClassFactoryInfoHashTable *pClassFactH
     // Check again.
     if (pClassFactHash->GetValue(pClassFactInfo, (HashDatum *)&hRef))
     {
-        *pRef = ObjectFromHandle(hRef);
+        *pRef = ObzjectFromHandle(hRef);
     }
     else
     {

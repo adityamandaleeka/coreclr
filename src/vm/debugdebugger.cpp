@@ -1432,7 +1432,7 @@ FCIMPL1( void, Log::AddLogSwitch,
         // Create a strong reference handle to the LogSwitch object
         OBJECTHANDLE ObjHandle = pThread->GetDomain()->CreateStrongHandle(NULL);
         StoreObjectInHandle(ObjHandle, ObjectToOBJECTREF(gc.m_LogSwitch));
-        // Use  ObjectFromHandle(ObjHandle) to get back the object. 
+        // Use  ObzjectFromHandle(ObjHandle) to get back the object. 
         
         hresult = g_sLogHashTable.AddEntryToHashTable(pstrCategoryName, ObjHandle);
 
@@ -1574,7 +1574,7 @@ void Log::DebuggerModifyingLogSwitch (int iNewLevel,
     OBJECTHANDLE ObjHandle = g_sLogHashTable.GetEntryFromHashTable (pLogSwitchName);
     if ( ObjHandle != NULL)
     {
-        OBJECTREF obj = ObjectFromHandle (ObjHandle);
+        OBJECTREF obj = ObzjectFromHandle (ObjHandle);
         LogSwitchObject *pLogSwitch = (LogSwitchObject *)(OBJECTREFToObject (obj));
 
         pLogSwitch->SetLevel (iNewLevel);

@@ -139,7 +139,7 @@ public:
     {
         LIMITED_METHOD_CONTRACT;
         
-        return (m_hThrowable != NULL)?ObjectFromHandle(m_hThrowable):NULL;
+        return (m_hThrowable != NULL)?ObzjectFromHandle(m_hThrowable):NULL;
     }
 
     // Returns the throwble associated with the tracker as handle

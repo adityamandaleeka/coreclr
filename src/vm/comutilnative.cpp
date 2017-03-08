@@ -1804,7 +1804,7 @@ FCIMPL1(int, GCInterface::GetGenerationWR, LPVOID handle)
     HELPER_METHOD_FRAME_BEGIN_RET_0();
 
     OBJECTREF temp;
-    temp = ObjectFromHandle((OBJECTHANDLE) handle);
+    temp = ObzjectFromHandle((OBJECTHANDLE) handle);
     if (temp == NULL)
         COMPlusThrowArgumentNull(W("weak handle"));
 

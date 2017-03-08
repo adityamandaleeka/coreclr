@@ -1726,7 +1726,7 @@ static void Stress_Thread_Proc_Worker_Impl(Stress_Thread_Worker_Param * args)
     // Build the parameter array and invoke the method.
     if (lpParam->EntryType == EntryManagedMain) 
     {
-        PTRARRAYREF StrArgArray = (PTRARRAYREF)ObjectFromHandle(lpParam->argHandle.GetValue());
+        PTRARRAYREF StrArgArray = (PTRARRAYREF)ObzjectFromHandle(lpParam->argHandle.GetValue());
         stackVar = ObjToArgSlot(StrArgArray);
     }
 

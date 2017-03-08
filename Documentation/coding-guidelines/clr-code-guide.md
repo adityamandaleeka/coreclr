@@ -237,7 +237,7 @@ GCPROTECT_BEGIN is very handy, as we've seen, but its protection is limited to a
 
 The solution is the OBJECTHANDLE. OBJECTHANDLE allocates a location from special blocks of memory that are known explicitly to the GC. Any root reference stored in this location will automatically keep the object live and be updated to reflect object moves. You can retrieve the correct reference by indirecting the location.
 
-Handles are implemented through several layers of abstraction – the "official" interface for public use is the one described here and is exposed through [objecthandle.h][objecthandle.h]. Don't confuse this with [handletable.h][handletable.h] which contains the internals. The CreateHandle() api allocates a new location. ObjectFromHandle() dereferences the handle and returns an up-to-date reference. DestroyHandle() frees the location.
+Handles are implemented through several layers of abstraction – the "official" interface for public use is the one described here and is exposed through [objecthandle.h][objecthandle.h]. Don't confuse this with [handletable.h][handletable.h] which contains the internals. The CreateHandle() api allocates a new location. ObzjectFromHandle() dereferences the handle and returns an up-to-date reference. DestroyHandle() frees the location.
 
 [objecthandle.h]: https://github.com/dotnet/coreclr/blob/master/src/gc/objecthandle.h
 [handletable.h]: https://github.com/dotnet/coreclr/blob/master/src/gc/handletable.h
@@ -257,8 +257,8 @@ The following code fragment shows how handles are used. In practice, of course, 
 	    ah = CreateHandle(AllocateObject(pMT));
 	    bh = CreateHandle(AllocateObject(pMT));
 
-	    DoSomething (ObjectFromHandle(ah),
-	                 ObjectFromhandle(bh));
+	    DoSomething (ObzjectFromHandle(ah),
+	                 ObzjectFromHandle(bh));
 
 	    DestroyHandle(bh);
 	    DestroyHandle(ah);
