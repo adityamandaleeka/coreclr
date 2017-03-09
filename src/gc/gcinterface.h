@@ -153,6 +153,15 @@ struct segment_info
     size_t ibReserved; // limit of reserved memory in the segment (>= commit)
 };
 
+
+/*
+ * handle to handle table
+ */
+typedef DPTR(struct HandleTable) PTR_HandleTable;
+typedef DPTR(PTR_HandleTable) PTR_PTR_HandleTable;
+typedef PTR_HandleTable HHANDLETABLE;
+typedef PTR_PTR_HandleTable PTR_HHANDLETABLE;
+
 // struct containing g_SystemInfo.dwNumberOfProcessors HHANDLETABLEs and current table index
 // instead of just single HHANDLETABLE for on-fly balancing while adding handles on multiproc machines
 struct HandleTableBucket
@@ -397,17 +406,6 @@ typedef void (* fq_walk_fn)(BOOL, void*);
 typedef void (* fq_scan_fn)(Object** ppObject, ScanContext *pSC, uint32_t dwFlags);
 typedef void (* handle_scan_fn)(Object** pRef, Object* pSec, uint32_t flags, ScanContext* context, BOOL isDependent);
 
-///// temporary - remove
-// #ifndef DACCESS_COMPILE
-// struct OBJECTHANDLE__
-// {
-//     void* unused;
-// };
-// typedef struct OBJECTHANDLE__* OBJECTHANDLE;
-// #else
-// typedef TADDR OBJECTHANDLE;
-// #endif
-
 // IGCHeap is the interface that the VM will use when interacting with the GC.
 class IGCHeap {
 public:
@@ -441,14 +439,17 @@ public:
     // Returns whether or not the given size is a valid segment size.
     virtual Object* ObjectFromHandle(OBJECTHANDLE handle) = 0;
 
+    virtual void* InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref) = 0;
+
     virtual void DestroyHandle(OBJECTHANDLE handle) = 0;
 
     virtual BOOL IsHandleNullUnchecked(OBJECTHANDLE handle) = 0;
 
-    virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, int type) = 0;
+    virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, HandleType type) = 0;
 
     virtual int GetCurrentThreadHomeHeapNumber() = 0;
 
+//////// Replace all of these with just one function that takes a HandleType to create??
     virtual OBJECTHANDLE CreateHandle(HHANDLETABLE table, Object* object) = 0;
 
     virtual OBJECTHANDLE CreateWeakHandle(HHANDLETABLE table, Object* object) = 0;

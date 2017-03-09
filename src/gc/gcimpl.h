@@ -289,11 +289,13 @@ protected:
     ////////////
     virtual Object* ObjectFromHandle(OBJECTHANDLE handle);
 
+    virtual void* InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref);
+
     virtual void DestroyHandle(OBJECTHANDLE handle);
 
     virtual BOOL IsHandleNullUnchecked(OBJECTHANDLE handle);
 
-    virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, int type);
+    virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, HandleType type);
 
     virtual int GetCurrentThreadHomeHeapNumber();
 
