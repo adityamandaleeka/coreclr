@@ -638,13 +638,15 @@ FCIMPL2(LPVOID, MarshalNative::GCHandleInternalAlloc, Object *obj, int type)
     OBJECTHANDLE hnd = 0;
 
     HELPER_METHOD_FRAME_BEGIN_RET_NOPOLL();
-    
+
+    HandleType hndType = static_cast<HandleType>(type);
+
     // If it is a pinned handle, check the object type.
-    if (type == (uint32_t)HandleType::HNDTYPE_PINNED)
+    if (hndType == HandleType::HNDTYPE_PINNED)
         GCHandleValidatePinnedObject(objRef);
 
     // Create the handle.
-    hnd = GetAppDomain()->CreateTypedHandle(objRef, type);
+    hnd = GetAppDomain()->CreateTypedHandle(objRef, hndType);
 
     HELPER_METHOD_FRAME_END_POLL();
     return (LPVOID) hnd;
@@ -723,7 +725,8 @@ FCIMPL4(Object*, MarshalNative::GCHandleInternalCompareExchange, OBJECTHANDLE ha
         GCHandleValidatePinnedObject(newObjref);
 
     // Update the stored object reference.
-    ret = InterlockedCompareExchangeObjectInHandle(handle, newObjref, oldObjref);
+    IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
+    ret = pHeap->InterlockedCompareExchangeObjectInHandle(handle, OBJECTREFToObject(newObjref), OBJECTREFToObject(oldObjref));
     HELPER_METHOD_FRAME_END_POLL();
     return (Object*)ret;
 }

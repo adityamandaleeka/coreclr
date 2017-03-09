@@ -14,6 +14,7 @@
 #ifndef _HANDLETABLE_H
 #define _HANDLETABLE_H
 
+#include "gcinterface.h"
 
 /****************************************************************************
  *
@@ -31,13 +32,13 @@
 #define HNDF_NORMAL         (0x00)
 #define HNDF_EXTRAINFO      (0x01)
 
-/*
- * handle to handle table
- */
-typedef DPTR(struct HandleTable) PTR_HandleTable;
-typedef DPTR(PTR_HandleTable) PTR_PTR_HandleTable;
-typedef PTR_HandleTable HHANDLETABLE;
-typedef PTR_PTR_HandleTable PTR_HHANDLETABLE;
+// /*
+//  * handle to handle table
+//  */
+// typedef DPTR(struct HandleTable) PTR_HandleTable;
+// typedef DPTR(PTR_HandleTable) PTR_PTR_HandleTable;
+// typedef PTR_HandleTable HHANDLETABLE;
+// typedef PTR_PTR_HandleTable PTR_HHANDLETABLE;
 
 /*--------------------------------------------------------------------------*/
 
@@ -68,7 +69,7 @@ ADIndex         HndGetHandleADIndex(OBJECTHANDLE handle);
 /*
  * individual handle allocation and deallocation
  */
-OBJECTHANDLE    HndCreateHandle(HHANDLETABLE hTable, uint32_t uType, OBJECTREF object, uintptr_t lExtraInfo = 0);
+OBJECTHANDLE    HndCreateHandle(HHANDLETABLE hTable, HandleType uType, OBJECTREF object, uintptr_t lExtraInfo = 0);
 void            HndDestroyHandle(HHANDLETABLE hTable, uint32_t uType, OBJECTHANDLE handle);
 
 void            HndDestroyHandleOfUnknownType(HHANDLETABLE hTable, OBJECTHANDLE handle);
@@ -103,10 +104,10 @@ void            HndWriteBarrier(OBJECTHANDLE handle, OBJECTREF value);
  */
 void            HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value);
 
- /*
-  * Scanning callback.
-  */
-typedef void (CALLBACK *HANDLESCANPROC)(PTR_UNCHECKED_OBJECTREF pref, uintptr_t *pExtraInfo, uintptr_t param1, uintptr_t param2);
+//  /*
+//   * Scanning callback.
+//   */
+// typedef void (CALLBACK *HANDLESCANPROC)(PTR_UNCHECKED_OBJECTREF pref, uintptr_t *pExtraInfo, uintptr_t param1, uintptr_t param2);
 
 /*
  * NON-GC handle enumeration
