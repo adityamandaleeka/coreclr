@@ -318,9 +318,6 @@ OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, HandleType type, OBJECTREF obj
     // fetch the handle table pointer
     HandleTable *pTable = Table(hTable);
 
-    // sanity check the type index
-    _ASSERTE(static_cast<uint32_t>(type) < pTable->uTypeCount);
-
     // get a handle from the table's cache
     OBJECTHANDLE handle = TableAllocSingleHandleFromCache(pTable, static_cast<uint32_t>(type));
 
@@ -365,7 +362,7 @@ OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, HandleType type, OBJECTREF obj
     }
 #endif //GC_PROFILING
 
-    STRESS_LOG2(LF_GC, LL_INFO1000, "CreateHandle: %p, type=%d\n", handle, (int)type);
+    STRESS_LOG2(LF_GC, LL_INFO1000, "CreateHandle: %p, type=%d\n", handle, static_cast<uint32_t>(type));
 
     // return the result
     return handle;
@@ -761,7 +758,7 @@ void HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value)
 
 #ifndef FEATURE_REDHAWK
         // Also fire the things pinned by Async pinned handles
-        if (hndType == (uint32_t)HandleType::AsyncPinned)
+        if (hndType == static_cast<uint32_t>(HandleType::AsyncPinned))
         {
             if (value->GetMethodTable() == g_pOverlappedDataClass)
             {
@@ -775,14 +772,14 @@ void HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value)
                     {
                         value = ppObj[i];
                         uint32_t generation = value != 0 ? g_theGCHeap->WhichGeneration(value) : 0;
-                        FireEtwSetGCHandle(overlapped, value, (int)HandleType::Pinned, generation, (int64_t) pAppDomain, GetClrInstanceId());
+                        FireEtwSetGCHandle(overlapped, value, static_cast<unsigned int>(HandleType::Pinned), generation, (int64_t) pAppDomain, GetClrInstanceId());
                     }
                 }
                 else
                 {
                     value = OBJECTREF_TO_UNCHECKED_OBJECTREF(overlapped->m_userObject);
                     uint32_t generation = value != 0 ? g_theGCHeap->WhichGeneration(value) : 0;
-                    FireEtwSetGCHandle(overlapped, value, (int)HandleType::Pinned, generation, (int64_t) pAppDomain, GetClrInstanceId());
+                    FireEtwSetGCHandle(overlapped, value, static_cast<unsigned int>(HandleType::Pinned), generation, (int64_t) pAppDomain, GetClrInstanceId());
                 }
             }
         }
@@ -839,18 +836,18 @@ void HndWriteBarrier(OBJECTHANDLE handle, OBJECTREF objref)
     {
         // find out generation
         int generation = g_theGCHeap->WhichGeneration(value);
-        uint32_t uType = HandleFetchType(handle);
+        HandleType hndType = static_cast<HandleType>(HandleFetchType(handle));
 
 #ifndef FEATURE_REDHAWK
         //OverlappedData need special treatment: because all user data pointed by it needs to be reported by this handle,
         //its age is consider to be min age of the user data, to be simple, we just make it 0
-        if (uType == (uint32_t)HandleType::AsyncPinned && objref->GetGCSafeMethodTable () == g_pOverlappedDataClass)
+        if (hndType == HandleType::AsyncPinned && objref->GetGCSafeMethodTable () == g_pOverlappedDataClass)
         {
             generation = 0;
         }
 #endif // !FEATURE_REDHAWK
         
-        if (uType == (uint32_t)HandleType::Dependent)
+        if (hndType == HandleType::Dependent)
         {
             generation = 0;
         }
