@@ -444,6 +444,11 @@ Object* GCHeap::ObjectFromHandle(OBJECTHANDLE handle)
     return OBJECTREFToObject(HndFetchHandle(handle));
 }
 
+void* GCHeap::InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref)
+{
+
+}
+
 void GCHeap::DestroyHandle(OBJECTHANDLE handle)
 {
     return ::DestroyHandle(handle);
@@ -454,7 +459,7 @@ BOOL GCHeap::IsHandleNullUnchecked(OBJECTHANDLE handle)
     return ::IszHandleNullUnchecked(handle);
 }
 
-OBJECTHANDLE GCHeap::CreateTypedHandle(HHANDLETABLE table, Object* object, int type)
+OBJECTHANDLE GCHeap::CreateTypedHandle(HHANDLETABLE table, Object* object, HandleType type)
 {
     return ::CreateTypedHandle(table, ObjectToOBJECTREF(object), type);
 }

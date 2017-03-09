@@ -8134,7 +8134,7 @@ void DacHandleWalker::GetRefCountedHandleInfo(
     SUPPORTS_DAC;
 
 #ifdef FEATURE_COMINTEROP
-    if (uType == HNDTYPE_REFCOUNTED)
+    if (uType == static_cast<unsigned int>(HandleType::HNDTYPE_REFCOUNTED))
     {
         // get refcount from the CCW
         PTR_ComCallWrapper pWrap = ComCallWrapper::GetWrapperForObject(oref);

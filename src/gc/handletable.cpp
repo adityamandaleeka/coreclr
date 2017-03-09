@@ -281,7 +281,7 @@ ADIndex HndGetHandleADIndex(OBJECTHANDLE handle)
  * Entrypoint for allocating an individual handle.
  *
  */
-OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, uint32_t uType, OBJECTREF object, uintptr_t lExtraInfo)
+OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, HandleType type, OBJECTREF object, uintptr_t lExtraInfo)
 {
     CONTRACTL
     {
@@ -319,10 +319,10 @@ OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, uint32_t uType, OBJECTREF obje
     HandleTable *pTable = Table(hTable);
 
     // sanity check the type index
-    _ASSERTE(uType < pTable->uTypeCount);
+    _ASSERTE(static_cast<uint32_t>(type) < pTable->uTypeCount);
 
     // get a handle from the table's cache
-    OBJECTHANDLE handle = TableAllocSingleHandleFromCache(pTable, uType);
+    OBJECTHANDLE handle = TableAllocSingleHandleFromCache(pTable, static_cast<uint32_t>(type));
 
     // did the allocation succeed?
     if (!handle)
@@ -365,7 +365,7 @@ OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, uint32_t uType, OBJECTREF obje
     }
 #endif //GC_PROFILING
 
-    STRESS_LOG2(LF_GC, LL_INFO1000, "CreateHandle: %p, type=%d\n", handle, uType);
+    STRESS_LOG2(LF_GC, LL_INFO1000, "CreateHandle: %p, type=%d\n", handle, (int)type);
 
     // return the result
     return handle;
@@ -542,7 +542,7 @@ void HndDestroyHandleOfUnknownType(HHANDLETABLE hTable, OBJECTHANDLE handle)
     // If we're being asked to destroy a WinRT weak handle, that will cause a leak
     // of the IWeakReference* that it holds in its extra data. Instead of using this
     // API use DestroyWinRTWeakHandle instead.
-    _ASSERTE(HandleFetchType(handle) != HandleType::HNDTYPE_WEAK_WINRT);
+    _ASSERTE(HandleFetchType(handle) != static_cast<uint32_t>(HandleType::HNDTYPE_WEAK_WINRT));
 #endif // FEATURE_COMINTEROP
 
     // fetch the type and then free normally
@@ -761,7 +761,7 @@ void HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value)
 
 #ifndef FEATURE_REDHAWK
         // Also fire the things pinned by Async pinned handles
-        if (hndType == HandleType::HNDTYPE_ASYNCPINNED)
+        if (hndType == (uint32_t)HandleType::HNDTYPE_ASYNCPINNED)
         {
             if (value->GetMethodTable() == g_pOverlappedDataClass)
             {
@@ -775,14 +775,14 @@ void HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value)
                     {
                         value = ppObj[i];
                         uint32_t generation = value != 0 ? g_theGCHeap->WhichGeneration(value) : 0;
-                        FireEtwSetGCHandle(overlapped, value, HandleType::HNDTYPE_PINNED, generation, (int64_t) pAppDomain, GetClrInstanceId());
+                        FireEtwSetGCHandle(overlapped, value, (int)HandleType::HNDTYPE_PINNED, generation, (int64_t) pAppDomain, GetClrInstanceId());
                     }
                 }
                 else
                 {
                     value = OBJECTREF_TO_UNCHECKED_OBJECTREF(overlapped->m_userObject);
                     uint32_t generation = value != 0 ? g_theGCHeap->WhichGeneration(value) : 0;
-                    FireEtwSetGCHandle(overlapped, value, HandleType::HNDTYPE_PINNED, generation, (int64_t) pAppDomain, GetClrInstanceId());
+                    FireEtwSetGCHandle(overlapped, value, (int)HandleType::HNDTYPE_PINNED, generation, (int64_t) pAppDomain, GetClrInstanceId());
                 }
             }
         }
