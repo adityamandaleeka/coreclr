@@ -236,6 +236,34 @@ enum end_no_gc_region_status
     end_no_gc_alloc_exceeded = 3
 };
 
+enum class HandleType 
+{
+    HNDTYPE_WEAK_SHORT   = 0,
+    
+    HNDTYPE_WEAK_LONG    = 1,
+    HNDTYPE_WEAK_DEFAULT = 1, // The default type of weak handle is 'long-lived' weak handle.
+
+    HNDTYPE_STRONG       = 2,
+    HNDTYPE_DEFAULT      = 2, // The default type of handle is a strong handle.
+    
+    HNDTYPE_PINNED       = 3,
+    HNDTYPE_VARIABLE     = 4,
+
+//// zzz remove ifdef???
+    #if defined(FEATURE_COMINTEROP) || defined(FEATURE_REDHAWK)
+    HNDTYPE_REFCOUNTED   = 5,
+    #endif
+    HNDTYPE_DEPENDENT    = 6,
+    HNDTYPE_ASYNCPINNED  = 7,
+    HNDTYPE_SIZEDREF     = 8,
+
+
+//// zzz remove ifdef???
+    #ifdef FEATURE_COMINTEROP
+    HNDTYPE_WEAK_WINRT  = 9
+    #endif
+};
+
 typedef BOOL (* walk_fn)(Object*, void*);
 typedef void (* gen_walk_fn)(void* context, int generation, uint8_t* range_start, uint8_t* range_end, uint8_t* range_reserved);
 typedef void (* record_surv_fn)(uint8_t* begin, uint8_t* end, ptrdiff_t reloc, size_t context, BOOL compacting_p, BOOL bgc_p);

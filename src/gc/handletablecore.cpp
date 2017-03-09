@@ -689,7 +689,7 @@ void SegmentPreCompactAsyncPinHandles(TableSegment *pSegment)
         {
             continue;
         }
-        else if (pSegment->rgBlockType[uBlock] != HNDTYPE_ASYNCPINNED)
+        else if (pSegment->rgBlockType[uBlock] != (uint8_t)HandleType::HNDTYPE_ASYNCPINNED)
         {
             _UNCHECKED_OBJECTREF *pValue = pSegment->rgValue + (uBlock * HANDLE_HANDLES_PER_BLOCK);
             _UNCHECKED_OBJECTREF *pLast = pValue + HANDLE_HANDLES_PER_BLOCK;
@@ -719,7 +719,7 @@ void SegmentPreCompactAsyncPinHandles(TableSegment *pSegment)
     uint32_t uType;
     for (uType = 0; uType < HANDLE_MAX_INTERNAL_TYPES; uType ++)
     {
-        if (uType == HNDTYPE_ASYNCPINNED)
+        if (uType == (uint32_t)HandleType::HNDTYPE_ASYNCPINNED)
         {
             continue;
         }
@@ -736,7 +736,7 @@ void SegmentPreCompactAsyncPinHandles(TableSegment *pSegment)
     }
 
     // make sure the remaining async handle has MethodTable that exists in default domain
-    uBlock = pSegment->rgHint[HNDTYPE_ASYNCPINNED];
+    uBlock = pSegment->rgHint[(int)HandleType::HNDTYPE_ASYNCPINNED];
     if (uBlock == BLOCK_INVALID)
     {
         return;
@@ -744,7 +744,7 @@ void SegmentPreCompactAsyncPinHandles(TableSegment *pSegment)
     uint32_t freeCount = 0;
     for (uBlock = 0; uBlock < pSegment->bEmptyLine; uBlock ++)
     {
-        if (pSegment->rgBlockType[uBlock] != HNDTYPE_ASYNCPINNED)
+        if (pSegment->rgBlockType[uBlock] != (uint8_t)HandleType::HNDTYPE_ASYNCPINNED)
         {
             continue;
         }
@@ -779,7 +779,7 @@ void SegmentPreCompactAsyncPinHandles(TableSegment *pSegment)
         } while (pValue != pLast);
     }
 
-    pSegment->rgFreeCount[HNDTYPE_ASYNCPINNED] = freeCount;
+    pSegment->rgFreeCount[(int)HandleType::HNDTYPE_ASYNCPINNED] = freeCount;
 }
 
 // Copy a handle to a different segment in the same HandleTable
@@ -795,7 +795,7 @@ BOOL SegmentCopyAsyncPinHandle(TableSegment *pSegment, _UNCHECKED_OBJECTREF *h)
 
     _ASSERTE (HandleFetchSegmentPointer((OBJECTHANDLE)h) != pSegment);
 
-    if (pSegment->rgFreeCount[HNDTYPE_ASYNCPINNED] == 0)
+    if (pSegment->rgFreeCount[(int)HandleType::HNDTYPE_ASYNCPINNED] == 0)
     {
         uint8_t uBlock = pSegment->bFreeList;
         if (uBlock == BLOCK_INVALID)
@@ -804,12 +804,12 @@ BOOL SegmentCopyAsyncPinHandle(TableSegment *pSegment, _UNCHECKED_OBJECTREF *h)
             return FALSE;
         }
         pSegment->bFreeList = pSegment->rgAllocation[uBlock];
-        pSegment->rgBlockType[uBlock] = HNDTYPE_ASYNCPINNED;
-        pSegment->rgAllocation[uBlock] = pSegment->rgHint[HNDTYPE_ASYNCPINNED];
-        pSegment->rgHint[HNDTYPE_ASYNCPINNED] = uBlock;
-        pSegment->rgFreeCount[HNDTYPE_ASYNCPINNED] += HANDLE_HANDLES_PER_BLOCK;
+        pSegment->rgBlockType[uBlock] = (uint8_t)HandleType::HNDTYPE_ASYNCPINNED;
+        pSegment->rgAllocation[uBlock] = pSegment->rgHint[(int)HandleType::HNDTYPE_ASYNCPINNED];
+        pSegment->rgHint[(int)HandleType::HNDTYPE_ASYNCPINNED] = uBlock;
+        pSegment->rgFreeCount[(int)HandleType::HNDTYPE_ASYNCPINNED] += HANDLE_HANDLES_PER_BLOCK;
     }
-    uint8_t uBlock = pSegment->rgHint[HNDTYPE_ASYNCPINNED];
+    uint8_t uBlock = pSegment->rgHint[(int)HandleType::HNDTYPE_ASYNCPINNED];
     uint8_t uLast = uBlock;
     do
     {
@@ -822,7 +822,7 @@ BOOL SegmentCopyAsyncPinHandle(TableSegment *pSegment, _UNCHECKED_OBJECTREF *h)
         uBlock = pSegment->rgAllocation[uBlock];
     } while (uBlock != uLast);
     _ASSERTE (uBlock != uLast);
-    pSegment->rgHint[HNDTYPE_ASYNCPINNED] = uBlock;
+    pSegment->rgHint[(int)HandleType::HNDTYPE_ASYNCPINNED] = uBlock;
     _UNCHECKED_OBJECTREF *pValue = pSegment->rgValue + (uBlock * HANDLE_HANDLES_PER_BLOCK);
     _UNCHECKED_OBJECTREF *pLast = pValue + HANDLE_HANDLES_PER_BLOCK;
     do
@@ -837,7 +837,7 @@ BOOL SegmentCopyAsyncPinHandle(TableSegment *pSegment, _UNCHECKED_OBJECTREF *h)
         pValue ++;
     } while (pValue != pLast);
     _ASSERTE (pValue != pLast);
-    pSegment->rgFreeCount[HNDTYPE_ASYNCPINNED] --;
+    pSegment->rgFreeCount[(int)HandleType::HNDTYPE_ASYNCPINNED] --;
     return TRUE;
 }
 
@@ -851,14 +851,14 @@ void SegmentCompactAsyncPinHandles(TableSegment *pSegment, TableSegment **ppWork
     }
     CONTRACTL_END;
 
-    uint32_t uBlock = pSegment->rgHint[HNDTYPE_ASYNCPINNED];
+    uint32_t uBlock = pSegment->rgHint[(int)HandleType::HNDTYPE_ASYNCPINNED];
     if (uBlock == BLOCK_INVALID)
     {
         return;
     }
     for (uBlock = 0; uBlock < pSegment->bEmptyLine; uBlock ++)
     {
-        if (pSegment->rgBlockType[uBlock] != HNDTYPE_ASYNCPINNED)
+        if (pSegment->rgBlockType[uBlock] != (uint8_t)HandleType::HNDTYPE_ASYNCPINNED)
         {
             continue;
         }
@@ -887,7 +887,7 @@ void SegmentCompactAsyncPinHandles(TableSegment *pSegment, TableSegment **ppWork
             }
             if (fNeedNewSegment)
             {
-                _ASSERTE ((*ppWorkerSegment)->rgFreeCount[HNDTYPE_ASYNCPINNED] == 0 &&
+                _ASSERTE ((*ppWorkerSegment)->rgFreeCount[(int)HandleType::HNDTYPE_ASYNCPINNED] == 0 &&
                           (*ppWorkerSegment)->bFreeList == BLOCK_INVALID);
                 TableSegment *pNextSegment = (*ppWorkerSegment)->pNextSegment;
                 SegmentPreCompactAsyncPinHandles(pNextSegment);
@@ -918,7 +918,7 @@ BOOL SegmentHandleAsyncPinHandles (TableSegment *pSegment)
     }
     CONTRACTL_END;
     
-    uint32_t uBlock = pSegment->rgHint[HNDTYPE_ASYNCPINNED];
+    uint32_t uBlock = pSegment->rgHint[(int)HandleType::HNDTYPE_ASYNCPINNED];
     if (uBlock == BLOCK_INVALID)
     {
         // There is no pinning handles.
@@ -929,7 +929,7 @@ BOOL SegmentHandleAsyncPinHandles (TableSegment *pSegment)
 
     for (uBlock = 0; uBlock < pSegment->bEmptyLine; uBlock ++)
     {
-        if (pSegment->rgBlockType[uBlock] != HNDTYPE_ASYNCPINNED)
+        if (pSegment->rgBlockType[uBlock] != (uint8_t)HandleType::HNDTYPE_ASYNCPINNED)
         {
             continue;
         }
@@ -971,7 +971,7 @@ void SegmentRelocateAsyncPinHandles (TableSegment *pSegment, HandleTable *pTarge
     }
     CONTRACTL_END;
     
-    uint32_t uBlock = pSegment->rgHint[HNDTYPE_ASYNCPINNED];
+    uint32_t uBlock = pSegment->rgHint[(int)HandleType::HNDTYPE_ASYNCPINNED];
     if (uBlock == BLOCK_INVALID)
     {
         // There is no pinning handles.
@@ -979,7 +979,7 @@ void SegmentRelocateAsyncPinHandles (TableSegment *pSegment, HandleTable *pTarge
     }
     for (uBlock = 0; uBlock < pSegment->bEmptyLine; uBlock ++)
     {
-        if (pSegment->rgBlockType[uBlock] != HNDTYPE_ASYNCPINNED)
+        if (pSegment->rgBlockType[uBlock] != (uint8_t)HandleType::HNDTYPE_ASYNCPINNED)
         {
             continue;
         }
