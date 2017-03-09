@@ -311,8 +311,6 @@ enum class HandleType
      */
     HNDTYPE_VARIABLE     = 4,
 
-//// zzz remove ifdef???
-#if defined(FEATURE_COMINTEROP) || defined(FEATURE_REDHAWK)
     /*
      * REFCOUNTED HANDLES
      *
@@ -324,7 +322,6 @@ enum class HandleType
      *
      */
     HNDTYPE_REFCOUNTED   = 5,
-#endif
 
     /*
      * DEPENDENT HANDLES
@@ -368,9 +365,6 @@ enum class HandleType
      */
     HNDTYPE_SIZEDREF     = 8,
 
-
-//// zzz remove ifdef???
-#ifdef FEATURE_COMINTEROP
     /*
      * WINRT WEAK HANDLES
      *
@@ -384,7 +378,6 @@ enum class HandleType
      * references.
      */
     HNDTYPE_WEAK_WINRT  = 9
-#endif
 };
 
 typedef BOOL (* walk_fn)(Object*, void*);
