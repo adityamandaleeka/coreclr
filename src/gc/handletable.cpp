@@ -542,7 +542,7 @@ void HndDestroyHandleOfUnknownType(HHANDLETABLE hTable, OBJECTHANDLE handle)
     // If we're being asked to destroy a WinRT weak handle, that will cause a leak
     // of the IWeakReference* that it holds in its extra data. Instead of using this
     // API use DestroyWinRTWeakHandle instead.
-    _ASSERTE(HandleFetchType(handle) != HandleType::HNDTYPE_WEAK_WINRT);
+    _ASSERTE(HandleFetchType(handle) != static_cast<uint32_t>(HandleType::HNDTYPE_WEAK_WINRT));
 #endif // FEATURE_COMINTEROP
 
     // fetch the type and then free normally
