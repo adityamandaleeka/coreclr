@@ -431,7 +431,7 @@ FCIMPL3(void, WeakReferenceNative::Create, WeakReferenceObject * pThisUNSAFE, Ob
 #endif // FEATURE_COMINTEROP
     {
         gc.pThis->m_Handle = GetAppDomain()->CreateTypedHandle(gc.pTarget, 
-            trackResurrection ? (int)HandleType::HNDTYPE_WEAK_LONG : (int)HandleType::HNDTYPE_WEAK_SHORT);
+            trackResurrection ? HandleType::HNDTYPE_WEAK_LONG : HandleType::HNDTYPE_WEAK_SHORT);
     }
 
     HELPER_METHOD_FRAME_END();
@@ -474,7 +474,7 @@ FCIMPL3(void, WeakReferenceOfTNative::Create, WeakReferenceObject * pThisUNSAFE,
 #endif // FEATURE_COMINTEROP
     {
         gc.pThis->m_Handle = GetAppDomain()->CreateTypedHandle(gc.pTarget, 
-            trackResurrection ? (int)HandleType::HNDTYPE_WEAK_LONG : (int)HandleType::HNDTYPE_WEAK_SHORT);
+            trackResurrection ? HandleType::HNDTYPE_WEAK_LONG : HandleType::HNDTYPE_WEAK_SHORT);
     }
 
     HELPER_METHOD_FRAME_END();

@@ -644,7 +644,7 @@ FCIMPL2(LPVOID, MarshalNative::GCHandleInternalAlloc, Object *obj, int type)
         GCHandleValidatePinnedObject(objRef);
 
     // Create the handle.
-    hnd = GetAppDomain()->CreateTypedHandle(objRef, type);
+    hnd = GetAppDomain()->CreateTypedHandle(objRef, static_cast<HandleType>(type));
 
     HELPER_METHOD_FRAME_END_POLL();
     return (LPVOID) hnd;

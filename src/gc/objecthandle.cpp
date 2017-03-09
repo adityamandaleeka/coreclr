@@ -882,7 +882,7 @@ OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, OBJECTREF primary, OBJECT
     }
     CONTRACTL_END;
 
-    OBJECTHANDLE handle = HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_DEPENDENT, primary); 
+    OBJECTHANDLE handle = HndCreateHandle(table, HandleType::HNDTYPE_DEPENDENT, primary); 
 
     SetDependentHandleSecondary(handle, secondary);
 
@@ -945,7 +945,7 @@ OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_
     }
 
     // create the handle
-    return HndCreateHandle(hTable, (uint32_t)HandleType::HNDTYPE_VARIABLE, object, (uintptr_t)type);
+    return HndCreateHandle(hTable, HandleType::HNDTYPE_VARIABLE, object, (uintptr_t)type);
 }
 
 /*

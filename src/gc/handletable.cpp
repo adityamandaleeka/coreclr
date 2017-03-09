@@ -281,7 +281,7 @@ ADIndex HndGetHandleADIndex(OBJECTHANDLE handle)
  * Entrypoint for allocating an individual handle.
  *
  */
-OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, uint32_t uType, OBJECTREF object, uintptr_t lExtraInfo)
+OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, HandleType type, OBJECTREF object, uintptr_t lExtraInfo)
 {
     CONTRACTL
     {
@@ -319,10 +319,10 @@ OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, uint32_t uType, OBJECTREF obje
     HandleTable *pTable = Table(hTable);
 
     // sanity check the type index
-    _ASSERTE(uType < pTable->uTypeCount);
+    _ASSERTE(static_cast<uint32_t>(type) < pTable->uTypeCount);
 
     // get a handle from the table's cache
-    OBJECTHANDLE handle = TableAllocSingleHandleFromCache(pTable, uType);
+    OBJECTHANDLE handle = TableAllocSingleHandleFromCache(pTable, static_cast<uint32_t>(type));
 
     // did the allocation succeed?
     if (!handle)
@@ -365,7 +365,7 @@ OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, uint32_t uType, OBJECTREF obje
     }
 #endif //GC_PROFILING
 
-    STRESS_LOG2(LF_GC, LL_INFO1000, "CreateHandle: %p, type=%d\n", handle, uType);
+    STRESS_LOG2(LF_GC, LL_INFO1000, "CreateHandle: %p, type=%d\n", handle, (int)type);
 
     // return the result
     return handle;
