@@ -319,7 +319,7 @@ OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, HandleType type, OBJECTREF obj
     HandleTable *pTable = Table(hTable);
 
     // get a handle from the table's cache
-    OBJECTHANDLE handle = TableAllocSingleHandleFromCache(pTable, static_cast<uint32_t>(type));
+    OBJECTHANDLE handle = TableAllocSingleHandleFromCache(pTable, (uint32_t)type);
 
     // did the allocation succeed?
     if (!handle)
@@ -362,7 +362,7 @@ OBJECTHANDLE HndCreateHandle(HHANDLETABLE hTable, HandleType type, OBJECTREF obj
     }
 #endif //GC_PROFILING
 
-    STRESS_LOG2(LF_GC, LL_INFO1000, "CreateHandle: %p, type=%d\n", handle, static_cast<uint32_t>(type));
+    STRESS_LOG2(LF_GC, LL_INFO1000, "CreateHandle: %p, type=%d\n", handle, (uint32_t)type);
 
     // return the result
     return handle;

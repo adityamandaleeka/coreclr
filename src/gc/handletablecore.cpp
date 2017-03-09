@@ -719,10 +719,11 @@ void SegmentPreCompactAsyncPinHandles(TableSegment *pSegment)
     uint32_t uType;
     for (uType = 0; uType < HANDLE_MAX_INTERNAL_TYPES; uType ++)
     {
-        if (uType == static_cast<uint32_t>(HandleType::AsyncPinned))
+        if (uType == (uint32_t)HandleType::AsyncPinned)
         {
             continue;
         }
+
         pSegment->rgFreeCount[uType] = 0;
         if (pSegment->rgHint[uType] != BLOCK_INVALID)
         {
