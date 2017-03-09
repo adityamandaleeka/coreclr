@@ -261,7 +261,7 @@ enum class HandleType
      * across object resurrections.
      *
      */
-    HNDTYPE_WEAK_SHORT   = 0,
+    WeakShort            = 0,
 
     /*
      * LONG-LIVED WEAK HANDLES
@@ -272,8 +272,8 @@ enum class HandleType
      * resurrections that may occur.
      *
      */
-    HNDTYPE_WEAK_LONG    = 1,
-    HNDTYPE_WEAK_DEFAULT = 1, // The default type of weak handle is 'long-lived' weak handle.
+    WeakLong             = 1,
+    WeakDefault          = 1,
 
     /*
      * STRONG HANDLES
@@ -283,8 +283,8 @@ enum class HandleType
      * be promoted (remain alive) through a garbage collection cycle.
      *
      */
-    HNDTYPE_STRONG       = 2,
-    HNDTYPE_DEFAULT      = 2, // The default type of handle is a strong handle.
+    Strong               = 2,
+    Default              = 2,
 
     /*
      * PINNED HANDLES
@@ -298,7 +298,7 @@ enum class HandleType
      *        OPTIMAL PACKING OF OBJECTS DURING EPHEMERAL COLLECTIONS.  THIS TYPE
      *        OF HANDLE SHOULD BE USED SPARINGLY!
      */
-    HNDTYPE_PINNED       = 3,
+    Pinned               = 3,
 
     /*
      * VARIABLE HANDLES
@@ -309,7 +309,7 @@ enum class HandleType
      * strength of a handle on the fly.
      * 
      */
-    HNDTYPE_VARIABLE     = 4,
+    Variable             = 4,
 
     /*
      * REFCOUNTED HANDLES
@@ -321,7 +321,7 @@ enum class HandleType
      *      The implementation is tied to COM Interop.
      *
      */
-    HNDTYPE_REFCOUNTED   = 5,
+    RefCounted           = 5,
 
     /*
      * DEPENDENT HANDLES
@@ -338,7 +338,7 @@ enum class HandleType
      *
      *
      */
-    HNDTYPE_DEPENDENT    = 6,
+    Dependent            = 6,
 
     /*
      * PINNED HANDLES for asynchronous operation
@@ -352,7 +352,7 @@ enum class HandleType
      *        OPTIMAL PACKING OF OBJECTS DURING EPHEMERAL COLLECTIONS.  THIS TYPE
      *        OF HANDLE SHOULD BE USED SPARINGLY!
      */
-    HNDTYPE_ASYNCPINNED  = 7,
+    AsyncPinned          = 7,
 
     /*
      * SIZEDREF HANDLES
@@ -363,7 +363,7 @@ enum class HandleType
      * be calculated.
      *
      */
-    HNDTYPE_SIZEDREF     = 8,
+    SizedRef             = 8,
 
     /*
      * WINRT WEAK HANDLES
@@ -377,7 +377,7 @@ enum class HandleType
      * underlying COM object as long as it has not been released by all of its strong
      * references.
      */
-    HNDTYPE_WEAK_WINRT  = 9
+    WeakWinRT            = 9
 };
 
 typedef BOOL (* walk_fn)(Object*, void*);

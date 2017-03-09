@@ -446,27 +446,29 @@ void CALLBACK ScanPointerForProfilerAndETW(_UNCHECKED_OBJECTREF *pObjRef, uintpt
     OBJECTHANDLE handle = (OBJECTHANDLE)(pRef);
     switch (static_cast<HandleType>(HandleFetchType(handle)))
     {
-    case    HandleType::HNDTYPE_DEPENDENT:
+    case    HandleType::Dependent:
         isDependent = TRUE;
         break;
-    case    HandleType::HNDTYPE_WEAK_SHORT:
-    case    HandleType::HNDTYPE_WEAK_LONG:
-#ifdef FEATURE_COMINTEROP
-    case    HandleType::HNDTYPE_WEAK_WINRT:
-#endif // FEATURE_COMINTEROP
+    case    HandleType::WeakWinRT:
+#ifndef FEATURE_COMINTEROP
+        _ASSERTE(!"WeakWinRT handle encounted");
+        break;
+#endif // !FEATURE_COMINTEROP
+    case    HandleType::WeakShort:
+    case    HandleType::WeakLong:
         rootFlags |= kEtwGCRootFlagsWeakRef;
         break;
 
-    case    HandleType::HNDTYPE_STRONG:
-    case    HandleType::HNDTYPE_SIZEDREF:
+    case    HandleType::Strong:
+    case    HandleType::SizedRef:
         break;
 
-    case    HandleType::HNDTYPE_PINNED:
-    case    HandleType::HNDTYPE_ASYNCPINNED:
+    case    HandleType::Pinned:
+    case    HandleType::AsyncPinned:
         rootFlags |= kEtwGCRootFlagsPinning;
         break;
 
-    case    HandleType::HNDTYPE_VARIABLE:
+    case    HandleType::Variable:
 #ifdef FEATURE_REDHAWK
     {
         // Set the appropriate ETW flags for the current strength of this variable handle
@@ -488,8 +490,8 @@ void CALLBACK ScanPointerForProfilerAndETW(_UNCHECKED_OBJECTREF *pObjRef, uintpt
 #endif
         break;
 
+    case    HandleType::RefCounted:
 #if defined(FEATURE_COMINTEROP) && !defined(FEATURE_REDHAWK)
-    case    HandleType::HNDTYPE_REFCOUNTED:
         rootFlags |= kEtwGCRootFlagsRefCounted;
         if (*pRef != NULL)
         {
@@ -498,6 +500,8 @@ void CALLBACK ScanPointerForProfilerAndETW(_UNCHECKED_OBJECTREF *pObjRef, uintpt
                 rootFlags |= kEtwGCRootFlagsWeakRef;
         }
         break;
+#else
+        _ASSERTE(!"RefCounted handle encountered");
 #endif // FEATURE_COMINTEROP || FEATURE_REDHAWK
     }
 
@@ -882,7 +886,7 @@ OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, OBJECTREF primary, OBJECT
     }
     CONTRACTL_END;
 
-    OBJECTHANDLE handle = HndCreateHandle(table, HandleType::HNDTYPE_DEPENDENT, primary); 
+    OBJECTHANDLE handle = HndCreateHandle(table, HandleType::Dependent, primary); 
 
     SetDependentHandleSecondary(handle, secondary);
 
@@ -918,7 +922,7 @@ void SetDependentHandleSecondary(OBJECTHANDLE handle, OBJECTREF objref)
         HndWriteBarrier(handle, objref);
 
     // store the pointer
-    HndSetHandleExtraInfo(handle, (uint32_t)HandleType::HNDTYPE_DEPENDENT, (uintptr_t)value);
+    HndSetHandleExtraInfo(handle, (uint32_t)HandleType::Dependent, (uintptr_t)value);
 }
 
 
@@ -945,7 +949,7 @@ OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_
     }
 
     // create the handle
-    return HndCreateHandle(hTable, HandleType::HNDTYPE_VARIABLE, object, (uintptr_t)type);
+    return HndCreateHandle(hTable, HandleType::Variable, object, (uintptr_t)type);
 }
 
 /*
@@ -989,7 +993,7 @@ void UpdateVariableHandleType(OBJECTHANDLE handle, uint32_t type)
     //
 
     // store the type in the handle's extra info
-    HndSetHandleExtraInfo(handle, (uint32_t)HandleType::HNDTYPE_VARIABLE, (uintptr_t)type);
+    HndSetHandleExtraInfo(handle, (uint32_t)HandleType::Variable, (uintptr_t)type);
 }
 
 /*
@@ -1006,7 +1010,7 @@ uint32_t CompareExchangeVariableHandleType(OBJECTHANDLE handle, uint32_t oldType
     _ASSERTE(IS_VALID_VHT_VALUE(oldType) && IS_VALID_VHT_VALUE(newType));
 
     // attempt to store the type in the handle's extra info
-    return (uint32_t)HndCompareExchangeHandleExtraInfo(handle, (uint32_t)HandleType::HNDTYPE_VARIABLE, (uintptr_t)oldType, (uintptr_t)newType);
+    return (uint32_t)HndCompareExchangeHandleExtraInfo(handle, (uint32_t)HandleType::Variable, (uintptr_t)oldType, (uintptr_t)newType);
 }
 
 
@@ -1021,7 +1025,7 @@ void TraceVariableHandles(HANDLESCANPROC pfnTrace, uintptr_t lp1, uintptr_t lp2,
     WRAPPER_NO_CONTRACT;
 
     // set up to scan variable handles with the specified mask and trace function
-    uint32_t               type = (uint32_t)HandleType::HNDTYPE_VARIABLE;
+    uint32_t               type = (uint32_t)HandleType::Variable;
     struct VARSCANINFO info = { (uintptr_t)uEnableMask, pfnTrace, lp2 };
 
     HandleTableMap *walk = &g_HandleTableMap;
@@ -1056,7 +1060,7 @@ void TraceVariableHandlesBySingleThread(HANDLESCANPROC pfnTrace, uintptr_t lp1, 
     WRAPPER_NO_CONTRACT;
 
     // set up to scan variable handles with the specified mask and trace function
-    uint32_t type = (uint32_t)HandleType::HNDTYPE_VARIABLE;
+    uint32_t type = (uint32_t)HandleType::Variable;
     struct VARSCANINFO info = { (uintptr_t)uEnableMask, pfnTrace, lp2 };
 
     HandleTableMap *walk = &g_HandleTableMap;
@@ -1086,7 +1090,7 @@ void Ref_TracePinningRoots(uint32_t condemned, uint32_t maxgen, ScanContext* sc,
     LOG((LF_GC, LL_INFO10000, "Pinning referents of pinned handles in generation %u\n", condemned));
 
     // pin objects pointed to by pinning handles
-    uint32_t types[2] = {(uint32_t)HandleType::HNDTYPE_PINNED, (uint32_t)HandleType::HNDTYPE_ASYNCPINNED};
+    uint32_t types[2] = {(uint32_t)HandleType::Pinned, (uint32_t)HandleType::AsyncPinned};
     uint32_t flags = sc->concurrent ? HNDGCF_ASYNC : HNDGCF_NORMAL;
 
     HandleTableMap *walk = &g_HandleTableMap;
@@ -1122,7 +1126,7 @@ void Ref_TraceNormalRoots(uint32_t condemned, uint32_t maxgen, ScanContext* sc, 
 
     // promote objects pointed to by strong handles
     // during ephemeral GCs we also want to promote the ones pointed to by sizedref handles.
-    uint32_t types[2] = {(uint32_t)HandleType::HNDTYPE_STRONG, (uint32_t)HandleType::HNDTYPE_SIZEDREF};
+    uint32_t types[2] = {(uint32_t)HandleType::Strong, (uint32_t)HandleType::SizedRef};
     uint32_t uTypeCount = (((condemned >= maxgen) && !g_theGCHeap->IsConcurrentGCInProgress()) ? 1 : _countof(types));
     uint32_t flags = (sc->concurrent) ? HNDGCF_ASYNC : HNDGCF_NORMAL;
 
@@ -1155,7 +1159,7 @@ void Ref_TraceNormalRoots(uint32_t condemned, uint32_t maxgen, ScanContext* sc, 
     if (!sc->concurrent)
     {
         // promote ref-counted handles
-        uint32_t type = (uint32_t)HandleType::HNDTYPE_REFCOUNTED;
+        uint32_t type = (uint32_t)HandleType::RefCounted;
 
         walk = &g_HandleTableMap;
         while (walk) {
@@ -1177,7 +1181,7 @@ void Ref_TraceNormalRoots(uint32_t condemned, uint32_t maxgen, ScanContext* sc, 
 void Ref_TraceRefCountHandles(HANDLESCANPROC callback, uintptr_t lParam1, uintptr_t lParam2)
 {
     int max_slots = getNumberOfSlots();
-    uint32_t handleType = (uint32_t)HandleType::HNDTYPE_REFCOUNTED;
+    uint32_t handleType = (uint32_t)HandleType::RefCounted;
 
     HandleTableMap *walk = &g_HandleTableMap;
     while (walk)
@@ -1211,9 +1215,9 @@ void Ref_CheckReachable(uint32_t condemned, uint32_t maxgen, uintptr_t lp1)
     // these are the handle types that need to be checked
     uint32_t types[] =
     {
-        (uint32_t)HandleType::HNDTYPE_WEAK_LONG,
+        (uint32_t)HandleType::WeakLong,
 #if defined(FEATURE_COMINTEROP) || defined(FEATURE_REDHAWK)
-        (uint32_t)HandleType::HNDTYPE_REFCOUNTED,
+        (uint32_t)HandleType::RefCounted,
 #endif // FEATURE_COMINTEROP || FEATURE_REDHAWK
     };
 
@@ -1276,7 +1280,7 @@ DhContext *Ref_GetDependentHandleContext(ScanContext* sc)
 bool Ref_ScanDependentHandlesForPromotion(DhContext *pDhContext)
 {
     LOG((LF_GC, LL_INFO10000, "Checking liveness of referents of dependent handles in generation %u\n", pDhContext->m_iCondemned));
-    uint32_t type = (uint32_t)HandleType::HNDTYPE_DEPENDENT;
+    uint32_t type = (uint32_t)HandleType::Dependent;
     uint32_t flags = (pDhContext->m_pScanContext->concurrent) ? HNDGCF_ASYNC : HNDGCF_NORMAL;
     flags |= HNDGCF_EXTRAINFO;
 
@@ -1337,7 +1341,7 @@ bool Ref_ScanDependentHandlesForPromotion(DhContext *pDhContext)
 void Ref_ScanDependentHandlesForClearing(uint32_t condemned, uint32_t maxgen, ScanContext* sc, Ref_promote_func* fn)
 {
     LOG((LF_GC, LL_INFO10000, "Clearing dead dependent handles in generation %u\n", condemned));
-    uint32_t type = (uint32_t)HandleType::HNDTYPE_DEPENDENT;
+    uint32_t type = (uint32_t)HandleType::Dependent;
     uint32_t flags = (sc->concurrent) ? HNDGCF_ASYNC : HNDGCF_NORMAL;
     flags |= HNDGCF_EXTRAINFO;
 
@@ -1363,7 +1367,7 @@ void Ref_ScanDependentHandlesForClearing(uint32_t condemned, uint32_t maxgen, Sc
 void Ref_ScanDependentHandlesForRelocation(uint32_t condemned, uint32_t maxgen, ScanContext* sc, Ref_promote_func* fn)
 {
     LOG((LF_GC, LL_INFO10000, "Relocating moved dependent handles in generation %u\n", condemned));
-    uint32_t type = (uint32_t)HandleType::HNDTYPE_DEPENDENT;
+    uint32_t type = (uint32_t)HandleType::Dependent;
     uint32_t flags = (sc->concurrent) ? HNDGCF_ASYNC : HNDGCF_NORMAL;
     flags |= HNDGCF_EXTRAINFO;
 
@@ -1395,7 +1399,7 @@ void TraceDependentHandlesBySingleThread(HANDLESCANPROC pfnTrace, uintptr_t lp1,
     WRAPPER_NO_CONTRACT;
 
     // set up to scan variable handles with the specified mask and trace function
-    uint32_t type = (uint32_t)HandleType::HNDTYPE_DEPENDENT;
+    uint32_t type = (uint32_t)HandleType::Dependent;
     struct DIAG_DEPSCANINFO info = { pfnTrace, lp2 };
 
     HandleTableMap *walk = &g_HandleTableMap;
@@ -1424,7 +1428,7 @@ void TraceDependentHandlesBySingleThread(HANDLESCANPROC pfnTrace, uintptr_t lp1,
 void ScanSizedRefByAD(uint32_t maxgen, HANDLESCANPROC scanProc, ScanContext* sc, Ref_promote_func* fn, uint32_t flags)
 {
     HandleTableMap *walk = &g_HandleTableMap;
-    uint32_t type = (uint32_t)HandleType::HNDTYPE_SIZEDREF;
+    uint32_t type = (uint32_t)HandleType::SizedRef;
     int uCPUindex = getSlotNumber(sc);
     int n_slots = g_theGCHeap->GetNumberOfHeaps();
 
@@ -1461,7 +1465,7 @@ void ScanSizedRefByAD(uint32_t maxgen, HANDLESCANPROC scanProc, ScanContext* sc,
 void ScanSizedRefByCPU(uint32_t maxgen, HANDLESCANPROC scanProc, ScanContext* sc, Ref_promote_func* fn, uint32_t flags)
 {
     HandleTableMap *walk = &g_HandleTableMap;
-    uint32_t type = (uint32_t)HandleType::HNDTYPE_SIZEDREF;
+    uint32_t type = (uint32_t)HandleType::SizedRef;
     int uCPUindex = getSlotNumber(sc);
 
     while (walk) 
@@ -1507,9 +1511,9 @@ void Ref_CheckAlive(uint32_t condemned, uint32_t maxgen, uintptr_t lp1)
     // perform a multi-type scan that checks for unreachable objects
     uint32_t types[] =
     {
-        (uint32_t)HandleType::HNDTYPE_WEAK_SHORT
+        (uint32_t)HandleType::WeakShort
 #ifdef FEATURE_COMINTEROP
-        , (uint32_t)HandleType::HNDTYPE_WEAK_WINRT
+        , (uint32_t)HandleType::WeakWinRT
 #endif // FEATURE_COMINTEROP
     };
     uint32_t flags = (((ScanContext*) lp1)->concurrent) ? HNDGCF_ASYNC : HNDGCF_NORMAL;
@@ -1561,16 +1565,16 @@ void Ref_UpdatePointers(uint32_t condemned, uint32_t maxgen, ScanContext* sc, Re
     // these are the handle types that need their pointers updated
     uint32_t types[] =
     {
-        (uint32_t)HandleType::HNDTYPE_WEAK_SHORT,
-        (uint32_t)HandleType::HNDTYPE_WEAK_LONG,
-        (uint32_t)HandleType::HNDTYPE_STRONG,
+        (uint32_t)HandleType::WeakShort,
+        (uint32_t)HandleType::WeakLong,
+        (uint32_t)HandleType::Strong,
 #if defined(FEATURE_COMINTEROP) || defined(FEATURE_REDHAWK)
-        (uint32_t)HandleType::HNDTYPE_REFCOUNTED,
+        (uint32_t)HandleType::RefCounted,
 #endif // FEATURE_COMINTEROP || FEATURE_REDHAWK
 #ifdef FEATURE_COMINTEROP
-        (uint32_t)HandleType::HNDTYPE_WEAK_WINRT,
+        (uint32_t)HandleType::WeakWinRT,
 #endif // FEATURE_COMINTEROP
-        (uint32_t)HandleType::HNDTYPE_SIZEDREF,
+        (uint32_t)HandleType::SizedRef,
     };
 
     // perform a multi-type scan that updates pointers
@@ -1607,19 +1611,19 @@ void Ref_ScanHandlesForProfilerAndETW(uint32_t maxgen, uintptr_t lp1, handle_sca
     // these are the handle types that need their pointers updated</REVISIT_TODO>
     uint32_t types[] =
     {
-        (uint32_t)HandleType::HNDTYPE_WEAK_SHORT,
-        (uint32_t)HandleType::HNDTYPE_WEAK_LONG,
-        (uint32_t)HandleType::HNDTYPE_STRONG,
+        (uint32_t)HandleType::WeakShort,
+        (uint32_t)HandleType::WeakLong,
+        (uint32_t)HandleType::Strong,
 #if defined(FEATURE_COMINTEROP) || defined(FEATURE_REDHAWK)
-        (uint32_t)HandleType::HNDTYPE_REFCOUNTED,
+        (uint32_t)HandleType::RefCounted,
 #endif // FEATURE_COMINTEROP || FEATURE_REDHAWK
 #ifdef FEATURE_COMINTEROP
-        (uint32_t)HandleType::HNDTYPE_WEAK_WINRT,
+        (uint32_t)HandleType::WeakWinRT,
 #endif // FEATURE_COMINTEROP
-        (uint32_t)HandleType::HNDTYPE_PINNED,
-//        (uint32_t)HandleType::HNDTYPE_VARIABLE,
-        (uint32_t)HandleType::HNDTYPE_ASYNCPINNED,
-        (uint32_t)HandleType::HNDTYPE_SIZEDREF,
+        (uint32_t)HandleType::Pinned,
+//        (uint32_t)HandleType::Variable,
+        (uint32_t)HandleType::AsyncPinned,
+        (uint32_t)HandleType::SizedRef,
     };
 
     uint32_t flags = HNDGCF_NORMAL;
@@ -1676,15 +1680,15 @@ void Ref_ScanPointers(uint32_t condemned, uint32_t maxgen, ScanContext* sc, Ref_
 
     uint32_t types[] =
     {
-        (uint32_t)HandleType::HNDTYPE_WEAK_SHORT,
-        (uint32_t)HandleType::HNDTYPE_WEAK_LONG,
-        (uint32_t)HandleType::HNDTYPE_STRONG,
+        (uint32_t)HandleType::WeakShort,
+        (uint32_t)HandleType::WeakLong,
+        (uint32_t)HandleType::Strong,
 #if defined(FEATURE_COMINTEROP) || defined(FEATURE_REDHAWK)
-        (uint32_t)HandleType::HNDTYPE_REFCOUNTED,
+        (uint32_t)HandleType::RefCounted,
 #endif // FEATURE_COMINTEROP || FEATURE_REDHAWK
-        (uint32_t)HandleType::HNDTYPE_PINNED,
-        (uint32_t)HandleType::HNDTYPE_ASYNCPINNED,
-        (uint32_t)HandleType::HNDTYPE_SIZEDREF,
+        (uint32_t)HandleType::Pinned,
+        (uint32_t)HandleType::AsyncPinned,
+        (uint32_t)HandleType::SizedRef,
     };
 
     uint32_t flags = HNDGCF_NORMAL;
@@ -1720,7 +1724,7 @@ void Ref_UpdatePinnedPointers(uint32_t condemned, uint32_t maxgen, ScanContext* 
     LOG((LF_GC, LL_INFO10000, "Updating pointers to referents of pinning handles in generation %u\n", condemned));
 
     // these are the handle types that need their pointers updated
-    uint32_t types[2] = {(uint32_t)HandleType::HNDTYPE_PINNED, (uint32_t)HandleType::HNDTYPE_ASYNCPINNED};
+    uint32_t types[2] = {(uint32_t)HandleType::Pinned, (uint32_t)HandleType::AsyncPinned};
     uint32_t flags = (sc->concurrent) ? HNDGCF_ASYNC : HNDGCF_NORMAL;
 
     HandleTableMap *walk = &g_HandleTableMap;
@@ -1749,21 +1753,21 @@ void Ref_AgeHandles(uint32_t condemned, uint32_t maxgen, uintptr_t lp1)
     // these are the handle types that need their ages updated
     uint32_t types[] =
     {
-        (uint32_t)HandleType::HNDTYPE_WEAK_SHORT,
-        (uint32_t)HandleType::HNDTYPE_WEAK_LONG,
+        (uint32_t)HandleType::WeakShort,
+        (uint32_t)HandleType::WeakLong,
 
-        (uint32_t)HandleType::HNDTYPE_STRONG,
+        (uint32_t)HandleType::Strong,
 
-        (uint32_t)HandleType::HNDTYPE_PINNED,
-        (uint32_t)HandleType::HNDTYPE_VARIABLE,
+        (uint32_t)HandleType::Pinned,
+        (uint32_t)HandleType::Variable,
 #if defined(FEATURE_COMINTEROP) || defined(FEATURE_REDHAWK)
-        (uint32_t)HandleType::HNDTYPE_REFCOUNTED,
+        (uint32_t)HandleType::RefCounted,
 #endif // FEATURE_COMINTEROP || FEATURE_REDHAWK
 #ifdef FEATURE_COMINTEROP
-        (uint32_t)HandleType::HNDTYPE_WEAK_WINRT,
+        (uint32_t)HandleType::WeakWinRT,
 #endif // FEATURE_COMINTEROP
-        (uint32_t)HandleType::HNDTYPE_ASYNCPINNED,
-        (uint32_t)HandleType::HNDTYPE_SIZEDREF,
+        (uint32_t)HandleType::AsyncPinned,
+        (uint32_t)HandleType::SizedRef,
     };
 
     int uCPUindex = getSlotNumber((ScanContext*) lp1);
@@ -1791,22 +1795,22 @@ void Ref_RejuvenateHandles(uint32_t condemned, uint32_t maxgen, uintptr_t lp1)
     // these are the handle types that need their ages updated
     uint32_t types[] =
     {
-        (uint32_t)HandleType::HNDTYPE_WEAK_SHORT,
-        (uint32_t)HandleType::HNDTYPE_WEAK_LONG,
+        (uint32_t)HandleType::WeakShort,
+        (uint32_t)HandleType::WeakLong,
 
 
-        (uint32_t)HandleType::HNDTYPE_STRONG,
+        (uint32_t)HandleType::Strong,
 
-        (uint32_t)HandleType::HNDTYPE_PINNED,
-        (uint32_t)HandleType::HNDTYPE_VARIABLE,
+        (uint32_t)HandleType::Pinned,
+        (uint32_t)HandleType::Variable,
 #if defined(FEATURE_COMINTEROP) || defined(FEATURE_REDHAWK)
-        (uint32_t)HandleType::HNDTYPE_REFCOUNTED,
+        (uint32_t)HandleType::RefCounted,
 #endif // FEATURE_COMINTEROP || FEATURE_REDHAWK
 #ifdef FEATURE_COMINTEROP
-        (uint32_t)HandleType::HNDTYPE_WEAK_WINRT,
+        (uint32_t)HandleType::WeakWinRT,
 #endif // FEATURE_COMINTEROP
-        (uint32_t)HandleType::HNDTYPE_ASYNCPINNED,
-        (uint32_t)HandleType::HNDTYPE_SIZEDREF,
+        (uint32_t)HandleType::AsyncPinned,
+        (uint32_t)HandleType::SizedRef,
     };
 
     int uCPUindex = getSlotNumber((ScanContext*) lp1);
@@ -1833,23 +1837,23 @@ void Ref_VerifyHandleTable(uint32_t condemned, uint32_t maxgen, ScanContext* sc)
     // these are the handle types that need to be verified
     uint32_t types[] =
     {
-        (uint32_t)HandleType::HNDTYPE_WEAK_SHORT,
-        (uint32_t)HandleType::HNDTYPE_WEAK_LONG,
+        (uint32_t)HandleType::WeakShort,
+        (uint32_t)HandleType::WeakLong,
 
 
-        (uint32_t)HandleType::HNDTYPE_STRONG,
+        (uint32_t)HandleType::Strong,
 
-        (uint32_t)HandleType::HNDTYPE_PINNED,
-        (uint32_t)HandleType::HNDTYPE_VARIABLE,
+        (uint32_t)HandleType::Pinned,
+        (uint32_t)HandleType::Variable,
 #if defined(FEATURE_COMINTEROP) || defined(FEATURE_REDHAWK)
-        (uint32_t)HandleType::HNDTYPE_REFCOUNTED,
+        (uint32_t)HandleType::RefCounted,
 #endif // FEATURE_COMINTEROP || FEATURE_REDHAWK
 #ifdef FEATURE_COMINTEROP
-        (uint32_t)HandleType::HNDTYPE_WEAK_WINRT,
+        (uint32_t)HandleType::WeakWinRT,
 #endif // FEATURE_COMINTEROP
-        (uint32_t)HandleType::HNDTYPE_ASYNCPINNED,
-        (uint32_t)HandleType::HNDTYPE_SIZEDREF,
-        (uint32_t)HandleType::HNDTYPE_DEPENDENT,
+        (uint32_t)HandleType::AsyncPinned,
+        (uint32_t)HandleType::SizedRef,
+        (uint32_t)HandleType::Dependent,
     };
 
     // verify these handles
@@ -1910,7 +1914,7 @@ void DestroySizedRefHandle(OBJECTHANDLE handle)
     CONTRACTL_END;
 
     HHANDLETABLE hTable = HndGetHandleTable(handle);
-    HndDestroyHandle(hTable, (uint32_t)HandleType::HNDTYPE_SIZEDREF, handle);
+    HndDestroyHandle(hTable, (uint32_t)HandleType::SizedRef, handle);
     AppDomain* pDomain = SystemDomain::GetAppDomainAtIndex(HndGetHandleTableADIndex(hTable));
     pDomain->DecNumSizedRefHandles();
 }
@@ -1938,7 +1942,7 @@ void DestroyWinRTWeakHandle(OBJECTHANDLE handle)
         pWinRTWeakReference->Release();
     }
 
-    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_WEAK_WINRT, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::WeakWinRT, handle);
 }
 
 #endif // FEATURE_COMINTEROP

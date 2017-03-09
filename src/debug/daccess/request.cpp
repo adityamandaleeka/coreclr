@@ -3342,17 +3342,17 @@ ClrDataAccess::GetThreadLocalModuleData(CLRDATA_ADDRESS thread, unsigned int ind
 
 HRESULT ClrDataAccess::GetHandleEnum(ISOSHandleEnum **ppHandleEnum)
 {
-    unsigned int types[] = {(unsigned int)HandleType::HNDTYPE_WEAK_SHORT,
-                            (unsigned int)HandleType::HNDTYPE_WEAK_LONG,
-                            (unsigned int)HandleType::HNDTYPE_STRONG,
-                            (unsigned int)HandleType::HNDTYPE_PINNED,
-                            (unsigned int)HandleType::HNDTYPE_VARIABLE,
-                            (unsigned int)HandleType::HNDTYPE_DEPENDENT,
-                            (unsigned int)HandleType::HNDTYPE_ASYNCPINNED,
-                            (unsigned int)HandleType::HNDTYPE_SIZEDREF,
+    unsigned int types[] = {(unsigned int)HandleType::WeakShort,
+                            (unsigned int)HandleType::WeakLong,
+                            (unsigned int)HandleType::Strong,
+                            (unsigned int)HandleType::Pinned,
+                            (unsigned int)HandleType::Variable,
+                            (unsigned int)HandleType::Dependent,
+                            (unsigned int)HandleType::AsyncPinned,
+                            (unsigned int)HandleType::SizedRef,
 #ifdef FEATURE_COMINTEROP
-                            (unsigned int)HandleType::HNDTYPE_REFCOUNTED,
-                            (unsigned int)HandleType::HNDTYPE_WEAK_WINRT
+                            (unsigned int)HandleType::RefCounted,
+                            (unsigned int)HandleType::WeakWinRT
 #endif
                             };
 
@@ -3387,17 +3387,17 @@ HRESULT ClrDataAccess::GetHandleEnumForGC(unsigned int gen, ISOSHandleEnum **ppH
     
     SOSDacEnter();
 
-    unsigned int types[] = {(unsigned int)HandleType::HNDTYPE_WEAK_SHORT,
-                            (unsigned int)HandleType::HNDTYPE_WEAK_LONG,
-                            (unsigned int)HandleType::HNDTYPE_STRONG,
-                            (unsigned int)HandleType::HNDTYPE_PINNED,
-                            (unsigned int)HandleType::HNDTYPE_VARIABLE,
-                            (unsigned int)HandleType::HNDTYPE_DEPENDENT,
-                            (unsigned int)HandleType::HNDTYPE_ASYNCPINNED,
-                            (unsigned int)HandleType::HNDTYPE_SIZEDREF,
+    unsigned int types[] = {(unsigned int)HandleType::WeakShort,
+                            (unsigned int)HandleType::WeakLong,
+                            (unsigned int)HandleType::Strong,
+                            (unsigned int)HandleType::Pinned,
+                            (unsigned int)HandleType::Variable,
+                            (unsigned int)HandleType::Dependent,
+                            (unsigned int)HandleType::AsyncPinned,
+                            (unsigned int)HandleType::SizedRef,
 #ifdef FEATURE_COMINTEROP
-                            (unsigned int)HandleType::HNDTYPE_REFCOUNTED,
-                            (unsigned int)HandleType::HNDTYPE_WEAK_WINRT
+                            (unsigned int)HandleType::RefCounted,
+                            (unsigned int)HandleType::WeakWinRT
 #endif
                             };
 

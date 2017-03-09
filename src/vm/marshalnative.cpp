@@ -640,7 +640,7 @@ FCIMPL2(LPVOID, MarshalNative::GCHandleInternalAlloc, Object *obj, int type)
     HELPER_METHOD_FRAME_BEGIN_RET_NOPOLL();
     
     // If it is a pinned handle, check the object type.
-    if (type == static_cast<int>(HandleType::HNDTYPE_PINNED))
+    if (type == static_cast<int>(HandleType::Pinned))
         GCHandleValidatePinnedObject(objRef);
 
     // Create the handle.

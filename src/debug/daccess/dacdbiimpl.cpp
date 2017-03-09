@@ -7306,33 +7306,33 @@ UINT32 DacRefWalker::GetHandleWalkerMask()
 {
     UINT32 result = 0;
     if (mHandleMask & CorHandleStrong)
-        result |= (1 << (int)HandleType::HNDTYPE_STRONG);
+        result |= (1 << (int)HandleType::Strong);
         
     if (mHandleMask & CorHandleStrongPinning)
-        result |= (1 << (int)HandleType::HNDTYPE_PINNED);
+        result |= (1 << (int)HandleType::Pinned);
 
     if (mHandleMask & CorHandleWeakShort)
-        result |= (1 << (int)HandleType::HNDTYPE_WEAK_SHORT);
+        result |= (1 << (int)HandleType::WeakShort);
     
     if (mHandleMask & CorHandleWeakLong)
-        result |= (1 << (int)HandleType::HNDTYPE_WEAK_LONG);
+        result |= (1 << (int)HandleType::WeakLong);
     
 #ifdef FEATURE_COMINTEROP
     if ((mHandleMask & CorHandleWeakRefCount) || (mHandleMask & CorHandleStrongRefCount))
-        result |= (1 << (int)HandleType::HNDTYPE_REFCOUNTED);
+        result |= (1 << (int)HandleType::RefCounted);
 
     if (mHandleMask & CorHandleWeakWinRT)
-        result |= (1 << (int)HandleType::HNDTYPE_WEAK_WINRT);
+        result |= (1 << (int)HandleType::WeakWinRT);
 #endif // FEATURE_COMINTEROP
 
     if (mHandleMask & CorHandleStrongDependent)
-        result |= (1 << (int)HandleType::HNDTYPE_DEPENDENT);
+        result |= (1 << (int)HandleType::Dependent);
         
     if (mHandleMask & CorHandleStrongAsyncPinned)
-        result |= (1 << (int)HandleType::HNDTYPE_ASYNCPINNED);
+        result |= (1 << (int)HandleType::AsyncPinned);
         
     if (mHandleMask & CorHandleStrongSizedByref)
-        result |= (1 << (int)HandleType::HNDTYPE_SIZEDREF);
+        result |= (1 << (int)HandleType::SizedRef);
     
     return result;
 }
@@ -7474,44 +7474,44 @@ void CALLBACK DacHandleWalker::EnumCallbackDac(PTR_UNCHECKED_OBJECTREF handle, u
     
     switch ((HandleType)param->Type)
     {
-        case HandleType::HNDTYPE_STRONG:
+        case HandleType::Strong:
             data.dwType = (DWORD)CorHandleStrong;
             break;
             
-        case HandleType::HNDTYPE_PINNED:
+        case HandleType::Pinned:
             data.dwType = (DWORD)CorHandleStrongPinning;
             break;
             
-        case HandleType::HNDTYPE_WEAK_SHORT:
+        case HandleType::WeakShort:
             data.dwType = (DWORD)CorHandleWeakShort;
             break;
             
-        case HandleType::HNDTYPE_WEAK_LONG:
+        case HandleType::WeakLong:
             data.dwType = (DWORD)CorHandleWeakLong;
             break;
             
 #ifdef FEATURE_COMINTEROP
-        case HandleType::HNDTYPE_REFCOUNTED:
+        case HandleType::RefCounted:
             data.dwType = (DWORD)(data.i64ExtraData ? CorHandleStrongRefCount : CorHandleWeakRefCount);
             GetRefCountedHandleInfo((OBJECTREF)*handle, param->Type, &refCnt, NULL, NULL, NULL);
             data.i64ExtraData = refCnt;
             break;
 
-        case HandleType::HNDTYPE_WEAK_WINRT:
+        case HandleType::WeakWinRT:
             data.dwType = (DWORD)CorHandleWeakWinRT;
             break;
 #endif
 
-        case HandleType::HNDTYPE_DEPENDENT:
+        case HandleType::Dependent:
             data.dwType = (DWORD)CorHandleStrongDependent;
             data.i64ExtraData = GetDependentHandleSecondary(handle.GetAddr()).GetAddr();
             break;
             
-        case HandleType::HNDTYPE_ASYNCPINNED:
+        case HandleType::AsyncPinned:
             data.dwType = (DWORD)CorHandleStrongAsyncPinned;
             break;
             
-        case HandleType::HNDTYPE_SIZEDREF:
+        case HandleType::SizedRef:
             data.dwType = (DWORD)CorHandleStrongSizedByref;
             break;
 

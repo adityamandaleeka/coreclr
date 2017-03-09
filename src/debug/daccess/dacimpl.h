@@ -2162,10 +2162,10 @@ private:
     static inline bool IsAlwaysStrongReference(unsigned int type)
     {
         HandleType handleType = static_cast<HandleType>(type);
-        return handleType == HandleType::HNDTYPE_STRONG 
-            || handleType == HandleType::HNDTYPE_PINNED 
-            || handleType == HandleType::HNDTYPE_ASYNCPINNED
-            || handleType == HandleType::HNDTYPE_SIZEDREF;
+        return handleType == HandleType::Strong 
+            || handleType == HandleType::Pinned 
+            || handleType == HandleType::AsyncPinned
+            || handleType == HandleType::SizedRef;
     }
 
     template <class StructType, class IntType, HANDLESCANPROC EnumFunc>

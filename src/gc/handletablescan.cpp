@@ -1013,7 +1013,7 @@ void BlockVerifyAgeMapForBlocksWorker(uint32_t *pdwGen, uint32_t dwClumpMask, Sc
                     }
 #endif // !FEATURE_REDHAWK
 
-                    if (uType == (uint32_t)HandleType::HNDTYPE_DEPENDENT)
+                    if (uType == (uint32_t)HandleType::Dependent)
                     {
                         PTR_uintptr_t pUserData = HandleQuickFetchUserDataPointer((OBJECTHANDLE)pValue);
 
