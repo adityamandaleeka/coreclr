@@ -216,7 +216,7 @@ NOINLINE Object* LoadWinRTWeakReferenceTarget(WEAKREFERENCEREF weakReference, Ty
             }
             else if(IsWinRTWeakReferenceHandle(handle.RawHandle))
             {
-                _ASSERTE(HandleFetchType(handle.Handle) == HNDTYPE_WEAK_WINRT);
+                _ASSERTE(HandleFetchType(handle.Handle) == static_cast<uint32_t>(HandleType::HNDTYPE_WEAK_WINRT));
 
                 // Retrieve the associated IWeakReference* for this weak reference.  Add a reference to it while we release
                 // the spin lock so that another thread doesn't release it out from underneath us.
