@@ -253,7 +253,8 @@ BOOL STDMETHODCALLTYPE ExecuteEXE(HMODULE hMod);
 BOOL STDMETHODCALLTYPE ExecuteEXE(__in LPWSTR pImageNameIn);
 
 #ifndef CROSSGEN_COMPILE
-static void InitializeGarbageCollector();
+static void InitializeGarbageCollector1();
+static void InitializeGarbageCollector2();
 
 #ifdef DEBUGGING_SUPPORTED
 static void InitializeDebugger(void);
@@ -869,7 +870,7 @@ void EEStartupHelper(COINITIEE fFlags)
 
         GCInterface::m_MemoryPressureLock.Init(CrstGCMemoryPressure);
 
-        InitializeGarbageCollector();
+        InitializeGarbageCollector1();
 
 #endif // CROSSGEN_COMPILE
 
@@ -994,6 +995,7 @@ void EEStartupHelper(COINITIEE fFlags)
 #endif
 
         // InitializeGarbageCollector();
+        InitializeGarbageCollector2();
 
         InitializePinHandleTable();
 
@@ -2431,7 +2433,7 @@ BOOL IsGarbageCollectorFullyInitialized()
 // Initialize the Garbage Collector
 //
 
-void InitializeGarbageCollector()
+void InitializeGarbageCollector1()
 {
     CONTRACTL{
         THROWS;
@@ -2480,6 +2482,24 @@ void InitializeGarbageCollector()
 
     hr = pGCHeap->Initialize();
     IfFailThrow(hr);
+
+///// moved below
+    // // Thread for running finalizers...
+    // FinalizerThread::FinalizerThreadCreate();
+
+    // // Now we really have fully initialized the garbage collector
+    // SetGarbageCollectorFullyInitialized();
+}
+
+void InitializeGarbageCollector2()
+{
+    CONTRACTL{
+        THROWS;
+        GC_TRIGGERS;
+        MODE_ANY;
+    } CONTRACTL_END;
+
+    HRESULT hr;
 
     // Thread for running finalizers...
     FinalizerThread::FinalizerThreadCreate();

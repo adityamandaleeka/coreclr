@@ -33,7 +33,7 @@
 #define InterlockedCompareExchangeObjectInHandle(handle, object, oldObj)        HndInterlockedCompareExchangeHandle(handle, object, oldObj)
 #define StoreFirstObjectInHandle(handle, object)   HndFirstAssignHandle(handle, object)
 #define ObjectHandleIsNull(handle)                 HndIsNull(handle)
-// #define IsHandleNullUnchecked(handle)              HndCheckForNullUnchecked(handle)
+#define IszHandleNullUnchecked(handle)              HndCheckForNullUnchecked(handle)
 
 
 /*
@@ -42,7 +42,7 @@
  * The default type of handle is a strong handle.
  *
  */
-#define HNDTYPE_DEFAULT                         HNDTYPE_STRONG
+// #define HNDTYPE_DEFAULT                         HNDTYPE_STRONG
 
 
 /*
@@ -54,7 +54,7 @@
  * The default type of weak handle is 'long-lived' weak handle.
  *
  */
-#define HNDTYPE_WEAK_DEFAULT                    HNDTYPE_WEAK_LONG
+// #define HNDTYPE_WEAK_DEFAULT                    HNDTYPE_WEAK_LONG
 
 
 /*
@@ -67,7 +67,7 @@
  * across object resurrections.
  *
  */
-#define HNDTYPE_WEAK_SHORT                      (0)
+// #define HNDTYPE_WEAK_SHORT                      (0)
 
 
 /*
@@ -79,7 +79,7 @@
  * resurrections that may occur.
  *
  */
-#define HNDTYPE_WEAK_LONG                       (1)
+// #define HNDTYPE_WEAK_LONG                       (1)
 
 
 /*
@@ -90,7 +90,7 @@
  * be promoted (remain alive) through a garbage collection cycle.
  *
  */
-#define HNDTYPE_STRONG                          (2)
+// #define HNDTYPE_STRONG                          (2)
 
 
 /*
@@ -105,7 +105,7 @@
  *        OPTIMAL PACKING OF OBJECTS DURING EPHEMERAL COLLECTIONS.  THIS TYPE
  *        OF HANDLE SHOULD BE USED SPARINGLY!
  */
-#define HNDTYPE_PINNED                          (3)
+// #define HNDTYPE_PINNED                          (3)
 
 
 /*
@@ -117,7 +117,7 @@
  * strength of a handle on the fly.
  * 
  */
-#define HNDTYPE_VARIABLE                        (4)
+// #define HNDTYPE_VARIABLE                        (4)
 
 #if defined(FEATURE_COMINTEROP) || defined(FEATURE_REDHAWK)
 /*
@@ -130,7 +130,7 @@
  *      The implementation is tied to COM Interop.
  *
  */
-#define HNDTYPE_REFCOUNTED                      (5)
+// #define HNDTYPE_REFCOUNTED                      (5)
 #endif // FEATURE_COMINTEROP || FEATURE_REDHAWK
 
 
@@ -149,7 +149,7 @@
  *
  *
  */
-#define HNDTYPE_DEPENDENT                            (6)
+// #define HNDTYPE_DEPENDENT                            (6)
 
 /*
  * PINNED HANDLES for asynchronous operation
@@ -163,7 +163,7 @@
  *        OPTIMAL PACKING OF OBJECTS DURING EPHEMERAL COLLECTIONS.  THIS TYPE
  *        OF HANDLE SHOULD BE USED SPARINGLY!
  */
-#define HNDTYPE_ASYNCPINNED                          (7)
+// #define HNDTYPE_ASYNCPINNED                          (7)
 
 
 /*
@@ -175,7 +175,7 @@
  * be calculated.
  *
  */
-#define HNDTYPE_SIZEDREF                             (8)
+// #define HNDTYPE_SIZEDREF                             (8)
 
 #ifdef FEATURE_COMINTEROP
 
@@ -191,7 +191,7 @@
  * underlying COM object as long as it has not been released by all of its strong
  * references.
  */
-#define HNDTYPE_WEAK_WINRT                           (9)
+// #define HNDTYPE_WEAK_WINRT                           (9)
 
 #endif // FEATURE_COMINTEROP
 
@@ -258,7 +258,7 @@ inline OBJECTHANDLE CreateHandle(HHANDLETABLE table, OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_DEFAULT, object); 
+    return HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_DEFAULT, object); 
 }
 
 inline void DestroyHandle(OBJECTHANDLE handle)
@@ -273,14 +273,14 @@ inline void DestroyHandle(OBJECTHANDLE handle)
     }
     CONTRACTL_END;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_DEFAULT, handle);
 }
 
 inline OBJECTHANDLE CreateDuplicateHandle(OBJECTHANDLE handle) {
     WRAPPER_NO_CONTRACT;
 
     // Create a new STRONG handle in the same table as an existing handle.  
-    return HndCreateHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, ObzjectFromHandle(handle));
+    return HndCreateHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_DEFAULT, ObzjectFromHandle(handle));
 }
 
 
@@ -288,28 +288,28 @@ inline OBJECTHANDLE CreateWeakHandle(HHANDLETABLE table, OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_WEAK_DEFAULT, object); 
+    return HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_WEAK_DEFAULT, object); 
 }
 
 inline void DestroyWeakHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_DEFAULT, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_WEAK_DEFAULT, handle);
 }
 
 inline OBJECTHANDLE CreateShortWeakHandle(HHANDLETABLE table, OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_WEAK_SHORT, object); 
+    return HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_WEAK_SHORT, object); 
 }
 
 inline void DestroyShortWeakHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_SHORT, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_WEAK_SHORT, handle);
 }
 
 
@@ -317,14 +317,14 @@ inline OBJECTHANDLE CreateLongWeakHandle(HHANDLETABLE table, OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_WEAK_LONG, object); 
+    return HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_WEAK_LONG, object); 
 }
 
 inline void DestroyLongWeakHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_LONG, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_WEAK_LONG, handle);
 }
 
 #ifndef FEATURE_REDHAWK
@@ -335,28 +335,28 @@ inline OBJECTHANDLE CreateStrongHandle(HHANDLETABLE table, OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_STRONG, object); 
+    return HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_STRONG, object); 
 }
 
 inline void DestroyStrongHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_STRONG, handle);
 }
 
 inline OBJECTHANDLE CreatePinningHandle(HHANDLETABLE table, OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_PINNED, object); 
+    return HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_PINNED, object); 
 }
 
 inline void DestroyPinningHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_PINNED, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_PINNED, handle);
 }
 
 #ifndef FEATURE_REDHAWK
@@ -367,14 +367,14 @@ inline OBJECTHANDLE CreateAsyncPinningHandle(HHANDLETABLE table, OBJECTREF objec
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_ASYNCPINNED, object); 
+    return HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_ASYNCPINNED, object); 
 }
 
 inline void DestroyAsyncPinningHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_ASYNCPINNED, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_ASYNCPINNED, handle);
 }
 
 #ifndef FEATURE_REDHAWK
@@ -385,7 +385,7 @@ inline OBJECTHANDLE CreateSizedRefHandle(HHANDLETABLE table, OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_SIZEDREF, object, (uintptr_t)0);
+    return HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_SIZEDREF, object, (uintptr_t)0);
 }
 
 void DestroySizedRefHandle(OBJECTHANDLE handle);
@@ -399,21 +399,21 @@ inline OBJECTHANDLE CreateRefcountedHandle(HHANDLETABLE table, OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_REFCOUNTED, object); 
+    return HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_REFCOUNTED, object); 
 }
 
 inline void DestroyRefcountedHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_REFCOUNTED, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_REFCOUNTED, handle);
 }
 
 inline OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, OBJECTREF object, IWeakReference* pWinRTWeakReference)
 {
     WRAPPER_NO_CONTRACT;
     _ASSERTE(pWinRTWeakReference != NULL);
-    return HndCreateHandle(table, HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
+    return HndCreateHandle(table, (uint32_t)HandleType::HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
 }
 
 void DestroyWinRTWeakHandle(OBJECTHANDLE handle);
@@ -432,7 +432,7 @@ inline void DestroyDependentHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-	HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEPENDENT, handle);
+	HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_DEPENDENT, handle);
 }
 #endif // !DACCESS_COMPILE
 
@@ -447,7 +447,7 @@ inline void  DestroyVariableHandle(OBJECTHANDLE handle)
 {
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_VARIABLE, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_VARIABLE, handle);
 }
 
 void GCHandleValidatePinnedObject(OBJECTREF obj);
@@ -519,28 +519,28 @@ inline OBJECTHANDLE CreateGlobalHandle(OBJECTREF object)
     WRAPPER_NO_CONTRACT;
     CONDITIONAL_CONTRACT_VIOLATION(ModeViolation, object == NULL);
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_DEFAULT, object); 
+    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], (uint32_t)HandleType::HNDTYPE_DEFAULT, object); 
 }
 
 inline void DestroyGlobalHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_DEFAULT, handle);
 }
 
 inline OBJECTHANDLE CreateGlobalWeakHandle(OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_DEFAULT, object); 
+    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], (uint32_t)HandleType::HNDTYPE_WEAK_DEFAULT, object); 
 }
 
 inline void DestroyGlobalWeakHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_DEFAULT, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_WEAK_DEFAULT, handle);
 }
 
 inline OBJECTHANDLE CreateGlobalShortWeakHandle(OBJECTREF object)
@@ -548,14 +548,14 @@ inline OBJECTHANDLE CreateGlobalShortWeakHandle(OBJECTREF object)
     WRAPPER_NO_CONTRACT;
     CONDITIONAL_CONTRACT_VIOLATION(ModeViolation, object == NULL);
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_SHORT, object);     
+    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], (uint32_t)HandleType::HNDTYPE_WEAK_SHORT, object);     
 }
 
 inline void DestroyGlobalShortWeakHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_SHORT, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_WEAK_SHORT, handle);
 }
 
 #ifndef FEATURE_REDHAWK
@@ -566,14 +566,14 @@ inline OBJECTHANDLE CreateGlobalLongWeakHandle(OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_LONG, object); 
+    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], (uint32_t)HandleType::HNDTYPE_WEAK_LONG, object); 
 }
 
 inline void DestroyGlobalLongWeakHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_LONG, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_WEAK_LONG, handle);
 }
 
 inline OBJECTHANDLE CreateGlobalStrongHandle(OBJECTREF object)
@@ -581,14 +581,14 @@ inline OBJECTHANDLE CreateGlobalStrongHandle(OBJECTREF object)
     WRAPPER_NO_CONTRACT;
     CONDITIONAL_CONTRACT_VIOLATION(ModeViolation, object == NULL);
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_STRONG, object); 
+    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], (uint32_t)HandleType::HNDTYPE_STRONG, object); 
 }
 
 inline void DestroyGlobalStrongHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_STRONG, handle);
 }
 
 #ifndef FEATURE_REDHAWK
@@ -599,14 +599,14 @@ inline OBJECTHANDLE CreateGlobalPinningHandle(OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_PINNED, object); 
+    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], (uint32_t)HandleType::HNDTYPE_PINNED, object); 
 }
 
 inline void DestroyGlobalPinningHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_PINNED, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_PINNED, handle);
 }
 
 #ifdef FEATURE_COMINTEROP
@@ -614,14 +614,14 @@ inline OBJECTHANDLE CreateGlobalRefcountedHandle(OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_REFCOUNTED, object); 
+    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], (uint32_t)HandleType::HNDTYPE_REFCOUNTED, object); 
 }
 
 inline void DestroyGlobalRefcountedHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_REFCOUNTED, handle);
+    HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_REFCOUNTED, handle);
 }
 #endif // FEATURE_COMINTEROP
 
