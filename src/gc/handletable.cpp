@@ -542,7 +542,7 @@ void HndDestroyHandleOfUnknownType(HHANDLETABLE hTable, OBJECTHANDLE handle)
     // If we're being asked to destroy a WinRT weak handle, that will cause a leak
     // of the IWeakReference* that it holds in its extra data. Instead of using this
     // API use DestroyWinRTWeakHandle instead.
-    _ASSERTE(HandleFetchType(handle) != HNDTYPE_WEAK_WINRT);
+    _ASSERTE(HandleFetchType(handle) != HandleType::HNDTYPE_WEAK_WINRT);
 #endif // FEATURE_COMINTEROP
 
     // fetch the type and then free normally
@@ -761,7 +761,7 @@ void HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value)
 
 #ifndef FEATURE_REDHAWK
         // Also fire the things pinned by Async pinned handles
-        if (hndType == HNDTYPE_ASYNCPINNED)
+        if (hndType == HandleType::HNDTYPE_ASYNCPINNED)
         {
             if (value->GetMethodTable() == g_pOverlappedDataClass)
             {
@@ -775,14 +775,14 @@ void HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value)
                     {
                         value = ppObj[i];
                         uint32_t generation = value != 0 ? g_theGCHeap->WhichGeneration(value) : 0;
-                        FireEtwSetGCHandle(overlapped, value, HNDTYPE_PINNED, generation, (int64_t) pAppDomain, GetClrInstanceId());
+                        FireEtwSetGCHandle(overlapped, value, HandleType::HNDTYPE_PINNED, generation, (int64_t) pAppDomain, GetClrInstanceId());
                     }
                 }
                 else
                 {
                     value = OBJECTREF_TO_UNCHECKED_OBJECTREF(overlapped->m_userObject);
                     uint32_t generation = value != 0 ? g_theGCHeap->WhichGeneration(value) : 0;
-                    FireEtwSetGCHandle(overlapped, value, HNDTYPE_PINNED, generation, (int64_t) pAppDomain, GetClrInstanceId());
+                    FireEtwSetGCHandle(overlapped, value, HandleType::HNDTYPE_PINNED, generation, (int64_t) pAppDomain, GetClrInstanceId());
                 }
             }
         }
@@ -844,13 +844,13 @@ void HndWriteBarrier(OBJECTHANDLE handle, OBJECTREF objref)
 #ifndef FEATURE_REDHAWK
         //OverlappedData need special treatment: because all user data pointed by it needs to be reported by this handle,
         //its age is consider to be min age of the user data, to be simple, we just make it 0
-        if (uType == HNDTYPE_ASYNCPINNED && objref->GetGCSafeMethodTable () == g_pOverlappedDataClass)
+        if (uType == (uint32_t)HandleType::HNDTYPE_ASYNCPINNED && objref->GetGCSafeMethodTable () == g_pOverlappedDataClass)
         {
             generation = 0;
         }
 #endif // !FEATURE_REDHAWK
         
-        if (uType == HNDTYPE_DEPENDENT)
+        if (uType == (uint32_t)HandleType::HNDTYPE_DEPENDENT)
         {
             generation = 0;
         }

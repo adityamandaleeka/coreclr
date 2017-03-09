@@ -437,6 +437,8 @@ CLREvent * GCHeap::GetWaitForGCEvent()
     return WaitForGCEvent;
 }
 
+
+///// for now the GCHeap implementations of the handle table functions are here, and just call the old functions
 Object* GCHeap::ObjectFromHandle(OBJECTHANDLE handle)
 {
     return OBJECTREFToObject(HndFetchHandle(handle));
@@ -449,41 +451,36 @@ void GCHeap::DestroyHandle(OBJECTHANDLE handle)
 
 BOOL GCHeap::IsHandleNullUnchecked(OBJECTHANDLE handle) 
 {
-    printf("GOT HERE");
-    return FALSE;
+    return ::IszHandleNullUnchecked(handle);
 }
 
 OBJECTHANDLE GCHeap::CreateTypedHandle(HHANDLETABLE table, Object* object, int type)
 {
-    printf("GOT HERE");
-    return nullptr;
+    return ::CreateTypedHandle(table, ObjectToOBJECTREF(object), type);
 }
 
 int GCHeap::GetCurrentThreadHomeHeapNumber()
 {
-    printf("GOT HERE");
-    return 0;
+    return ::GetCurrentThreadHomeHeapNumber();
 }
 
 OBJECTHANDLE GCHeap::CreateHandle(HHANDLETABLE table, Object* object)
 {
-    printf("GOT HERE");
-    return nullptr;
+    return ::CreateHandle(table, ObjectToOBJECTREF(object));
 }
 
 OBJECTHANDLE GCHeap::CreateWeakHandle(HHANDLETABLE table, Object* object)
 {
-    printf("GOT HERE");
-    return nullptr;
+    return ::CreateWeakHandle(table, ObjectToOBJECTREF(object));
 }
 
-OBJECTHANDLE GCHeap::CreateShortWeakHandle(HHANDLETABLE table, Object* object) { printf("GOT HERE"); return nullptr; }
-OBJECTHANDLE GCHeap::CreateLongWeakHandle(HHANDLETABLE table, Object* object) { printf("GOT HERE");return nullptr; }
-OBJECTHANDLE GCHeap::CreateStrongHandle(HHANDLETABLE table, Object* object) { printf("GOT HERE");return nullptr;}
-OBJECTHANDLE GCHeap::CreatePinningHandle(HHANDLETABLE table, Object* object) { printf("GOT HERE");return nullptr;}
-OBJECTHANDLE GCHeap::CreateSizedRefHandle(HHANDLETABLE table, Object* object) { printf("GOT HERE");return nullptr;}
-OBJECTHANDLE GCHeap::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) { printf("GOT HERE");return nullptr;}
-OBJECTHANDLE GCHeap::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) { printf("GOT HERE");return nullptr;}
+OBJECTHANDLE GCHeap::CreateShortWeakHandle(HHANDLETABLE table, Object* object) { return ::CreateShortWeakHandle(table, ObjectToOBJECTREF(object)); }
+OBJECTHANDLE GCHeap::CreateLongWeakHandle(HHANDLETABLE table, Object* object)  { return ::CreateLongWeakHandle(table, ObjectToOBJECTREF(object)); }
+OBJECTHANDLE GCHeap::CreateStrongHandle(HHANDLETABLE table, Object* object)    { return ::CreateStrongHandle(table, ObjectToOBJECTREF(object)); }
+OBJECTHANDLE GCHeap::CreatePinningHandle(HHANDLETABLE table, Object* object)   { return ::CreatePinningHandle(table, ObjectToOBJECTREF(object)); }
+OBJECTHANDLE GCHeap::CreateSizedRefHandle(HHANDLETABLE table, Object* object)  { return ::CreateSizedRefHandle(table, ObjectToOBJECTREF(object)); }
+OBJECTHANDLE GCHeap::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) { return ::CreateVariableHandle(hTable, ObjectToOBJECTREF(object), type); }
+OBJECTHANDLE GCHeap::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) { return ::CreateDependentHandle(table, ObjectToOBJECTREF(primary), ObjectToOBJECTREF(secondary)); }
 
 void GCHeap::WaitUntilConcurrentGCComplete()
 {
