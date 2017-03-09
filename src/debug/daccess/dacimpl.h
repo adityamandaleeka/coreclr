@@ -2161,7 +2161,10 @@ private:
     bool FetchMoreHandles(HANDLESCANPROC proc);
     static inline bool IsAlwaysStrongReference(unsigned int type)
     {
-        return type == HNDTYPE_STRONG || type == HNDTYPE_PINNED || type == HNDTYPE_ASYNCPINNED || type == HNDTYPE_SIZEDREF;
+        return type == static_cast<unsigned int>(HandleType::HNDTYPE_STRONG) 
+            || type == static_cast<unsigned int>(HandleType::HNDTYPE_PINNED) 
+            || type == static_cast<unsigned int>(HandleType::HNDTYPE_ASYNCPINNED)
+            || type == static_cast<unsigned int>(HandleType::HNDTYPE_SIZEDREF);
     }
 
     template <class StructType, class IntType, HANDLESCANPROC EnumFunc>
