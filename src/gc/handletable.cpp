@@ -539,7 +539,7 @@ void HndDestroyHandleOfUnknownType(HHANDLETABLE hTable, OBJECTHANDLE handle)
     // If we're being asked to destroy a WinRT weak handle, that will cause a leak
     // of the IWeakReference* that it holds in its extra data. Instead of using this
     // API use DestroyWinRTWeakHandle instead.
-    _ASSERTE(HandleFetchType(handle) != static_cast<uint32_t>(HandleType::WeakWinRT));
+    _ASSERTE(HandleFetchType(handle) != (uint32_t)HandleType::WeakWinRT);
 #endif // FEATURE_COMINTEROP
 
     // fetch the type and then free normally
@@ -758,7 +758,7 @@ void HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value)
 
 #ifndef FEATURE_REDHAWK
         // Also fire the things pinned by Async pinned handles
-        if (hndType == static_cast<uint32_t>(HandleType::AsyncPinned))
+        if (hndType == (uint32_t)HandleType::AsyncPinned)
         {
             if (value->GetMethodTable() == g_pOverlappedDataClass)
             {
@@ -772,14 +772,14 @@ void HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value)
                     {
                         value = ppObj[i];
                         uint32_t generation = value != 0 ? g_theGCHeap->WhichGeneration(value) : 0;
-                        FireEtwSetGCHandle(overlapped, value, static_cast<unsigned int>(HandleType::Pinned), generation, (int64_t) pAppDomain, GetClrInstanceId());
+                        FireEtwSetGCHandle(overlapped, value, (unsigned int)HandleType::Pinned, generation, (int64_t) pAppDomain, GetClrInstanceId());
                     }
                 }
                 else
                 {
                     value = OBJECTREF_TO_UNCHECKED_OBJECTREF(overlapped->m_userObject);
                     uint32_t generation = value != 0 ? g_theGCHeap->WhichGeneration(value) : 0;
-                    FireEtwSetGCHandle(overlapped, value, static_cast<unsigned int>(HandleType::Pinned), generation, (int64_t) pAppDomain, GetClrInstanceId());
+                    FireEtwSetGCHandle(overlapped, value, (unsigned int)HandleType::Pinned, generation, (int64_t) pAppDomain, GetClrInstanceId());
                 }
             }
         }

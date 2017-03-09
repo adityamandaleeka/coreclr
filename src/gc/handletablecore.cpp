@@ -689,7 +689,7 @@ void SegmentPreCompactAsyncPinHandles(TableSegment *pSegment)
         {
             continue;
         }
-        else if (pSegment->rgBlockType[uBlock] != static_cast<uint8_t>(HandleType::AsyncPinned))
+        else if (pSegment->rgBlockType[uBlock] != (uint8_t)HandleType::AsyncPinned)
         {
             _UNCHECKED_OBJECTREF *pValue = pSegment->rgValue + (uBlock * HANDLE_HANDLES_PER_BLOCK);
             _UNCHECKED_OBJECTREF *pLast = pValue + HANDLE_HANDLES_PER_BLOCK;
@@ -736,7 +736,7 @@ void SegmentPreCompactAsyncPinHandles(TableSegment *pSegment)
     }
 
     // make sure the remaining async handle has MethodTable that exists in default domain
-    uBlock = pSegment->rgHint[static_cast<int>(HandleType::AsyncPinned)];
+    uBlock = pSegment->rgHint[(int)HandleType::AsyncPinned];
     if (uBlock == BLOCK_INVALID)
     {
         return;
@@ -744,7 +744,7 @@ void SegmentPreCompactAsyncPinHandles(TableSegment *pSegment)
     uint32_t freeCount = 0;
     for (uBlock = 0; uBlock < pSegment->bEmptyLine; uBlock ++)
     {
-        if (pSegment->rgBlockType[uBlock] != static_cast<uint8_t>(HandleType::AsyncPinned))
+        if (pSegment->rgBlockType[uBlock] != (uint8_t)HandleType::AsyncPinned)
         {
             continue;
         }
