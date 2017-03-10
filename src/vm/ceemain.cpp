@@ -2462,15 +2462,17 @@ void InitializeGarbageCollector1()
     IGCToCLR* gcToClr = nullptr;
 #endif
 
+    IGCHandleTable *pGcHandleTable;
 
     IGCHeap *pGCHeap;
-    if (!InitializeGarbageCollector(gcToClr, &pGCHeap, &g_gc_dac_vars)) 
+    if (!InitializeGarbageCollector(gcToClr, &pGCHeap, &pGcHandleTable, &g_gc_dac_vars)) 
     {
         ThrowOutOfMemory();
     }
 
     assert(pGCHeap != nullptr);
     g_pGCHeap = pGCHeap;
+    g_pGCHandleTable = pGcHandleTable;
     g_gcDacGlobals = &g_gc_dac_vars;
 
     // Apparently the Windows linker removes global variables if they are never
