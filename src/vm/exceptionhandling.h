@@ -255,8 +255,8 @@ public:
         if (NULL != m_hThrowable)
         {
 #ifndef DACCESS_COMPILE
-            IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
-            return (OBJECTREF)pHeap->ObjectFromHandle(m_hThrowable);
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            return (OBJECTREF)pHandleTable->ObjectFromHandle(m_hThrowable);
 #else
             assert("akjufhsdjk0");
 #endif
@@ -428,8 +428,8 @@ private:
         // Never, ever destroy a preallocated exception handle.
         if ((m_hThrowable != NULL) && !CLRException::IsPreallocatedExceptionHandle(m_hThrowable))
         {
-            IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
-            pHeap->DestroyHandle(m_hThrowable);
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            pHandleTable->DestroyHandle(m_hThrowable);
         }
 
         m_hThrowable = NULL;

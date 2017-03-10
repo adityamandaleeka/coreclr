@@ -3342,17 +3342,10 @@ ClrDataAccess::GetThreadLocalModuleData(CLRDATA_ADDRESS thread, unsigned int ind
 
 HRESULT ClrDataAccess::GetHandleEnum(ISOSHandleEnum **ppHandleEnum)
 {
-    unsigned int types[] = {(unsigned int)HandleType::HNDTYPE_WEAK_SHORT,
-                            (unsigned int)HandleType::HNDTYPE_WEAK_LONG,
-                            (unsigned int)HandleType::HNDTYPE_STRONG,
-                            (unsigned int)HandleType::HNDTYPE_PINNED,
-                            (unsigned int)HandleType::HNDTYPE_VARIABLE,
-                            (unsigned int)HandleType::HNDTYPE_DEPENDENT,
-                            (unsigned int)HandleType::HNDTYPE_ASYNCPINNED,
-                            (unsigned int)HandleType::HNDTYPE_SIZEDREF,
+    unsigned int types[] = {HNDTYPE_WEAK_SHORT, HNDTYPE_WEAK_LONG, HNDTYPE_STRONG, HNDTYPE_PINNED, HNDTYPE_VARIABLE, HNDTYPE_DEPENDENT,
+                            HNDTYPE_ASYNCPINNED, HNDTYPE_SIZEDREF,
 #ifdef FEATURE_COMINTEROP
-                            (unsigned int)HandleType::HNDTYPE_REFCOUNTED,
-                            (unsigned int)HandleType::HNDTYPE_WEAK_WINRT
+                            HNDTYPE_REFCOUNTED, HNDTYPE_WEAK_WINRT
 #endif
                             };
 
@@ -3386,21 +3379,14 @@ HRESULT ClrDataAccess::GetHandleEnumForGC(unsigned int gen, ISOSHandleEnum **ppH
         return E_POINTER;
     
     SOSDacEnter();
-
-    unsigned int types[] = {(unsigned int)HandleType::HNDTYPE_WEAK_SHORT,
-                            (unsigned int)HandleType::HNDTYPE_WEAK_LONG,
-                            (unsigned int)HandleType::HNDTYPE_STRONG,
-                            (unsigned int)HandleType::HNDTYPE_PINNED,
-                            (unsigned int)HandleType::HNDTYPE_VARIABLE,
-                            (unsigned int)HandleType::HNDTYPE_DEPENDENT,
-                            (unsigned int)HandleType::HNDTYPE_ASYNCPINNED,
-                            (unsigned int)HandleType::HNDTYPE_SIZEDREF,
+    
+    unsigned int types[] = {HNDTYPE_WEAK_SHORT, HNDTYPE_WEAK_LONG, HNDTYPE_STRONG, HNDTYPE_PINNED, HNDTYPE_VARIABLE, HNDTYPE_DEPENDENT,
+                            HNDTYPE_ASYNCPINNED, HNDTYPE_SIZEDREF,
 #ifdef FEATURE_COMINTEROP
-                            (unsigned int)HandleType::HNDTYPE_REFCOUNTED,
-                            (unsigned int)HandleType::HNDTYPE_WEAK_WINRT
+                            HNDTYPE_REFCOUNTED, HNDTYPE_WEAK_WINRT
 #endif
                             };
-
+                            
     DacHandleWalker *walker = new DacHandleWalker();
     
     HRESULT hr = walker->Init(this, types, _countof(types), gen);

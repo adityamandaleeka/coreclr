@@ -664,7 +664,8 @@ FCIMPL1(VOID, MarshalNative::GCHandleInternalFree, OBJECTHANDLE handle)
     UINT handleType = HandleFetchType(handle);
 #endif
 
-    DestroyTypedHandle(handle);
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    pHandleTable->DestroyTypedHandle(handle);
 
 #ifdef MDA_SUPPORTED
     if (handleType == HNDTYPE_PINNED)
@@ -725,8 +726,8 @@ FCIMPL4(Object*, MarshalNative::GCHandleInternalCompareExchange, OBJECTHANDLE ha
         GCHandleValidatePinnedObject(newObjref);
 
     // Update the stored object reference.
-    IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
-    ret = pHeap->InterlockedCompareExchangeObjectInHandle(handle, OBJECTREFToObject(newObjref), OBJECTREFToObject(oldObjref));
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    ret = pHandleTable->InterlockedCompareExchangeObjectInHandle(handle, OBJECTREFToObject(newObjref), OBJECTREFToObject(oldObjref));
     HELPER_METHOD_FRAME_END_POLL();
     return (Object*)ret;
 }

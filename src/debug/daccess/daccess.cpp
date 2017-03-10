@@ -8134,7 +8134,7 @@ void DacHandleWalker::GetRefCountedHandleInfo(
     SUPPORTS_DAC;
 
 #ifdef FEATURE_COMINTEROP
-    if (uType == static_cast<unsigned int>(HandleType::HNDTYPE_REFCOUNTED))
+    if (uType == HNDTYPE_REFCOUNTED)
     {
         // get refcount from the CCW
         PTR_ComCallWrapper pWrap = ComCallWrapper::GetWrapperForObject(oref);
@@ -8208,10 +8208,10 @@ void CALLBACK DacHandleWalker::EnumCallbackSOS(PTR_UNCHECKED_OBJECTREF handle, u
     
     data.Handle = TO_CDADDR(handle.GetAddr());
     data.Type = param->Type;
-    if (param->Type == (unsigned int)HandleType::HNDTYPE_DEPENDENT)
+    if (param->Type == HNDTYPE_DEPENDENT)
         data.Secondary = GetDependentHandleSecondary(handle.GetAddr()).GetAddr();
 #ifdef FEATURE_COMINTEROP
-    else if (param->Type == (unsigned int)HandleType::HNDTYPE_WEAK_WINRT)
+    else if (param->Type == HNDTYPE_WEAK_WINRT)
         data.Secondary = HndGetHandleExtraInfo(handle.GetAddr());
 #endif // FEATURE_COMINTEROP
     else

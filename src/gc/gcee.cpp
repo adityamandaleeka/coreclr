@@ -438,54 +438,59 @@ CLREvent * GCHeap::GetWaitForGCEvent()
 }
 
 
-///// for now the GCHeap implementations of the handle table functions are here, and just call the old functions
-Object* GCHeap::ObjectFromHandle(OBJECTHANDLE handle)
+///// for now the GCHandleTable implementations of the handle table functions are here, and just call the old functions
+Object* GCHandleTable::ObjectFromHandle(OBJECTHANDLE handle)
 {
     return OBJECTREFToObject(HndFetchHandle(handle));
 }
 
-void* GCHeap::InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref)
+void* GCHandleTable::InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref)
 {
-    return ::IntzerlockedCompareExchangeObjectInHandle(handle, ObjectToOBJECTREF(objref), ObjectToOBJECTREF(oldObjref));
+    return ::HndInterlockedCompareExchangeHandle(handle, ObjectToOBJECTREF(objref), ObjectToOBJECTREF(oldObjref));
 }
 
-void GCHeap::DestroyHandle(OBJECTHANDLE handle)
+void GCHandleTable::DestroyHandle(OBJECTHANDLE handle)
 {
     return ::DestroyHandle(handle);
 }
 
-BOOL GCHeap::IsHandleNullUnchecked(OBJECTHANDLE handle) 
+void GCHandleTable::DestroyTypedHandle(OBJECTHANDLE handle)
 {
-    return ::IszHandleNullUnchecked(handle);
+    return HndDestroyHandleOfUnknownType(HndGetHandleTable(handle), handle);
 }
 
-OBJECTHANDLE GCHeap::CreateTypedHandle(HHANDLETABLE table, Object* object, HandleType type)
+BOOL GCHandleTable::IsHandleNullUnchecked(OBJECTHANDLE handle) 
 {
-    return ::CreateTypedHandle(table, ObjectToOBJECTREF(object), type);
+    return ::HndCheckForNullUnchecked(handle);
 }
 
-int GCHeap::GetCurrentThreadHomeHeapNumber()
+OBJECTHANDLE GCHandleTable::CreateTypedHandle(HHANDLETABLE table, Object* object, int type)
+{
+    return ::HndCreateHandle(table, type, ObjectToOBJECTREF(object));
+}
+
+int GCHandleTable::GetCurrentThreadHomeHeapNumber()
 {
     return ::GetCurrentThreadHomeHeapNumber();
 }
 
-OBJECTHANDLE GCHeap::CreateHandle(HHANDLETABLE table, Object* object)
+OBJECTHANDLE GCHandleTable::CreateHandle(HHANDLETABLE table, Object* object)
 {
     return ::CreateHandle(table, ObjectToOBJECTREF(object));
 }
 
-OBJECTHANDLE GCHeap::CreateWeakHandle(HHANDLETABLE table, Object* object)
+OBJECTHANDLE GCHandleTable::CreateWeakHandle(HHANDLETABLE table, Object* object)
 {
     return ::CreateWeakHandle(table, ObjectToOBJECTREF(object));
 }
 
-OBJECTHANDLE GCHeap::CreateShortWeakHandle(HHANDLETABLE table, Object* object) { return ::CreateShortWeakHandle(table, ObjectToOBJECTREF(object)); }
-OBJECTHANDLE GCHeap::CreateLongWeakHandle(HHANDLETABLE table, Object* object)  { return ::CreateLongWeakHandle(table, ObjectToOBJECTREF(object)); }
-OBJECTHANDLE GCHeap::CreateStrongHandle(HHANDLETABLE table, Object* object)    { return ::CreateStrongHandle(table, ObjectToOBJECTREF(object)); }
-OBJECTHANDLE GCHeap::CreatePinningHandle(HHANDLETABLE table, Object* object)   { return ::CreatePinningHandle(table, ObjectToOBJECTREF(object)); }
-OBJECTHANDLE GCHeap::CreateSizedRefHandle(HHANDLETABLE table, Object* object)  { return ::CreateSizedRefHandle(table, ObjectToOBJECTREF(object)); }
-OBJECTHANDLE GCHeap::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) { return ::CreateVariableHandle(hTable, ObjectToOBJECTREF(object), type); }
-OBJECTHANDLE GCHeap::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) { return ::CreateDependentHandle(table, ObjectToOBJECTREF(primary), ObjectToOBJECTREF(secondary)); }
+OBJECTHANDLE GCHandleTable::CreateShortWeakHandle(HHANDLETABLE table, Object* object) { return ::CreateShortWeakHandle(table, ObjectToOBJECTREF(object)); }
+OBJECTHANDLE GCHandleTable::CreateLongWeakHandle(HHANDLETABLE table, Object* object)  { return ::CreateLongWeakHandle(table, ObjectToOBJECTREF(object)); }
+OBJECTHANDLE GCHandleTable::CreateStrongHandle(HHANDLETABLE table, Object* object)    { return ::CreateStrongHandle(table, ObjectToOBJECTREF(object)); }
+OBJECTHANDLE GCHandleTable::CreatePinningHandle(HHANDLETABLE table, Object* object)   { return ::CreatePinningHandle(table, ObjectToOBJECTREF(object)); }
+OBJECTHANDLE GCHandleTable::CreateSizedRefHandle(HHANDLETABLE table, Object* object)  { return ::CreateSizedRefHandle(table, ObjectToOBJECTREF(object)); }
+OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) { return ::CreateVariableHandle(hTable, ObjectToOBJECTREF(object), type); }
+OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) { return ::CreateDependentHandle(table, ObjectToOBJECTREF(primary), ObjectToOBJECTREF(secondary)); }
 
 void GCHeap::WaitUntilConcurrentGCComplete()
 {
@@ -631,6 +636,10 @@ void gc_heap::background_gc_wait_lh (alloc_wait_reason awr)
 /******************************************************************************/
 IGCHeapInternal* CreateGCHeap() {
     return new(nothrow) GCHeap();   // we return wks or svr 
+}
+
+IGCHandleTable* CreateGCHandleTable() {
+    return new(nothrow) GCHandleTable();
 }
 
 void GCHeap::DiagTraceGCSegments()

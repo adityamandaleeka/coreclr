@@ -2170,8 +2170,8 @@ BOOL IsInFirstFrameOfHandler(Thread *pThread, IJitManager *pJitManager, const ME
     CONTRACTL_END;
 
     // if don't have a throwable the aren't processing an exception
-    IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
-    if (pHeap->IsHandleNullUnchecked(pThread->GetThrowableAsHandle()))
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    if (pHandleTable->IsHandleNullUnchecked(pThread->GetThrowableAsHandle()))
         return FALSE;
 
     EH_CLAUSE_ENUMERATOR pEnumState;

@@ -190,11 +190,12 @@ struct HandleTableBucket
 
 class Object;
 class IGCHeap;
+class IGCHandleTable;
 
 // Initializes the garbage collector. Should only be called
 // once, during EE startup. Returns true if the initialization
 // was successful, false otherwise.
-bool InitializeGarbageCollector(IGCToCLR* clrToGC, IGCHeap **gcHeap, GcDacVars* gcDacVars);
+bool InitializeGarbageCollector(IGCToCLR* clrToGC, IGCHeap** gcHeap, IGCHandleTable** gcHandleTable, GcDacVars* gcDacVars);
 
 // The runtime needs to know whether we're using workstation or server GC 
 // long before the GCHeap is created. This function sets the type of
@@ -260,7 +261,7 @@ enum end_no_gc_region_status
     end_no_gc_alloc_exceeded = 3
 };
 
-enum class HandleType 
+typedef enum 
 {
     /*
      * WEAK HANDLES
@@ -292,7 +293,7 @@ enum class HandleType
      *
      */
     HNDTYPE_WEAK_LONG    = 1,
-    HNDTYPE_WEAK_DEFAULT = 1, // The default type of weak handle is 'long-lived' weak handle.
+    HNDTYPE_WEAK_DEFAULT = 1,
 
     /*
      * STRONG HANDLES
@@ -303,7 +304,7 @@ enum class HandleType
      *
      */
     HNDTYPE_STRONG       = 2,
-    HNDTYPE_DEFAULT      = 2, // The default type of handle is a strong handle.
+    HNDTYPE_DEFAULT      = 2,
 
     /*
      * PINNED HANDLES
@@ -396,8 +397,8 @@ enum class HandleType
      * underlying COM object as long as it has not been released by all of its strong
      * references.
      */
-    HNDTYPE_WEAK_WINRT  = 9
-};
+    HNDTYPE_WEAK_WINRT   = 9
+} HandleType;
 
 typedef BOOL (* walk_fn)(Object*, void*);
 typedef void (* gen_walk_fn)(void* context, int generation, uint8_t* range_start, uint8_t* range_end, uint8_t* range_reserved);
@@ -405,6 +406,43 @@ typedef void (* record_surv_fn)(uint8_t* begin, uint8_t* end, ptrdiff_t reloc, s
 typedef void (* fq_walk_fn)(BOOL, void*);
 typedef void (* fq_scan_fn)(Object** ppObject, ScanContext *pSC, uint32_t dwFlags);
 typedef void (* handle_scan_fn)(Object** pRef, Object* pSec, uint32_t flags, ScanContext* context, BOOL isDependent);
+
+class IGCHandleTable {
+public:
+    // Returns whether or not the given size is a valid segment size.
+    virtual Object* ObjectFromHandle(OBJECTHANDLE handle) = 0;
+
+    virtual void* InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref) = 0;
+
+    virtual void DestroyHandle(OBJECTHANDLE handle) = 0;
+
+    virtual void DestroyTypedHandle(OBJECTHANDLE handle) = 0;
+
+    virtual BOOL IsHandleNullUnchecked(OBJECTHANDLE handle) = 0;
+
+    virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, int type) = 0;
+
+    virtual int GetCurrentThreadHomeHeapNumber() = 0;
+
+//////// Replace all of these with just one function that takes a HandleType to create??
+    virtual OBJECTHANDLE CreateHandle(HHANDLETABLE table, Object* object) = 0;
+
+    virtual OBJECTHANDLE CreateWeakHandle(HHANDLETABLE table, Object* object) = 0;
+
+    virtual OBJECTHANDLE CreateShortWeakHandle(HHANDLETABLE table, Object* object) = 0;
+
+    virtual OBJECTHANDLE CreateLongWeakHandle(HHANDLETABLE table, Object* object) = 0;
+
+    virtual OBJECTHANDLE CreateStrongHandle(HHANDLETABLE table, Object* object) = 0;
+
+    virtual OBJECTHANDLE CreatePinningHandle(HHANDLETABLE table, Object* object) = 0;
+
+    virtual OBJECTHANDLE CreateSizedRefHandle(HHANDLETABLE table, Object* object) = 0;
+
+    virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
+
+    virtual OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) = 0;
+};
 
 // IGCHeap is the interface that the VM will use when interacting with the GC.
 class IGCHeap {
@@ -436,37 +474,37 @@ public:
     ===========================================================================
     */
 
-    // Returns whether or not the given size is a valid segment size.
-    virtual Object* ObjectFromHandle(OBJECTHANDLE handle) = 0;
+//     // Returns whether or not the given size is a valid segment size.
+//     virtual Object* ObjectFromHandle(OBJECTHANDLE handle) = 0;
 
-    virtual void* InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref) = 0;
+//     virtual void* InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref) = 0;
 
-    virtual void DestroyHandle(OBJECTHANDLE handle) = 0;
+//     virtual void DestroyHandle(OBJECTHANDLE handle) = 0;
 
-    virtual BOOL IsHandleNullUnchecked(OBJECTHANDLE handle) = 0;
+//     virtual BOOL IsHandleNullUnchecked(OBJECTHANDLE handle) = 0;
 
-    virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, HandleType type) = 0;
+//     virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, int type) = 0;
 
-    virtual int GetCurrentThreadHomeHeapNumber() = 0;
+//     virtual int GetCurrentThreadHomeHeapNumber() = 0;
 
-//////// Replace all of these with just one function that takes a HandleType to create??
-    virtual OBJECTHANDLE CreateHandle(HHANDLETABLE table, Object* object) = 0;
+// //////// Replace all of these with just one function that takes a HandleType to create??
+//     virtual OBJECTHANDLE CreateHandle(HHANDLETABLE table, Object* object) = 0;
 
-    virtual OBJECTHANDLE CreateWeakHandle(HHANDLETABLE table, Object* object) = 0;
+//     virtual OBJECTHANDLE CreateWeakHandle(HHANDLETABLE table, Object* object) = 0;
 
-    virtual OBJECTHANDLE CreateShortWeakHandle(HHANDLETABLE table, Object* object) = 0;
+//     virtual OBJECTHANDLE CreateShortWeakHandle(HHANDLETABLE table, Object* object) = 0;
 
-    virtual OBJECTHANDLE CreateLongWeakHandle(HHANDLETABLE table, Object* object) = 0;
+//     virtual OBJECTHANDLE CreateLongWeakHandle(HHANDLETABLE table, Object* object) = 0;
 
-    virtual OBJECTHANDLE CreateStrongHandle(HHANDLETABLE table, Object* object) = 0;
+//     virtual OBJECTHANDLE CreateStrongHandle(HHANDLETABLE table, Object* object) = 0;
 
-    virtual OBJECTHANDLE CreatePinningHandle(HHANDLETABLE table, Object* object) = 0;
+//     virtual OBJECTHANDLE CreatePinningHandle(HHANDLETABLE table, Object* object) = 0;
 
-    virtual OBJECTHANDLE CreateSizedRefHandle(HHANDLETABLE table, Object* object) = 0;
+//     virtual OBJECTHANDLE CreateSizedRefHandle(HHANDLETABLE table, Object* object) = 0;
 
-    virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
+//     virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
 
-    virtual OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) = 0;
+//     virtual OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) = 0;
 
     /*
     ===========================================================================

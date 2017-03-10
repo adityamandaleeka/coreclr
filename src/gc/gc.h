@@ -111,6 +111,7 @@ extern "C" uint8_t g_build_variant;
 
 namespace WKS {
     ::IGCHeapInternal* CreateGCHeap();
+    ::IGCHandleTable*  CreateGCHandleTable();
     class GCHeap;
     class gc_heap;
     }
@@ -118,6 +119,7 @@ namespace WKS {
 #if defined(FEATURE_SVR_GC)
 namespace SVR {
     ::IGCHeapInternal* CreateGCHeap();
+    ::IGCHandleTable*  CreateGCHandleTable();
     class GCHeap;
     class gc_heap;
 }
