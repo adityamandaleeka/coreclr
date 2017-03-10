@@ -136,7 +136,8 @@ int __cdecl main(int argc, char* argv[])
     //
     GcDacVars dacVars;
     IGCHeap *pGCHeap;
-    if (!InitializeGarbageCollector(nullptr, &pGCHeap, &dacVars))
+    IGCHandleTable *pGCHandleTable;
+    if (!InitializeGarbageCollector(nullptr, &pGCHeap, &pGCHandleTable, &dacVars))
     {
         return -1;
     }

@@ -1605,7 +1605,9 @@ void AssemblyLoaderAllocator::CleanupHandles()
     while (!m_handleCleanupList.IsEmpty())
     {
         HandleCleanupListItem * pItem = m_handleCleanupList.RemoveHead();
-        DestroyTypedHandle(pItem->m_handle);
+
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        pHandleTable->DestroyTypedHandle(pItem->m_handle);
     }
 }
 
