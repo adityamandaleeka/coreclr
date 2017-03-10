@@ -446,7 +446,7 @@ Object* GCHeap::ObjectFromHandle(OBJECTHANDLE handle)
 
 void* GCHeap::InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref)
 {
-
+    return ::IntzerlockedCompareExchangeObjectInHandle(handle, ObjectToOBJECTREF(objref), ObjectToOBJECTREF(oldObjref));
 }
 
 void GCHeap::DestroyHandle(OBJECTHANDLE handle)

@@ -154,7 +154,7 @@ FCIMPL1(void*, AllocateNativeOverlapped, OverlappedDataObject* overlappedUNSAFE)
         
     }
 
-    handle = GetAppDomain()->CreateTypedHandle(overlapped, (int)HandleType::HNDTYPE_ASYNCPINNED);
+    handle = GetAppDomain()->CreateTypedHandle(overlapped, HandleType::HNDTYPE_ASYNCPINNED);
 
 
     handle.SuppressRelease();

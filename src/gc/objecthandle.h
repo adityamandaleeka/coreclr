@@ -50,18 +50,6 @@ GVAL_DECL(HandleTableMap, g_HandleTableMap);
 
 #define INITIAL_HANDLE_TABLE_ARRAY_SIZE 10
 
-// // struct containing g_SystemInfo.dwNumberOfProcessors HHANDLETABLEs and current table index
-// // instead of just single HHANDLETABLE for on-fly balancing while adding handles on multiproc machines
-
-// struct HandleTableBucket
-// {
-//     PTR_HHANDLETABLE pTable;
-//     uint32_t         HandleTableIndex;
-
-//     bool Contains(OBJECTHANDLE handle);
-// };
-
-
 /*
  * Type mask definitions for HNDTYPE_VARIABLE handles.
  */
@@ -341,20 +329,6 @@ public:
 
 int GetCurrentThreadHomeHeapNumber();
 
-/// DELETE THIS FUNCTION? NEVER USED.
-// inline OBJECTHANDLE CreateGlobalTypedHandle(OBJECTREF object, int type)
-// { 
-//     WRAPPER_NO_CONTRACT;
-//     return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], type, object); 
-// }
-
-// inline void DestroyGlobalTypedHandle(OBJECTHANDLE handle)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     HndDestroyHandleOfUnknownType(HndGetHandleTable(handle), handle);
-// }
-
 inline OBJECTHANDLE CreateGlobalHandle(OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
@@ -403,20 +377,6 @@ inline void DestroyGlobalShortWeakHandle(OBJECTHANDLE handle)
 typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>,DestroyGlobalShortWeakHandle> GlobalShortWeakHandleHolder;
 #endif
 
-// inline OBJECTHANDLE CreateGlobalLongWeakHandle(OBJECTREF object)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HandleType::HNDTYPE_WEAK_LONG, object); 
-// }
-
-// inline void DestroyGlobalLongWeakHandle(OBJECTHANDLE handle)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_WEAK_LONG, handle);
-// }
-
 inline OBJECTHANDLE CreateGlobalStrongHandle(OBJECTREF object)
 { 
     WRAPPER_NO_CONTRACT;
@@ -435,36 +395,6 @@ inline void DestroyGlobalStrongHandle(OBJECTHANDLE handle)
 #ifndef FEATURE_REDHAWK
 typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>,DestroyGlobalStrongHandle> GlobalStrongHandleHolder;
 #endif
-
-// inline OBJECTHANDLE CreateGlobalPinningHandle(OBJECTREF object)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HandleType::HNDTYPE_PINNED, object); 
-// }
-
-// inline void DestroyGlobalPinningHandle(OBJECTHANDLE handle)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_PINNED, handle);
-// }
-
-// #ifdef FEATURE_COMINTEROP
-// inline OBJECTHANDLE CreateGlobalRefcountedHandle(OBJECTREF object)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HandleType::HNDTYPE_REFCOUNTED, object); 
-// }
-
-// inline void DestroyGlobalRefcountedHandle(OBJECTHANDLE handle)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     HndDestroyHandle(HndGetHandleTable(handle), (uint32_t)HandleType::HNDTYPE_REFCOUNTED, handle);
-// }
-// #endif // FEATURE_COMINTEROP
 
 inline void ResetOBJECTHANDLE(OBJECTHANDLE handle)
 {
