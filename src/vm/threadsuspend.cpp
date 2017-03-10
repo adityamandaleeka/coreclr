@@ -646,7 +646,8 @@ void Thread::ClearAbortReason(BOOL pNoLock)
         AppDomainFromIDHolder ad(adid, TRUE);
         if (!ad.IsUnloaded())
         {   // Still a valid domain, so destroy the handle.
-            DestroyHandle(oh);
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            pHandleTable->DestroyHandle(oh);
         }
     }
 }
