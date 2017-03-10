@@ -136,7 +136,8 @@ CustomMarshalerInfo::~CustomMarshalerInfo()
 #ifndef CROSSGEN_COMPILE    
     if (m_hndCustomMarshaler)
     {
-        DestroyHandle(m_hndCustomMarshaler);
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        pHandleTable->DestroyHandle(m_hndCustomMarshaler);
         m_hndCustomMarshaler = NULL;
     }
 #endif

@@ -762,7 +762,7 @@ private:
                         refSH = (SAFEHANDLEREF) ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(hndSafeHandle));
 
                         // Destroy the GC handle
-                        DestroyHandle(hndSafeHandle);
+                        pHandleTable->DestroyHandle(hndSafeHandle);
 
                         if (refSH != NULL)
                         {

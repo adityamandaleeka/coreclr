@@ -4892,7 +4892,8 @@ void Thread::SetLastThrownObject(OBJECTREF throwable, BOOL isUnhandled)
         // these handles... they'll be destroyed when the Runtime shuts down.
         if (!CLRException::IsPreallocatedExceptionHandle(m_LastThrownObjectHandle))
         {
-            DestroyHandle(m_LastThrownObjectHandle);
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            pHandleTable->DestroyHandle(m_LastThrownObjectHandle);
         }
 
         m_LastThrownObjectHandle = NULL; // Make sure to set this to NULL here just in case we throw trying to make
@@ -5086,7 +5087,8 @@ void Thread::SetLastThrownObjectHandle(OBJECTHANDLE h)
     if (m_LastThrownObjectHandle != NULL &&
         !CLRException::IsPreallocatedExceptionHandle(m_LastThrownObjectHandle))
     {
-        DestroyHandle(m_LastThrownObjectHandle);
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        pHandleTable->DestroyHandle(m_LastThrownObjectHandle);
     }
 
     m_LastThrownObjectHandle = h;

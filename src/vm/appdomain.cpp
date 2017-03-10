@@ -9290,7 +9290,8 @@ void AppDomain::ClearGCRoots()
             // Never delete a handle to a preallocated exception object.
             if (!CLRException::IsPreallocatedExceptionHandle(pThread->m_LastThrownObjectHandle))
             {
-                DestroyHandle(pThread->m_LastThrownObjectHandle);
+                IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+                pHandleTable->DestroyHandle(pThread->m_LastThrownObjectHandle);
             }
 
             pThread->m_LastThrownObjectHandle = NULL;
