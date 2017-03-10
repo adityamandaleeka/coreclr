@@ -451,7 +451,7 @@ void* GCHandleTable::InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handl
 
 void GCHandleTable::DestroyHandle(OBJECTHANDLE handle)
 {
-    return ::DestroyHandle(handle);
+    return ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
 }
 
 void GCHandleTable::DestroyTypedHandle(OBJECTHANDLE handle)
@@ -476,7 +476,7 @@ int GCHandleTable::GetCurrentThreadHomeHeapNumber()
 
 OBJECTHANDLE GCHandleTable::CreateHandle(HHANDLETABLE table, Object* object)
 {
-    return ::CreateHandle(table, ObjectToOBJECTREF(object));
+    return ::HndCreateHandle(table, HNDTYPE_DEFAULT, ObjectToOBJECTREF(object));
 }
 
 OBJECTHANDLE GCHandleTable::CreateWeakHandle(HHANDLETABLE table, Object* object)

@@ -7028,7 +7028,8 @@ void ExceptionTracker::ReleaseResources()
     {
         if (!CLRException::IsPreallocatedExceptionHandle(m_hThrowable))
         {
-            DestroyHandle(m_hThrowable);
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            pHandleTable->DestroyHandle(m_hThrowable);
         }
         m_hThrowable = NULL;
     }

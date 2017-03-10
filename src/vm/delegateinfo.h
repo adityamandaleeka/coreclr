@@ -61,12 +61,14 @@ struct DelegateInfo
         AppDomainFromIDHolder ad(m_appDomainId, FALSE);
         if (!ad.IsUnloaded())
         {
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+
             if (m_stateHandle)
-                DestroyHandle(m_stateHandle);
+                pHandleTable->DestroyHandle(m_stateHandle);
             if (m_eventHandle)
-            	 DestroyHandle(m_eventHandle);
+                pHandleTable->DestroyHandle(m_eventHandle);
             if (m_registeredWaitHandle)
-               DestroyHandle(m_registeredWaitHandle);
+                pHandleTable->DestroyHandle(m_registeredWaitHandle);
         }
 
     }

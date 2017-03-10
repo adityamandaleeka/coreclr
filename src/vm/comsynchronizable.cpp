@@ -79,8 +79,9 @@ struct SharedState
         AppDomainFromIDHolder ad(m_Internal->GetKickOffDomainId(), TRUE);
         if (!ad.IsUnloaded())
         {
-            DestroyHandle(m_Threadable);
-            DestroyHandle(m_ThreadStartArg);
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            pHandleTable->DestroyHandle(m_Threadable);
+            pHandleTable->DestroyHandle(m_ThreadStartArg);
         }
     }
 };
@@ -1727,7 +1728,8 @@ FCIMPL2(void, ThreadNative::SetAbortReason, ThreadBaseObject* pThisUNSAFE, Objec
     //  was not used, created above.
     if (oh != 0)
     {
-        DestroyHandle(oh);
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        pHandleTable->DestroyHandle(oh);
     }
 
     HELPER_METHOD_FRAME_END()

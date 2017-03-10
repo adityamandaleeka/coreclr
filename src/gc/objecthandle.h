@@ -89,14 +89,14 @@ GVAL_DECL(HandleTableMap, g_HandleTableMap);
 //     HndDestroyHandleOfUnknownType(HndGetHandleTable(handle), handle);
 // }
 
-inline OBJECTHANDLE CreateHandle(HHANDLETABLE table, OBJECTREF object)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline OBJECTHANDLE CrzeateHandle(HHANDLETABLE table, OBJECTREF object)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_DEFAULT, object); 
-}
+//     return HndCreateHandle(table, HNDTYPE_DEFAULT, object); 
+// }
 
-inline void DestroyHandle(OBJECTHANDLE handle)
+inline void DezstroyHandle(OBJECTHANDLE handle)
 { 
     CONTRACTL
     {
@@ -292,7 +292,7 @@ void GCHandleValidatePinnedObject(OBJECTREF obj);
  */
 
 #ifndef FEATURE_REDHAWK
-typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DestroyHandle > OHWrapper;
+typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DezstroyHandle > OHWrapper;
 
 class OBJECTHANDLEHolder : public OHWrapper
 {
