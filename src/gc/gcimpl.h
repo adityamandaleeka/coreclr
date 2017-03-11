@@ -56,6 +56,8 @@ public:
 
     virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, int type);
 
+    virtual OBJECTHANDLE CreateDuplicateHandle(OBJECTHANDLE handle);
+
     virtual int GetCurrentThreadHomeHeapNumber();
 
     virtual OBJECTHANDLE CreateHandle(HHANDLETABLE table, Object* object);
@@ -75,6 +77,14 @@ public:
     virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type);
 
     virtual OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary);
+
+    virtual void DestroyShortWeakHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyStrongHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyLongWeakHandle(OBJECTHANDLE handle);
+
+    virtual OBJECTHANDLE CreateGlobalShortWeakHandle(OBJECTREF object);
 };
 
 class GCHeap : public IGCHeapInternal

@@ -1189,6 +1189,7 @@ VOID UMEntryThunk::FreeUMEntryThunk(UMEntryThunk* p)
     {
         if (p->GetObjectHandle())
         {
+            
             DestroyLongWeakHandle(p->GetObjectHandle());
             p->m_pObjectHandle = NULL;
 

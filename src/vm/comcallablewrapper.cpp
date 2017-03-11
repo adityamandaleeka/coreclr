@@ -751,13 +751,16 @@ HRESULT WeakReferenceImpl::Cleanup()
         // Destroy the handle if the AppDomain is still there
         // The AppDomain is the domain where this WeakReferenceImpl is created
         //
-        GCX_COOP_THREAD_EXISTS(GET_THREAD());    
-        
+        GCX_COOP_THREAD_EXISTS(GET_THREAD());
+
         AppDomainFromIDHolder ad(m_adid, TRUE);
-        
+
         if (!ad.IsUnloaded())
-            DestroyShortWeakHandle(m_ppObject);
-        
+        {
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            pHandleTable->DestroyShortWeakHandle(m_ppObject);
+        }
+
         m_ppObject = NULL;
     }
     END_EXTERNAL_ENTRYPOINT;

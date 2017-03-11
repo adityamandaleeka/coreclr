@@ -631,7 +631,8 @@ ThreadStaticHandleBucket::~ThreadStaticHandleBucket()
 
     if (m_hndHandleArray)
     {
-        DestroyStrongHandle(m_hndHandleArray);
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        pHandleTable->DestroyStrongHandle(m_hndHandleArray);
         m_hndHandleArray = NULL;
     }
 }

@@ -451,12 +451,12 @@ void* GCHandleTable::InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handl
 
 void GCHandleTable::DestroyHandle(OBJECTHANDLE handle)
 {
-    return ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
+    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
 }
 
 void GCHandleTable::DestroyTypedHandle(OBJECTHANDLE handle)
 {
-    return HndDestroyHandleOfUnknownType(HndGetHandleTable(handle), handle);
+    HndDestroyHandleOfUnknownType(HndGetHandleTable(handle), handle);
 }
 
 BOOL GCHandleTable::IsHandleNullUnchecked(OBJECTHANDLE handle) 
@@ -469,6 +469,13 @@ OBJECTHANDLE GCHandleTable::CreateTypedHandle(HHANDLETABLE table, Object* object
     return ::HndCreateHandle(table, type, ObjectToOBJECTREF(object));
 }
 
+// Create a new STRONG handle in the same table as an existing handle.
+OBJECTHANDLE GCHandleTable::CreateDuplicateHandle(OBJECTHANDLE handle)
+{
+    return ::HndCreateHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, ObjectToOBJECTREF(ObjectFromHandle(handle)));
+}
+
+////// try to get out of needing this on the interface
 int GCHandleTable::GetCurrentThreadHomeHeapNumber()
 {
     return ::GetCurrentThreadHomeHeapNumber();
@@ -481,16 +488,63 @@ OBJECTHANDLE GCHandleTable::CreateHandle(HHANDLETABLE table, Object* object)
 
 OBJECTHANDLE GCHandleTable::CreateWeakHandle(HHANDLETABLE table, Object* object)
 {
-    return ::CreateWeakHandle(table, ObjectToOBJECTREF(object));
+    return ::HndCreateHandle(table, HNDTYPE_WEAK_DEFAULT, ObjectToOBJECTREF(object));
 }
 
-OBJECTHANDLE GCHandleTable::CreateShortWeakHandle(HHANDLETABLE table, Object* object) { return ::CreateShortWeakHandle(table, ObjectToOBJECTREF(object)); }
-OBJECTHANDLE GCHandleTable::CreateLongWeakHandle(HHANDLETABLE table, Object* object)  { return ::CreateLongWeakHandle(table, ObjectToOBJECTREF(object)); }
-OBJECTHANDLE GCHandleTable::CreateStrongHandle(HHANDLETABLE table, Object* object)    { return ::CreateStrongHandle(table, ObjectToOBJECTREF(object)); }
-OBJECTHANDLE GCHandleTable::CreatePinningHandle(HHANDLETABLE table, Object* object)   { return ::CreatePinningHandle(table, ObjectToOBJECTREF(object)); }
-OBJECTHANDLE GCHandleTable::CreateSizedRefHandle(HHANDLETABLE table, Object* object)  { return ::CreateSizedRefHandle(table, ObjectToOBJECTREF(object)); }
-OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) { return ::CreateVariableHandle(hTable, ObjectToOBJECTREF(object), type); }
-OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) { return ::CreateDependentHandle(table, ObjectToOBJECTREF(primary), ObjectToOBJECTREF(secondary)); }
+OBJECTHANDLE GCHandleTable::CreateShortWeakHandle(HHANDLETABLE table, Object* object)
+{
+    return ::HndCreateHandle(table, HNDTYPE_WEAK_SHORT, ObjectToOBJECTREF(object));
+}
+
+OBJECTHANDLE GCHandleTable::CreateLongWeakHandle(HHANDLETABLE table, Object* object)
+{
+    return ::HndCreateHandle(table, HNDTYPE_WEAK_LONG, ObjectToOBJECTREF(object));
+}
+
+OBJECTHANDLE GCHandleTable::CreateStrongHandle(HHANDLETABLE table, Object* object)
+{
+    return ::CreateStrongHandle(table, ObjectToOBJECTREF(object));
+}
+
+OBJECTHANDLE GCHandleTable::CreatePinningHandle(HHANDLETABLE table, Object* object)
+{
+    return ::CreatePinningHandle(table, ObjectToOBJECTREF(object));
+}
+
+OBJECTHANDLE GCHandleTable::CreateSizedRefHandle(HHANDLETABLE table, Object* object)
+{
+    return ::CreateSizedRefHandle(table, ObjectToOBJECTREF(object));
+}
+
+OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type)
+{
+    return ::CreateVariableHandle(hTable, ObjectToOBJECTREF(object), type);
+}
+
+OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary)
+{
+    return ::CreateDependentHandle(table, ObjectToOBJECTREF(primary), ObjectToOBJECTREF(secondary));
+}
+
+void GCHandleTable::DestroyShortWeakHandle(OBJECTHANDLE handle)
+{
+    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_SHORT, handle);
+}
+
+void GCHandleTable::DestroyStrongHandle(OBJECTHANDLE handle)
+{
+    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
+}
+
+void GCHandleTable::DestroyLongWeakHandle(OBJECTHANDLE handle)
+{
+    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_LONG, handle);
+}
+
+OBJECTHANDLE GCHandleTable::CreateGlobalShortWeakHandle(OBJECTREF object)
+{
+    return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_SHORT, object);
+}
 
 void GCHeap::WaitUntilConcurrentGCComplete()
 {
