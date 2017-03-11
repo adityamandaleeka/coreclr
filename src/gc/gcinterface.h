@@ -420,6 +420,8 @@ public:
 
     virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, int type) = 0;
 
+    virtual OBJECTHANDLE CreateDuplicateHandle(OBJECTHANDLE handle) = 0;
+
     virtual int GetCurrentThreadHomeHeapNumber() = 0;
 
 //////// Replace all of these with just one function that takes a HandleType to create??
@@ -440,6 +442,14 @@ public:
     virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
 
     virtual OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) = 0;
+
+    virtual void DestroyShortWeakHandle(OBJECTHANDLE handle) = 0;
+
+    virtual void DestroyStrongHandle(OBJECTHANDLE handle) = 0;
+
+    virtual void DestroyLongWeakHandle(OBJECTHANDLE handle) = 0;
+
+    virtual OBJECTHANDLE CreateGlobalShortWeakHandle(OBJECTREF object) = 0;
 };
 
 // IGCHeap is the interface that the VM will use when interacting with the GC.
@@ -465,44 +475,6 @@ public:
 
     // Sets the limit for reserved virtual memory.
     virtual void SetReservedVMLimit(size_t vmlimit) = 0;
-
-    /*
-    ===========================================================================
-    HANDLETABLE ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
-    ===========================================================================
-    */
-
-//     // Returns whether or not the given size is a valid segment size.
-//     virtual Object* ObjectFromHandle(OBJECTHANDLE handle) = 0;
-
-//     virtual void* InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref) = 0;
-
-//     virtual void DestroyHandle(OBJECTHANDLE handle) = 0;
-
-//     virtual BOOL IsHandleNullUnchecked(OBJECTHANDLE handle) = 0;
-
-//     virtual OBJECTHANDLE CreateTypedHandle(HHANDLETABLE table, Object* object, int type) = 0;
-
-//     virtual int GetCurrentThreadHomeHeapNumber() = 0;
-
-// //////// Replace all of these with just one function that takes a HandleType to create??
-//     virtual OBJECTHANDLE CreateHandle(HHANDLETABLE table, Object* object) = 0;
-
-//     virtual OBJECTHANDLE CreateWeakHandle(HHANDLETABLE table, Object* object) = 0;
-
-//     virtual OBJECTHANDLE CreateShortWeakHandle(HHANDLETABLE table, Object* object) = 0;
-
-//     virtual OBJECTHANDLE CreateLongWeakHandle(HHANDLETABLE table, Object* object) = 0;
-
-//     virtual OBJECTHANDLE CreateStrongHandle(HHANDLETABLE table, Object* object) = 0;
-
-//     virtual OBJECTHANDLE CreatePinningHandle(HHANDLETABLE table, Object* object) = 0;
-
-//     virtual OBJECTHANDLE CreateSizedRefHandle(HHANDLETABLE table, Object* object) = 0;
-
-//     virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
-
-//     virtual OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) = 0;
 
     /*
     ===========================================================================

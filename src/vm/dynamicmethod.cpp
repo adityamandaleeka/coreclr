@@ -1051,7 +1051,8 @@ void LCGMethodResolver::Destroy(BOOL fDomainUnload)
 
         if (m_managedResolver)
         {
-            ::DestroyLongWeakHandle(m_managedResolver);
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            pHandleTable->DestroyLongWeakHandle(m_managedResolver);
             m_managedResolver = NULL;
         }
 

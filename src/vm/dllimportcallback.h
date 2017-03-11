@@ -324,7 +324,8 @@ public:
 
         if (GetObjectHandle())
         {
-            DestroyLongWeakHandle(GetObjectHandle());
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            pHandleTable->DestroyLongWeakHandle(GetObjectHandle());
         }
 
 #ifdef _DEBUG

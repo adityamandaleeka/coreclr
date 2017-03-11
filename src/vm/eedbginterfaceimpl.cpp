@@ -260,13 +260,14 @@ void EEDbgInterfaceImpl::DbgDestroyHandle(OBJECTHANDLE oh,
     LOG((LF_CORDB, LL_INFO1000, "EEI::GHFO: Destroyed given handle 0x%x,"
         "fStrong: 0x%x!\n", oh, fStrongNewRef));
 
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
     if (fStrongNewRef)
     {
-        DestroyStrongHandle(oh);
+        pHandleTable->DestroyStrongHandle(oh);
     }
     else
     {
-        DestroyLongWeakHandle(oh);
+        pHandleTable->DestroyLongWeakHandle(oh);
     }
 }
 

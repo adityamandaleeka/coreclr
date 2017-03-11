@@ -11346,11 +11346,13 @@ bool Debugger::HandleIPCEvent(DebuggerIPCEvent * pEvent)
 
             if (pEvent->DisposeHandle.fStrong == TRUE)
             {
-                DestroyStrongHandle(objectHandle);
+                ///////////// HOW SHOULD THE DEBUGGER CALL THIS?
+                // DestroyStrongHandle(objectHandle);
             }
             else
             {
-                DestroyLongWeakHandle(objectHandle);
+                ///////////// HOW SHOULD THE DEBUGGER CALL THIS?
+                // DestroyLongWeakHandle(objectHandle);
             }
             break;
         }
