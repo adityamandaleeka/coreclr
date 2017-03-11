@@ -1764,7 +1764,8 @@ Thread::Thread()
     // It can't be a LongWeakHandle because we zero stuff out of the exposed
     // object as it is finalized.  At that point, calls to GetCurrentThread()
     // had better get a new one,!
-    m_ExposedObject = CreateGlobalShortWeakHandle(NULL);
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    m_ExposedObject = pHandleTable->CreateGlobalShortWeakHandle(NULL);
 
     GlobalShortWeakHandleHolder exposedObjectHolder(m_ExposedObject);
 
@@ -3109,8 +3110,9 @@ Thread::~Thread()
         // Destroy any handles that we're using to hold onto exception objects
         SafeSetThrowables(NULL);
 
-        DestroyShortWeakHandle(m_ExposedObject);
-        DestroyStrongHandle(m_StrongHndToExposedObject);
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        pHandleTable->DestroyShortWeakHandle(m_ExposedObject);
+        pHandleTable->DestroyStrongHandle(m_StrongHndToExposedObject);
     }
 
     g_pThinLockThreadIdDispenser->DisposeId(GetThreadId());
@@ -5117,7 +5119,8 @@ void Thread::SafeUpdateLastThrownObject(void)
         {
             // Using CreateDuplicateHandle here ensures that the AD of the last thrown object matches the domain of
             // the current throwable.
-            SetLastThrownObjectHandle(CreateDuplicateHandle(hThrowable));
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            SetLastThrownObjectHandle(pHandleTable->CreateDuplicateHandle(hThrowable));
         }
         EX_CATCH
         {

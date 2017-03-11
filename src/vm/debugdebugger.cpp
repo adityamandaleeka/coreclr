@@ -802,7 +802,7 @@ FCIMPL4(void, DebugStackTrace::GetStackFramesInternal,
 }
 FCIMPLEND
 
-FORCEINLINE void HolderDestroyStrongHandle(OBJECTHANDLE h) { if (h != NULL) DestroyStrongHandle(h); }
+FORCEINLINE void HolderDestroyStrongHandle(OBJECTHANDLE h) { if (h != NULL) GCHeapUtilities::GetGCHandleTable()->DestroyStrongHandle(h); }
 typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, HolderDestroyStrongHandle, NULL> StrongHandleHolder;
 
 // receives a custom notification object from the target and sends it to the RS via 
@@ -1440,7 +1440,8 @@ FCIMPL1( void, Log::AddLogSwitch,
         // that we don't leak it.
         if (FAILED(hresult))
         {
-             ::DestroyStrongHandle(ObjHandle);
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            pHandleTable->DestroyStrongHandle(ObjHandle);
         }
 
 #ifdef DEBUGGING_SUPPORTED
