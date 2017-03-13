@@ -160,10 +160,10 @@ inline void DestroyDependentHandle(OBJECTHANDLE handle)
 
 #ifndef DACCESS_COMPILE
 
-OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_t type);
-uint32_t     GetVariableHandleType(OBJECTHANDLE handle);
-void         UpdateVariableHandleType(OBJECTHANDLE handle, uint32_t type);
-uint32_t     CompareExchangeVariableHandleType(OBJECTHANDLE handle, uint32_t oldType, uint32_t newType);
+// OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_t type);
+// uint32_t     GetVariableHandleType(OBJECTHANDLE handle);
+// void         UpdateVariableHandleType(OBJECTHANDLE handle, uint32_t type);
+// uint32_t     CompareExchangeVariableHandleType(OBJECTHANDLE handle, uint32_t oldType, uint32_t newType);
 
 inline void  DestroyVariableHandle(OBJECTHANDLE handle)
 {
@@ -230,17 +230,17 @@ int GetCurrentThreadHomeHeapNumber();
 //     HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
 // }
 
-inline void DestroyGlobalStrongHandle(OBJECTHANDLE handle)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline void DestroyGlobalStrongHandle(OBJECTHANDLE handle)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
-}
+//     HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
+// }
 
-#ifndef FEATURE_REDHAWK
-/////// this can be moved to the one place that uses it after STRESS_THREAD is gone
-typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>,DestroyGlobalStrongHandle> GlobalStrongHandleHolder;
-#endif
+// #ifndef FEATURE_REDHAWK
+// /////// this can be moved to the one place that uses it after STRESS_THREAD is gone
+// // typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>,DestroyGlobalStrongHandle> GlobalStrongHandleHolder;
+// #endif
 
 inline void ResetOBJECTHANDLE(OBJECTHANDLE handle)
 {
