@@ -1769,7 +1769,7 @@ Thread::Thread()
 
     GlobalShortWeakHandleHolder exposedObjectHolder(m_ExposedObject);
 
-    m_StrongHndToExposedObject = CreateGlobalStrongHandle(NULL);
+    m_StrongHndToExposedObject = pHandleTable->CreateGlobalStrongHandle(NULL);
     GlobalStrongHandleHolder strongHndToExposedObjectHolder(m_StrongHndToExposedObject);
 
     m_LastThrownObjectHandle = NULL;

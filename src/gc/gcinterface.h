@@ -261,6 +261,10 @@ enum end_no_gc_region_status
     end_no_gc_alloc_exceeded = 3
 };
 
+////////// ONLY USED IN GC/* AND IN ONE PLACE IN DACCESS.CPP
+/// see if it can be removed from here
+static const int INITIAL_HANDLE_TABLE_ARRAY_SIZE = 10;
+
 typedef enum 
 {
     /*
@@ -452,6 +456,12 @@ public:
     virtual void DestroyLongWeakHandle(OBJECTHANDLE handle) = 0;
 
     virtual OBJECTHANDLE CreateGlobalShortWeakHandle(OBJECTREF object) = 0;
+
+    virtual OBJECTHANDLE CreateGlobalStrongHandle(OBJECTREF object) = 0;
+
+    virtual OBJECTHANDLE CreateAsyncPinningHandle(HHANDLETABLE table, OBJECTREF object) = 0;
+
+    virtual OBJECTHANDLE CreateGlobalWeakHandle(OBJECTREF object) = 0;
 };
 
 // IGCHeap is the interface that the VM will use when interacting with the GC.

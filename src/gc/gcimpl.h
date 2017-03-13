@@ -85,6 +85,12 @@ public:
     virtual void DestroyLongWeakHandle(OBJECTHANDLE handle);
 
     virtual OBJECTHANDLE CreateGlobalShortWeakHandle(OBJECTREF object);
+
+    virtual OBJECTHANDLE CreateGlobalStrongHandle(OBJECTREF object);
+
+    virtual OBJECTHANDLE CreateAsyncPinningHandle(HHANDLETABLE table, OBJECTREF object);
+
+    virtual OBJECTHANDLE CreateGlobalWeakHandle(OBJECTREF object);
 };
 
 class GCHeap : public IGCHeapInternal
