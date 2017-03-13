@@ -26,6 +26,8 @@
 #include "nativeoverlapped.h"
 #endif // FEATURE_REDHAWK
 
+#include "gcimpl.h"
+
 GVAL_IMPL(HandleTableMap, g_HandleTableMap);
 
 // Array of contexts used while scanning dependent handles for promotion. There are as many contexts as GC
@@ -932,7 +934,7 @@ void SetDependentHandleSecondary(OBJECTHANDLE handle, OBJECTREF objref)
  * N.B. This routine is not a macro since we do validation in RETAIL.
  * We always validate the type here because it can come from external callers.
  */
-OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_t type)
+OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type)
 {
     WRAPPER_NO_CONTRACT;
 
@@ -945,7 +947,7 @@ OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_
     }
 
     // create the handle
-    return HndCreateHandle(hTable, HNDTYPE_VARIABLE, object, (uintptr_t)type);
+    return HndCreateHandle(hTable, HNDTYPE_VARIABLE, ObjectToOBJECTREF(object), (uintptr_t)type);
 }
 
 /*
@@ -953,7 +955,7 @@ OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_
 *
 * Retrieves the dynamic type of a variable-strength handle.
 */
-uint32_t GetVariableHandleType(OBJECTHANDLE handle)
+uint32_t GCHandleTable::GetVariableHandleType(OBJECTHANDLE handle)
 {
     WRAPPER_NO_CONTRACT;
 
@@ -968,7 +970,7 @@ uint32_t GetVariableHandleType(OBJECTHANDLE handle)
  * N.B. This routine is not a macro since we do validation in RETAIL.
  * We always validate the type here because it can come from external callers.
  */
-void UpdateVariableHandleType(OBJECTHANDLE handle, uint32_t type)
+void GCHandleTable::UpdateVariableHandleType(OBJECTHANDLE handle, uint32_t type)
 {
     WRAPPER_NO_CONTRACT;
 
@@ -998,7 +1000,7 @@ void UpdateVariableHandleType(OBJECTHANDLE handle, uint32_t type)
 * Changes the dynamic type of a variable-strength handle. Unlike UpdateVariableHandleType we assume that the
 * types have already been validated.
 */
-uint32_t CompareExchangeVariableHandleType(OBJECTHANDLE handle, uint32_t oldType, uint32_t newType)
+uint32_t GCHandleTable::CompareExchangeVariableHandleType(OBJECTHANDLE handle, uint32_t oldType, uint32_t newType)
 {
     WRAPPER_NO_CONTRACT;
 
