@@ -1703,12 +1703,17 @@ void CheckADValidity(AppDomain* pDomain, DWORD ADValidityKind)
 #endif
 
 
-void DestroyGlobalShortWeakHandle(OBJECTHANDLE handle)
+void DestroyGlobalStrongHandle(OBJECTHANDLE handle)
 {
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    pHandleTable->DestroyGlobalShortWeakHandle(handle);
+    GCHeapUtilities::GetGCHandleTable()->DestroyGlobalStrongHandle(handle);
 }
 
+void DestroyGlobalShortWeakHandle(OBJECTHANDLE handle)
+{
+    GCHeapUtilities::GetGCHandleTable()->DestroyGlobalShortWeakHandle(handle);
+}
+
+typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>, DestroyGlobalStrongHandle> GlobalStrongHandleHolder;
 typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>, DestroyGlobalShortWeakHandle> GlobalShortWeakHandleHolder;
 
 //--------------------------------------------------------------------

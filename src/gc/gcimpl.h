@@ -88,6 +88,8 @@ public:
 
     virtual void DestroyGlobalHandle(OBJECTHANDLE handle);
 
+    virtual void DestroyGlobalStrongHandle(OBJECTHANDLE handle);
+
     virtual OBJECTHANDLE CreateGlobalHandle(Object* object);
 
     virtual OBJECTHANDLE CreateGlobalShortWeakHandle(Object* object);
@@ -99,6 +101,12 @@ public:
     virtual OBJECTHANDLE CreateGlobalWeakHandle(Object* object);
 
     virtual OBJECTHANDLE CreateRefcountedHandle(HHANDLETABLE table, Object* object);
+
+
+
+    virtual uint32_t     GetVariableHandleType(OBJECTHANDLE handle);
+    virtual void         UpdateVariableHandleType(OBJECTHANDLE handle, uint32_t type);
+    virtual uint32_t     CompareExchangeVariableHandleType(OBJECTHANDLE handle, uint32_t oldType, uint32_t newType);
 };
 
 class GCHeap : public IGCHeapInternal

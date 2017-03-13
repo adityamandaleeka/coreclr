@@ -522,10 +522,10 @@ OBJECTHANDLE GCHandleTable::CreateSizedRefHandle(HHANDLETABLE table, Object* obj
     return ::HndCreateHandle(table, HNDTYPE_SIZEDREF, ObjectToOBJECTREF(object), (uintptr_t)0);
 }
 
-OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type)
-{
-    return ::CreateVariableHandle(hTable, ObjectToOBJECTREF(object), type);
-}
+// OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type)
+// {
+//     return ::CreateVariableHandle(hTable, ObjectToOBJECTREF(object), type);
+// }
 
 OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary)
 {
@@ -555,6 +555,11 @@ void GCHandleTable::DestroyLongWeakHandle(OBJECTHANDLE handle)
 void GCHandleTable::DestroyGlobalHandle(OBJECTHANDLE handle)
 {
     ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
+}
+
+void DestroyGlobalStrongHandle(OBJECTHANDLE handle)
+{
+    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
 }
 
 OBJECTHANDLE GCHandleTable::CreateGlobalHandle(Object* object)
