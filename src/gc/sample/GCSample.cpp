@@ -224,7 +224,8 @@ int __cdecl main(int argc, char* argv[])
     }
 
     // Create weak handle that points to our object
-    OBJECTHANDLE ohWeak = CreateGlobalWeakHandle(ObzjectFromHandle(oh));
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    OBJECTHANDLE ohWeak = pHandleTable->CreateGlobalWeakHandle(ObzjectFromHandle(oh));
     if (ohWeak == NULL)
         return -1;
 

@@ -481,6 +481,12 @@ int GCHandleTable::GetCurrentThreadHomeHeapNumber()
     return ::GetCurrentThreadHomeHeapNumber();
 }
 
+
+// OBJECTHANDLE GCHandleTable::ZZZZCreateHandle(HHANDLETABLE table, uint32_t handleType, Object* object)
+// {
+//     return ::HndCreateHandle(table, handleType, ObjectToOBJECTREF(object));
+// }
+
 OBJECTHANDLE GCHandleTable::CreateHandle(HHANDLETABLE table, Object* object)
 {
     return ::HndCreateHandle(table, HNDTYPE_DEFAULT, ObjectToOBJECTREF(object));
@@ -503,12 +509,12 @@ OBJECTHANDLE GCHandleTable::CreateLongWeakHandle(HHANDLETABLE table, Object* obj
 
 OBJECTHANDLE GCHandleTable::CreateStrongHandle(HHANDLETABLE table, Object* object)
 {
-    return ::CreateStrongHandle(table, ObjectToOBJECTREF(object));
+    return ::HndCreateHandle(table, HNDTYPE_STRONG, ObjectToOBJECTREF(object));
 }
 
 OBJECTHANDLE GCHandleTable::CreatePinningHandle(HHANDLETABLE table, Object* object)
 {
-    return ::CreatePinningHandle(table, ObjectToOBJECTREF(object));
+    return ::HndCreateHandle(table, HNDTYPE_PINNED, ObjectToOBJECTREF(object));
 }
 
 OBJECTHANDLE GCHandleTable::CreateSizedRefHandle(HHANDLETABLE table, Object* object)
@@ -544,6 +550,21 @@ void GCHandleTable::DestroyLongWeakHandle(OBJECTHANDLE handle)
 OBJECTHANDLE GCHandleTable::CreateGlobalShortWeakHandle(OBJECTREF object)
 {
     return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_SHORT, object);
+}
+
+OBJECTHANDLE GCHandleTable::CreateGlobalStrongHandle(OBJECTREF object)
+{
+    return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_STRONG, object); 
+}
+
+OBJECTHANDLE GCHandleTable::CreateAsyncPinningHandle(HHANDLETABLE table, OBJECTREF object)
+{
+    return ::HndCreateHandle(table, HNDTYPE_ASYNCPINNED, object);
+}
+
+OBJECTHANDLE GCHandleTable::CreateGlobalWeakHandle(OBJECTREF object)
+{
+    return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_DEFAULT, object);
 }
 
 void GCHeap::WaitUntilConcurrentGCComplete()
