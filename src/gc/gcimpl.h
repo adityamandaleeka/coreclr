@@ -80,17 +80,25 @@ public:
 
     virtual void DestroyShortWeakHandle(OBJECTHANDLE handle);
 
+    virtual void DestroyGlobalShortWeakHandle(OBJECTHANDLE handle);
+
     virtual void DestroyStrongHandle(OBJECTHANDLE handle);
 
     virtual void DestroyLongWeakHandle(OBJECTHANDLE handle);
 
-    virtual OBJECTHANDLE CreateGlobalShortWeakHandle(OBJECTREF object);
+    virtual void DestroyGlobalHandle(OBJECTHANDLE handle);
 
-    virtual OBJECTHANDLE CreateGlobalStrongHandle(OBJECTREF object);
+    virtual OBJECTHANDLE CreateGlobalHandle(Object* object);
 
-    virtual OBJECTHANDLE CreateAsyncPinningHandle(HHANDLETABLE table, OBJECTREF object);
+    virtual OBJECTHANDLE CreateGlobalShortWeakHandle(Object* object);
 
-    virtual OBJECTHANDLE CreateGlobalWeakHandle(OBJECTREF object);
+    virtual OBJECTHANDLE CreateGlobalStrongHandle(Object* object);
+
+    virtual OBJECTHANDLE CreateAsyncPinningHandle(HHANDLETABLE table, Object* object);
+
+    virtual OBJECTHANDLE CreateGlobalWeakHandle(Object* object);
+
+    virtual OBJECTHANDLE CreateRefcountedHandle(HHANDLETABLE table, Object* object);
 };
 
 class GCHeap : public IGCHeapInternal

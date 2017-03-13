@@ -33651,8 +33651,12 @@ HRESULT GCHeap::Initialize ()
 #ifndef FEATURE_REDHAWK // Redhawk forces relocation a different way
 #if defined (STRESS_HEAP) && !defined (MULTIPLE_HEAPS)
     if (GCStress<cfg_any>::IsEnabled())  {
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
         for(int i = 0; i < GCHeap::NUM_HEAP_STRESS_OBJS; i++)
-            m_StressObjs[i] = CreateGlobalHandle(0);
+        {
+            m_StressObjs[i] = pHandleTable->CreateGlobalHandle(0);
+        }
+
         m_CurStressObj = 0;
     }
 #endif //STRESS_HEAP && !MULTIPLE_HEAPS
