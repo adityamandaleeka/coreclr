@@ -2952,7 +2952,8 @@ OBJECTREF DispatchInfo::GetOleAutBinder()
     OBJECTREF OleAutBinder = AllocateObject(pOleAutBinderClass);
 
     // Keep a handle to the OleAutBinder instance.
-    m_hndOleAutBinder = CreateGlobalHandle(OleAutBinder);
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    m_hndOleAutBinder = pHandleTable->CreateGlobalHandle(OleAutBinder);
 
     return OleAutBinder;
 }

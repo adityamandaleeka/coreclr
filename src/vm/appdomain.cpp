@@ -6339,7 +6339,8 @@ void AppDomain::SetupSharedStatics()
         MethodTable *pMT = MscorlibBinder::GetClass(CLASS__SHARED_STATICS);
         _ASSERTE(pMT->IsClassPreInited());
 
-        hSharedStaticsHandle = CreateGlobalHandle(AllocateObject(pMT));
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        hSharedStaticsHandle = pHandleTable->CreateGlobalHandle(OBJECTREFToObject(AllocateObject(pMT)));
     }
 
     DomainLocalModule *pLocalModule;

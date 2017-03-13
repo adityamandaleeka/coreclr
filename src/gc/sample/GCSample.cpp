@@ -201,7 +201,8 @@ int __cdecl main(int argc, char* argv[])
         return -1;
 
     // Create strong handle and store the object into it
-    OBJECTHANDLE oh = CreateGlobalHandle(pObj);
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    OBJECTHANDLE oh = pHandleTable->CreateGlobalHandle(pObj);
     if (oh == NULL)
         return -1;
 

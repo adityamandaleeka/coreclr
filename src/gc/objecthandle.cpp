@@ -1898,22 +1898,22 @@ bool HandleTableBucket::Contains(OBJECTHANDLE handle)
     return FALSE;
 }
 
-void DestroySizedRefHandle(OBJECTHANDLE handle)
-{ 
-    CONTRACTL
-    {
-        NOTHROW;
-        GC_NOTRIGGER;
-        SO_TOLERANT;
-        MODE_ANY;
-    }
-    CONTRACTL_END;
+// void DestroySizedRefHandle(OBJECTHANDLE handle)
+// { 
+//     CONTRACTL
+//     {
+//         NOTHROW;
+//         GC_NOTRIGGER;
+//         SO_TOLERANT;
+//         MODE_ANY;
+//     }
+//     CONTRACTL_END;
 
-    HHANDLETABLE hTable = HndGetHandleTable(handle);
-    HndDestroyHandle(hTable , HNDTYPE_SIZEDREF, handle);
-    AppDomain* pDomain = SystemDomain::GetAppDomainAtIndex(HndGetHandleTableADIndex(hTable));
-    pDomain->DecNumSizedRefHandles();
-}
+//     HHANDLETABLE hTable = HndGetHandleTable(handle);
+//     HndDestroyHandle(hTable , HNDTYPE_SIZEDREF, handle);
+//     AppDomain* pDomain = SystemDomain::GetAppDomainAtIndex(HndGetHandleTableADIndex(hTable));
+//     pDomain->DecNumSizedRefHandles();
+// }
 
 #ifdef FEATURE_COMINTEROP
 

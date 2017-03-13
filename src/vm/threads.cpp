@@ -1679,6 +1679,14 @@ void CheckADValidity(AppDomain* pDomain, DWORD ADValidityKind)
 #endif
 
 
+void DestroyGlobalShortWeakHandle(OBJECTHANDLE handle)
+{
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    pHandleTable->DestroyGlobalShortWeakHandle(handle);
+}
+
+typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>, DestroyGlobalShortWeakHandle> GlobalShortWeakHandleHolder;
+
 //--------------------------------------------------------------------
 // Thread construction
 //--------------------------------------------------------------------
@@ -4757,6 +4765,8 @@ retry:
     _ASSERTE(res == WAIT_TIMEOUT || res == WAIT_OBJECT_0);
 }
 
+///////// moved from objecthandle.h
+typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>,ResetOBJECTHANDLE> ObjectInHandleHolder;
 
 // Correspondence between an EE Thread and an exposed System.Thread:
 OBJECTREF Thread::GetExposedObject()
