@@ -53,9 +53,6 @@ struct HandleTableMap
 
 GVAL_DECL(HandleTableMap, g_HandleTableMap);
 
-////////// ONLY USED IN GC/* AND IN ONE PLACE IN DACCESS.CPP
-#define INITIAL_HANDLE_TABLE_ARRAY_SIZE 10
-
 ////////// THESE ARE ONLY USED IN GC/*
 /*
  * Type mask definitions for HNDTYPE_VARIABLE handles.
@@ -166,12 +163,12 @@ inline void DezstroyHandle(OBJECTHANDLE handle)
 // typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>,DestroyLongWeakHandle> LongWeakHandleHolder;
 // #endif
 
-inline OBJECTHANDLE CreateStrongHandle(HHANDLETABLE table, OBJECTREF object)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline OBJECTHANDLE CreateStrongHandle(HHANDLETABLE table, OBJECTREF object)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_STRONG, object); 
-}
+//     return HndCreateHandle(table, HNDTYPE_STRONG, object); 
+// }
 
 // inline void DestroyStrongHandle(OBJECTHANDLE handle)
 // { 
@@ -180,12 +177,12 @@ inline OBJECTHANDLE CreateStrongHandle(HHANDLETABLE table, OBJECTREF object)
 //     HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
 // }
 
-inline OBJECTHANDLE CreatePinningHandle(HHANDLETABLE table, OBJECTREF object)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline OBJECTHANDLE CreatePinningHandle(HHANDLETABLE table, OBJECTREF object)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_PINNED, object); 
-}
+//     return HndCreateHandle(table, HNDTYPE_PINNED, object); 
+// }
 
 inline void DestroyPinningHandle(OBJECTHANDLE handle)
 { 
@@ -198,12 +195,12 @@ inline void DestroyPinningHandle(OBJECTHANDLE handle)
 typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DestroyPinningHandle, NULL> PinningHandleHolder;
 #endif
 
-inline OBJECTHANDLE CreateAsyncPinningHandle(HHANDLETABLE table, OBJECTREF object)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline OBJECTHANDLE CreateAsyncPinningHandle(HHANDLETABLE table, OBJECTREF object)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(table, HNDTYPE_ASYNCPINNED, object); 
-}
+//     return HndCreateHandle(table, HNDTYPE_ASYNCPINNED, object); 
+// }
 
 inline void DestroyAsyncPinningHandle(OBJECTHANDLE handle)
 { 
@@ -336,18 +333,18 @@ public:
 
 int GetCurrentThreadHomeHeapNumber();
 
-inline OBJECTHANDLE CreateGlobalTypedHandle(OBJECTREF object, int type)
-{ 
-    WRAPPER_NO_CONTRACT;
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], type, object); 
-}
+// inline OBJECTHANDLE CreateGlobalTypedHandle(OBJECTREF object, int type)
+// { 
+//     WRAPPER_NO_CONTRACT;
+//     return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], type, object); 
+// }
 
-inline void DestroyGlobalTypedHandle(OBJECTHANDLE handle)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline void DestroyGlobalTypedHandle(OBJECTHANDLE handle)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandleOfUnknownType(HndGetHandleTable(handle), handle);
-}
+//     HndDestroyHandleOfUnknownType(HndGetHandleTable(handle), handle);
+// }
 
 inline OBJECTHANDLE CreateGlobalHandle(OBJECTREF object)
 { 
@@ -364,12 +361,12 @@ inline void DestroyGlobalHandle(OBJECTHANDLE handle)
     HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
 }
 
-inline OBJECTHANDLE CreateGlobalWeakHandle(OBJECTREF object)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline OBJECTHANDLE CreateGlobalWeakHandle(OBJECTREF object)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_DEFAULT, object); 
-}
+//     return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_DEFAULT, object); 
+// }
 
 // inline void DestroyGlobalWeakHandle(OBJECTHANDLE handle)
 // { 
@@ -397,27 +394,27 @@ inline void DestroyGlobalShortWeakHandle(OBJECTHANDLE handle)
 typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>, DestroyGlobalShortWeakHandle> GlobalShortWeakHandleHolder;
 #endif
 
-inline OBJECTHANDLE CreateGlobalLongWeakHandle(OBJECTREF object)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline OBJECTHANDLE CreateGlobalLongWeakHandle(OBJECTREF object)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_LONG, object); 
-}
+//     return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_LONG, object); 
+// }
 
-inline void DestroyGlobalLongWeakHandle(OBJECTHANDLE handle)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline void DestroyGlobalLongWeakHandle(OBJECTHANDLE handle)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_LONG, handle);
-}
+//     HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_LONG, handle);
+// }
 
-inline OBJECTHANDLE CreateGlobalStrongHandle(OBJECTREF object)
-{ 
-    WRAPPER_NO_CONTRACT;
-    CONDITIONAL_CONTRACT_VIOLATION(ModeViolation, object == NULL);
+// inline OBJECTHANDLE CreateGlobalStrongHandle(OBJECTREF object)
+// { 
+//     WRAPPER_NO_CONTRACT;
+//     CONDITIONAL_CONTRACT_VIOLATION(ModeViolation, object == NULL);
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_STRONG, object); 
-}
+//     return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_STRONG, object); 
+// }
 
 inline void DestroyGlobalStrongHandle(OBJECTHANDLE handle)
 { 
@@ -430,35 +427,35 @@ inline void DestroyGlobalStrongHandle(OBJECTHANDLE handle)
 typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>,DestroyGlobalStrongHandle> GlobalStrongHandleHolder;
 #endif
 
-inline OBJECTHANDLE CreateGlobalPinningHandle(OBJECTREF object)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline OBJECTHANDLE CreateGlobalPinningHandle(OBJECTREF object)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_PINNED, object); 
-}
+//     return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_PINNED, object); 
+// }
 
-inline void DestroyGlobalPinningHandle(OBJECTHANDLE handle)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline void DestroyGlobalPinningHandle(OBJECTHANDLE handle)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_PINNED, handle);
-}
+//     HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_PINNED, handle);
+// }
 
-#ifdef FEATURE_COMINTEROP
-inline OBJECTHANDLE CreateGlobalRefcountedHandle(OBJECTREF object)
-{ 
-    WRAPPER_NO_CONTRACT;
+// #ifdef FEATURE_COMINTEROP
+// inline OBJECTHANDLE CreateGlobalRefcountedHandle(OBJECTREF object)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_REFCOUNTED, object); 
-}
+//     return HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_REFCOUNTED, object); 
+// }
 
-inline void DestroyGlobalRefcountedHandle(OBJECTHANDLE handle)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline void DestroyGlobalRefcountedHandle(OBJECTHANDLE handle)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_REFCOUNTED, handle);
-}
-#endif // FEATURE_COMINTEROP
+//     HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_REFCOUNTED, handle);
+// }
+// #endif // FEATURE_COMINTEROP
 
 inline void ResetOBJECTHANDLE(OBJECTHANDLE handle)
 {
