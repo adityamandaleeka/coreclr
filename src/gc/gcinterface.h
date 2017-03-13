@@ -449,17 +449,25 @@ public:
 
     virtual void DestroyShortWeakHandle(OBJECTHANDLE handle) = 0;
 
+    virtual void DestroyGlobalShortWeakHandle(OBJECTHANDLE handle) = 0;
+
     virtual void DestroyStrongHandle(OBJECTHANDLE handle) = 0;
 
     virtual void DestroyLongWeakHandle(OBJECTHANDLE handle) = 0;
 
-    virtual OBJECTHANDLE CreateGlobalShortWeakHandle(OBJECTREF object) = 0;
+    virtual void DestroyGlobalHandle(OBJECTHANDLE handle) = 0;
 
-    virtual OBJECTHANDLE CreateGlobalStrongHandle(OBJECTREF object) = 0;
+    virtual OBJECTHANDLE CreateGlobalHandle(Object* object) = 0;
 
-    virtual OBJECTHANDLE CreateAsyncPinningHandle(HHANDLETABLE table, OBJECTREF object) = 0;
+    virtual OBJECTHANDLE CreateGlobalShortWeakHandle(Object* object) = 0;
 
-    virtual OBJECTHANDLE CreateGlobalWeakHandle(OBJECTREF object) = 0;
+    virtual OBJECTHANDLE CreateGlobalStrongHandle(Object* object) = 0;
+
+    virtual OBJECTHANDLE CreateAsyncPinningHandle(HHANDLETABLE table, Object* object) = 0;
+
+    virtual OBJECTHANDLE CreateGlobalWeakHandle(Object* object) = 0;
+
+    virtual OBJECTHANDLE CreateRefcountedHandle(HHANDLETABLE table, Object* object) = 0;
 };
 
 // IGCHeap is the interface that the VM will use when interacting with the GC.

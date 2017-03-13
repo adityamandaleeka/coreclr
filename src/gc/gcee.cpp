@@ -519,7 +519,7 @@ OBJECTHANDLE GCHandleTable::CreatePinningHandle(HHANDLETABLE table, Object* obje
 
 OBJECTHANDLE GCHandleTable::CreateSizedRefHandle(HHANDLETABLE table, Object* object)
 {
-    return ::CreateSizedRefHandle(table, ObjectToOBJECTREF(object));
+    return ::HndCreateHandle(table, HNDTYPE_SIZEDREF, ObjectToOBJECTREF(object), (uintptr_t)0);
 }
 
 OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type)
@@ -530,6 +530,11 @@ OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* ob
 OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary)
 {
     return ::CreateDependentHandle(table, ObjectToOBJECTREF(primary), ObjectToOBJECTREF(secondary));
+}
+
+void GCHandleTable::DestroyGlobalShortWeakHandle(OBJECTHANDLE handle)
+{
+    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_SHORT, handle);
 }
 
 void GCHandleTable::DestroyShortWeakHandle(OBJECTHANDLE handle)
@@ -547,24 +552,39 @@ void GCHandleTable::DestroyLongWeakHandle(OBJECTHANDLE handle)
     ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_LONG, handle);
 }
 
-OBJECTHANDLE GCHandleTable::CreateGlobalShortWeakHandle(OBJECTREF object)
+void GCHandleTable::DestroyGlobalHandle(OBJECTHANDLE handle)
 {
-    return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_SHORT, object);
+    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
 }
 
-OBJECTHANDLE GCHandleTable::CreateGlobalStrongHandle(OBJECTREF object)
+OBJECTHANDLE GCHandleTable::CreateGlobalHandle(Object* object)
 {
-    return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_STRONG, object); 
+    return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_DEFAULT, ObjectToOBJECTREF(object)); 
 }
 
-OBJECTHANDLE GCHandleTable::CreateAsyncPinningHandle(HHANDLETABLE table, OBJECTREF object)
+OBJECTHANDLE GCHandleTable::CreateGlobalShortWeakHandle(Object* object)
 {
-    return ::HndCreateHandle(table, HNDTYPE_ASYNCPINNED, object);
+    return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_SHORT, ObjectToOBJECTREF(object));
 }
 
-OBJECTHANDLE GCHandleTable::CreateGlobalWeakHandle(OBJECTREF object)
+OBJECTHANDLE GCHandleTable::CreateGlobalStrongHandle(Object* object)
 {
-    return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_DEFAULT, object);
+    return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_STRONG, ObjectToOBJECTREF(object)); 
+}
+
+OBJECTHANDLE GCHandleTable::CreateAsyncPinningHandle(HHANDLETABLE table, Object* object)
+{
+    return ::HndCreateHandle(table, HNDTYPE_ASYNCPINNED, ObjectToOBJECTREF(object));
+}
+
+OBJECTHANDLE GCHandleTable::CreateGlobalWeakHandle(Object* object)
+{
+    return ::HndCreateHandle(g_HandleTableMap.pBuckets[0]->pTable[GetCurrentThreadHomeHeapNumber()], HNDTYPE_WEAK_DEFAULT, ObjectToOBJECTREF(object));
+}
+
+OBJECTHANDLE GCHandleTable::CreateRefcountedHandle(HHANDLETABLE table, Object* object)
+{
+    return ::HndCreateHandle(table, HNDTYPE_REFCOUNTED, ObjectToOBJECTREF(object));
 }
 
 void GCHeap::WaitUntilConcurrentGCComplete()
