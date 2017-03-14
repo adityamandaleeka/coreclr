@@ -107,23 +107,8 @@ inline void DestroyAsyncPinningHandle(OBJECTHANDLE handle)
 typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DestroyAsyncPinningHandle, NULL> AsyncPinningHandleHolder;
 #endif
 
-// inline OBJECTHANDLE CreateSizedRefHandle(HHANDLETABLE table, OBJECTREF object)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     return HndCreateHandle(table, HNDTYPE_SIZEDREF, object, (uintptr_t)0);
-// }
-
-// void DestroySizedRefHandle(OBJECTHANDLE handle);
 
 #ifdef FEATURE_COMINTEROP
-// inline OBJECTHANDLE CreateRefcountedHandle(HHANDLETABLE table, OBJECTREF object)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     return HndCreateHandle(table, HNDTYPE_REFCOUNTED, object); 
-// }
-
 inline void DestroyRefcountedHandle(OBJECTHANDLE handle)
 { 
     WRAPPER_NO_CONTRACT;
@@ -131,12 +116,12 @@ inline void DestroyRefcountedHandle(OBJECTHANDLE handle)
     HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_REFCOUNTED, handle);
 }
 
-inline OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, OBJECTREF object, IWeakReference* pWinRTWeakReference)
-{
-    WRAPPER_NO_CONTRACT;
-    _ASSERTE(pWinRTWeakReference != NULL);
-    return HndCreateHandle(table, HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
-}
+// inline OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, OBJECTREF object, IWeakReference* pWinRTWeakReference)
+// {
+//     WRAPPER_NO_CONTRACT;
+//     _ASSERTE(pWinRTWeakReference != NULL);
+//     return HndCreateHandle(table, HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
+// }
 
 void DestroyWinRTWeakHandle(OBJECTHANDLE handle);
 
@@ -147,23 +132,20 @@ void DestroyWinRTWeakHandle(OBJECTHANDLE handle);
 OBJECTREF GetDependentHandleSecondary(OBJECTHANDLE handle);
 
 #ifndef DACCESS_COMPILE
-OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, OBJECTREF primary, OBJECTREF secondary);
-void SetDependentHandleSecondary(OBJECTHANDLE handle, OBJECTREF secondary);
+// OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, OBJECTREF primary, OBJECTREF secondary);
+void SzetDependentHandleSecondary(OBJECTHANDLE handle, OBJECTREF secondary);
 
-inline void DestroyDependentHandle(OBJECTHANDLE handle)
-{ 
-    WRAPPER_NO_CONTRACT;
+// inline void DestroyDependentHandle(OBJECTHANDLE handle)
+// { 
+//     WRAPPER_NO_CONTRACT;
 
-	HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEPENDENT, handle);
-}
+// 	HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEPENDENT, handle);
+// }
 #endif // !DACCESS_COMPILE
 
 #ifndef DACCESS_COMPILE
 
 // OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_t type);
-// uint32_t     GetVariableHandleType(OBJECTHANDLE handle);
-// void         UpdateVariableHandleType(OBJECTHANDLE handle, uint32_t type);
-// uint32_t     CompareExchangeVariableHandleType(OBJECTHANDLE handle, uint32_t oldType, uint32_t newType);
 
 inline void  DestroyVariableHandle(OBJECTHANDLE handle)
 {
@@ -223,35 +205,12 @@ public:
 
 int GetCurrentThreadHomeHeapNumber();
 
-// inline void DestroyGlobalHandle(OBJECTHANDLE handle)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
-// }
-
-// inline void DestroyGlobalStrongHandle(OBJECTHANDLE handle)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-//     HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
-// }
-
-// #ifndef FEATURE_REDHAWK
-// /////// this can be moved to the one place that uses it after STRESS_THREAD is gone
-// // typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>,DestroyGlobalStrongHandle> GlobalStrongHandleHolder;
-// #endif
-
 inline void ResetOBJECTHANDLE(OBJECTHANDLE handle)
 {
     WRAPPER_NO_CONTRACT;
 
     StoreObjectInHandle(handle, NULL);
 }
-
-// #ifndef FEATURE_REDHAWK
-// typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>,ResetOBJECTHANDLE> ObjectInHandleHolder;
-// #endif
 
 /*
  * Table maintenance routines
@@ -265,6 +224,11 @@ void Ref_RemoveHandleTableBucket(HandleTableBucket *pBucket);
 void Ref_DestroyHandleTableBucket(HandleTableBucket *pBucket);
 BOOL Ref_ContainHandle(HandleTableBucket *pBucket, OBJECTHANDLE handle);
 
+
+////////////
+////////// THIS IS USED BY VM CODE!!!!!!!!!!!!!!!!!!!!!!!!!!
+void Ref_TraceRefCountHandles(HANDLESCANPROC callback, uintptr_t lParam1, uintptr_t lParam2);
+
 /*
  * GC-time scanning entrypoints
  */
@@ -275,7 +239,7 @@ void Ref_EndSynchronousGC     (uint32_t uCondemnedGeneration, uint32_t uMaxGener
 
 typedef void Ref_promote_func(class Object**, ScanContext*, uint32_t);
 
-void Ref_TraceRefCountHandles(HANDLESCANPROC callback, uintptr_t lParam1, uintptr_t lParam2);
+////////// GC ONLY VERIFIED
 void Ref_TracePinningRoots(uint32_t condemned, uint32_t maxgen, ScanContext* sc, Ref_promote_func* fn);
 void Ref_TraceNormalRoots(uint32_t condemned, uint32_t maxgen, ScanContext* sc, Ref_promote_func* fn);
 void Ref_UpdatePointers(uint32_t condemned, uint32_t maxgen, ScanContext* sc, Ref_promote_func* fn);
