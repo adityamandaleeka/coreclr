@@ -445,6 +445,9 @@ public:
 
     virtual OBJECTHANDLE CreateSizedRefHandle(HHANDLETABLE table, Object* object) = 0;
 
+//////// IWeakReference isn't defined
+    // virtual OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, IWeakReference* pWinRTWeakReference) = 0;
+
     // virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
 
     virtual OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary) = 0;
@@ -461,6 +464,8 @@ public:
 
     virtual void DestroyGlobalStrongHandle(OBJECTHANDLE handle) = 0;
 
+    virtual void DestroyDependentHandle(OBJECTHANDLE handle) = 0;
+
     virtual OBJECTHANDLE CreateGlobalHandle(Object* object) = 0;
 
     virtual OBJECTHANDLE CreateGlobalShortWeakHandle(Object* object) = 0;
@@ -474,9 +479,8 @@ public:
     virtual OBJECTHANDLE CreateRefcountedHandle(HHANDLETABLE table, Object* object) = 0;
 
     virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
-    virtual uint32_t     GetVariableHandleType(OBJECTHANDLE handle) = 0;
-    virtual void         UpdateVariableHandleType(OBJECTHANDLE handle, uint32_t type) = 0;
-    virtual uint32_t     CompareExchangeVariableHandleType(OBJECTHANDLE handle, uint32_t oldType, uint32_t newType) = 0;
+
+    virtual void SetDependentHandleSecondary(OBJECTHANDLE handle, Object* secondary) = 0;
 };
 
 // IGCHeap is the interface that the VM will use when interacting with the GC.

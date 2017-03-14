@@ -46,7 +46,8 @@ FCIMPL1(VOID, DependentHandle::nFree, OBJECTHANDLE handle)
     
     HELPER_METHOD_FRAME_BEGIN_0();
 
-    DestroyDependentHandle(handle);
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    pHandleTable->DestroyDependentHandle(handle);
 
     HELPER_METHOD_FRAME_END();
 
@@ -92,6 +93,8 @@ FCIMPL2(VOID, DependentHandle::nSetSecondary, OBJECTHANDLE handle, Object *_seco
     _ASSERTE(handle != NULL);
 
     OBJECTREF secondary(_secondary);
-    SetDependentHandleSecondary(handle, secondary);
+
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    pHandleTable->SetDependentHandleSecondary(handle, OBJECTREFToObject(secondary));
 }
 FCIMPLEND

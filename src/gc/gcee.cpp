@@ -529,8 +529,14 @@ OBJECTHANDLE GCHandleTable::CreateSizedRefHandle(HHANDLETABLE table, Object* obj
 
 OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary)
 {
-    return ::CreateDependentHandle(table, ObjectToOBJECTREF(primary), ObjectToOBJECTREF(secondary));
+    //// thisis nonsense
+    return ::HndCreateHandle(table, HNDTYPE_SIZEDREF, ObjectToOBJECTREF(primary), (uintptr_t)0);
 }
+
+// OBJECTHANDLE GCHandleTable::CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, IWeakReference* pWinRTWeakReference)
+// {
+//     return ::HndCreateHandle(table, HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
+// }
 
 void GCHandleTable::DestroyGlobalShortWeakHandle(OBJECTHANDLE handle)
 {
@@ -557,9 +563,14 @@ void GCHandleTable::DestroyGlobalHandle(OBJECTHANDLE handle)
     ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
 }
 
-void DestroyGlobalStrongHandle(OBJECTHANDLE handle)
+void GCHandleTable::DestroyGlobalStrongHandle(OBJECTHANDLE handle)
 {
     ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
+}
+
+void GCHandleTable::DestroyDependentHandle(OBJECTHANDLE handle)
+{
+    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEPENDENT, handle);
 }
 
 OBJECTHANDLE GCHandleTable::CreateGlobalHandle(Object* object)
@@ -590,6 +601,11 @@ OBJECTHANDLE GCHandleTable::CreateGlobalWeakHandle(Object* object)
 OBJECTHANDLE GCHandleTable::CreateRefcountedHandle(HHANDLETABLE table, Object* object)
 {
     return ::HndCreateHandle(table, HNDTYPE_REFCOUNTED, ObjectToOBJECTREF(object));
+}
+
+void GCHandleTable::SetDependentHandleSecondary(OBJECTHANDLE handle, Object* secondary)
+{
+    return ::SzetDependentHandleSecondary(handle, ObjectToOBJECTREF(secondary));
 }
 
 void GCHeap::WaitUntilConcurrentGCComplete()
