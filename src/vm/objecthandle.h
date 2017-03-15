@@ -4,12 +4,5 @@
 
 #include "../gc/objecthandle.h"
 
-// #define ObzjectFromHandle(handle)            ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(handle))
-
-
-// void DestroyPinningHandle(OBJECTHANDLE handle)
-// {
-//     GCHeapUtilities::GetGCHandleTable()->DestroyPinningHandle(handle);
-// }
-
-// typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DestroyPinningHandle, NULL> PinningHandleHolder;
+////// this was in the GC version of objecthandle.h but is only used and implemented on the VM side
+void GCHandleValidatePinnedObject(OBJECTREF obj);

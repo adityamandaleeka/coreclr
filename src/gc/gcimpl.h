@@ -48,6 +48,20 @@ public:
 
     virtual void Shutdown();
 
+    virtual HandleTableBucket* CreateHandleTableBucket(uint32_t appDomainIndex);
+
+    virtual BOOL HandleAsyncPinHandles();
+
+    virtual void RelocateAsyncPinHandles(HandleTableBucket *pSource, HandleTableBucket *pTarget);
+
+    virtual void RemoveHandleTableBucket(HandleTableBucket *pBucket);
+
+    virtual void DestroyHandleTableBucket(HandleTableBucket *pBucket);
+
+    virtual BOOL ContainsHandle(HandleTableBucket *pBucket, OBJECTHANDLE handle);
+
+    virtual void TraceRefCountedHandles(HANDLESCANPROC callback, uintptr_t lParam1, uintptr_t lParam2);
+
     ////////////
     virtual Object* ObjectFromHandle(OBJECTHANDLE handle);
 
@@ -128,6 +142,8 @@ public:
     virtual OBJECTHANDLE CreateRefcountedHandle(HHANDLETABLE table, Object* object);
 
     virtual void SetDependentHandleSecondary(OBJECTHANDLE handle, Object* secondary);
+
+    virtual void ResetObjectHandle(OBJECTHANDLE handle);
 
 };
 

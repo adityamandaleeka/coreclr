@@ -454,6 +454,46 @@ void GCHandleTable::Shutdown()
     Ref_Shutdown();
 }
 
+HandleTableBucket* GCHandleTable::CreateHandleTableBucket(uint32_t appDomainIndex)
+{
+    return ::Ref_CreateHandleTableBucket(ADIndex(appDomainIndex));
+}
+
+BOOL GCHandleTable::HandleAsyncPinHandles()
+{
+    return ::Ref_HandleAsyncPinHandles();
+}
+
+void GCHandleTable::RelocateAsyncPinHandles(HandleTableBucket *pSource, HandleTableBucket *pTarget)
+{
+    ::Ref_RelocateAsyncPinHandles(pSource, pTarget);
+}
+
+void GCHandleTable::RemoveHandleTableBucket(HandleTableBucket *pBucket)
+{
+    ::Ref_RemoveHandleTableBucket(pBucket);
+}
+
+void GCHandleTable::DestroyHandleTableBucket(HandleTableBucket *pBucket)
+{
+    ::Ref_DestroyHandleTableBucket(pBucket);
+}
+
+BOOL GCHandleTable::ContainsHandle(HandleTableBucket *pBucket, OBJECTHANDLE handle)
+{
+    return ::Ref_ContainHandle(pBucket, handle);
+}
+
+void GCHandleTable::TraceRefCountedHandles(HANDLESCANPROC callback, uintptr_t lParam1, uintptr_t lParam2)
+{
+#ifdef FEATURE_COMINTEROP
+    ::Ref_TraceRefCountHandles(callback, lParam1, lParam2);
+#else
+    assert(!"Should not call GCHandleTable::TraceRefCountedHandles without FEATURE_COMINTEROP defined!");
+    return;
+#endif
+}
+
 Object* GCHandleTable::ObjectFromHandle(OBJECTHANDLE handle)
 {
     return OBJECTREFToObject(::HndFetchHandle(handle));
@@ -564,11 +604,11 @@ OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* pr
 
 OBJECTHANDLE GCHandleTable::CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, void* /* IWeakReference* */ pWinRTWeakReference)
 {
-#ifndef FEATURE_COMINTEROP
+#ifdef FEATURE_COMINTEROP
+    return ::HndCreateHandle(table, HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
+#else
     assert(!"Should not call GCHandleTable::CreateWinRTWeakHandle without FEATURE_COMINTEROP defined!");
     return NULL;
-#else
-    return ::HndCreateHandle(table, HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
 #endif
 }
 
@@ -673,6 +713,11 @@ OBJECTHANDLE GCHandleTable::CreateRefcountedHandle(HHANDLETABLE table, Object* o
 void GCHandleTable::SetDependentHandleSecondary(OBJECTHANDLE handle, Object* secondary)
 {
     return ::SzetDependentHandleSecondary(handle, ObjectToOBJECTREF(secondary));
+}
+
+void GCHandleTable::ResetObjectHandle(OBJECTHANDLE handle)
+{
+    ::HndAssignHandle(handle, NULL);
 }
 
 void GCHeap::WaitUntilConcurrentGCComplete()
