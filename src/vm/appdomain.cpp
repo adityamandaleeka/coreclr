@@ -4727,7 +4727,9 @@ OBJECTREF AppDomain::GetExposedObject()
         obj = (APPDOMAINREF) AllocateObject(pMT);
         obj->SetDomain(this);
 
-        if(StoreFirstObjectInHandle(m_ExposedObject, (OBJECTREF) obj) == FALSE) {
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        if (pHandleTable->StoreFirstObjectInHandle(m_ExposedObject, OBJECTREFToObject((OBJECTREF) obj)) == FALSE)
+        {
             obj = (APPDOMAINREF) GetRawExposedObject();
             _ASSERTE(obj);
         }

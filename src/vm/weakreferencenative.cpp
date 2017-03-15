@@ -295,7 +295,7 @@ NOINLINE Object* LoadWinRTWeakReferenceTarget(WEAKREFERENCEREF weakReference, Ty
 
             if (gc.target == NULL)
             {
-                StoreObjectInHandle(handle.Handle, gc.rcw);
+                GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(handle.Handle, OBJECTREFToObject(gc.rcw));
                 gc.target = gc.rcw;
             }
         }
@@ -523,15 +523,15 @@ void FinalizeWeakReference(Object * obj)
 
     if (handleToDestroy != NULL)
     {
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
 #ifdef FEATURE_COMINTEROP
         if (isWeakWinRTHandle)
         {
-            DestroyWinRTWeakHandle(handleToDestroy);
+            pHandleTable->DestroyWinRTWeakHandle(handleToDestroy);
         }
         else
 #endif // FEATURE_COMINTEROP
         {
-            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
             pHandleTable->DestroyTypedHandle(handleToDestroy);
         }
     }
@@ -726,6 +726,8 @@ NOINLINE void SetWeakReferenceTarget(WEAKREFERENCEREF weakReference, OBJECTREF t
     WeakHandleSpinLockHolder handle(AcquireWeakHandleSpinLock(weakReference), &weakReference);
     GCX_NOTRIGGER();
 
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+
 #ifdef FEATURE_COMINTEROP
     //
     // We have four combinations to handle here
@@ -747,7 +749,6 @@ NOINLINE void SetWeakReferenceTarget(WEAKREFERENCEREF weakReference, OBJECTREF t
     //   * Destroy the existing handle
     //   * Allocate a new WinRT weak handle for the new target
     //
-
     if (IsWinRTWeakReferenceHandle(handle.RawHandle))
     {
         // If the existing reference is a WinRT weak reference, we need to release its IWeakReference pointer
@@ -756,7 +757,7 @@ NOINLINE void SetWeakReferenceTarget(WEAKREFERENCEREF weakReference, OBJECTREF t
         // object type is, we can unconditionally store pTargetWeakReference to the object handle's extra data.
         IWeakReference* pExistingWeakReference = reinterpret_cast<IWeakReference*>(HndGetHandleExtraInfo(handle.Handle));
         HndSetHandleExtraInfo(handle.Handle, HNDTYPE_WEAK_WINRT, reinterpret_cast<LPARAM>(pTargetWeakReference.GetValue()));
-        StoreObjectInHandle(handle.Handle, target);
+        pHandleTable->StoreObjectInHandle(handle.Handle, OBJECTREFToObject(target));
 
         if (pExistingWeakReference != nullptr)
         {
@@ -775,13 +776,12 @@ NOINLINE void SetWeakReferenceTarget(WEAKREFERENCEREF weakReference, OBJECTREF t
         handle.Handle = GetAppDomain()->CreateWinRTWeakHandle(target, pTargetWeakReference);
         handle.RawHandle = SetWinRTWeakReferenceHandle(handle.Handle);
 
-        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
         pHandleTable->DestroyTypedHandle(previousHandle);
     }
     else
 #endif // FEATURE_COMINTEROP
     {
-        StoreObjectInHandle(handle.Handle, target);
+        pHandleTable->StoreObjectInHandle(handle.Handle, OBJECTREFToObject(target));
     }
 
 #ifdef FEATURE_COMINTEROP
@@ -824,7 +824,7 @@ FCIMPL2(void, WeakReferenceNative::SetTarget, WeakReferenceObject * pThisUNSAFE,
         {
             if (pTarget == NULL || !pTarget->GetMethodTable()->IsComObjectType())
             {
-                StoreObjectInHandle(handle, pTarget);
+                GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(handle, OBJECTREFToObject(pTarget));
                 storedObject = true;
             }
         }
@@ -877,7 +877,7 @@ FCIMPL2(void, WeakReferenceOfTNative::SetTarget, WeakReferenceObject * pThisUNSA
         {
             if (pTarget == NULL || !pTarget->GetMethodTable()->IsComObjectType())
             {
-                StoreObjectInHandle(handle, pTarget);
+                GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(handle, OBJECTREFToObject(pTarget));
                 storedObject = true;
             }
         }

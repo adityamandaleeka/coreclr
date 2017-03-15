@@ -998,7 +998,7 @@ void MethodTable::SetObjCreateDelegate(OBJECTREF orDelegate)
     CONTRACTL_END;
 
     if (GetOHDelegate())
-        StoreObjectInHandle(GetOHDelegate(), orDelegate);
+        GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(GetOHDelegate(), OBJECTREFToObject(orDelegate));
     else
         SetOHDelegate (GetAppDomain()->CreateHandle(orDelegate));
 }

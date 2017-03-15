@@ -546,7 +546,8 @@ BOOL QCALLTYPE LoaderAllocator::Destroy(QCall::LoaderAllocatorHandle pLoaderAllo
 
     BEGIN_QCALL;
 
-    if (ObjectHandleIsNull(pLoaderAllocator->GetLoaderAllocatorObjectHandle()))
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    if (pHandleTable->ObjectHandleIsNull(pLoaderAllocator->GetLoaderAllocatorObjectHandle()))
     {
         STRESS_LOG1(LF_CLASSLOADER, LL_INFO100, "Begin LoaderAllocator::Destroy for loader allocator %p\n", reinterpret_cast<void *>(static_cast<PTR_LoaderAllocator>(pLoaderAllocator)));
         LoaderAllocatorID *pID = pLoaderAllocator->Id();
@@ -773,7 +774,7 @@ OBJECTREF LoaderAllocator::CompareExchangeValueInHandle(LOADERHANDLE handle, OBJ
         }
         else
         {
-            _ASSERTE(!ObjectHandleIsNull(m_hLoaderAllocatorObjectHandle));
+            _ASSERTE(!GCHeapUtilities::GetGCHandleTable()->ObjectHandleIsNull(m_hLoaderAllocatorObjectHandle));
 
             UINT_PTR index = (((UINT_PTR)handle) >> 1) - 1;
             LOADERALLOCATORREF loaderAllocator = (LOADERALLOCATORREF)ObzjectFromHandle(m_hLoaderAllocatorObjectHandle);
@@ -819,7 +820,7 @@ void LoaderAllocator::SetHandleValue(LOADERHANDLE handle, OBJECTREF value)
         }
         else
         {
-            _ASSERTE(!ObjectHandleIsNull(m_hLoaderAllocatorObjectHandle));
+            _ASSERTE(!GCHeapUtilities::GetGCHandleTable()->ObjectHandleIsNull(m_hLoaderAllocatorObjectHandle));
 
             UINT_PTR index = (((UINT_PTR)handle) >> 1) - 1;
             LOADERALLOCATORREF loaderAllocator = (LOADERALLOCATORREF)ObzjectFromHandle(m_hLoaderAllocatorObjectHandle);

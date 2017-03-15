@@ -258,7 +258,7 @@ TypeHandle Object::GetGCSafeTypeHandleIfPossible() const
     LoaderAllocator * pLoaderAllocator = pLoaderModule->GetLoaderAllocator();
     _ASSERTE(pLoaderAllocator != NULL);
     if ((pLoaderAllocator->IsCollectible()) &&
-        (ObjectHandleIsNull(pLoaderAllocator->GetLoaderAllocatorObjectHandle())))
+        (GCHeapUtilities::GetGCHandleTable()->ObjectHandleIsNull(pLoaderAllocator->GetLoaderAllocatorObjectHandle())))
     {
         return NULL;
     }

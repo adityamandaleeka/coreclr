@@ -847,10 +847,12 @@ void EEStartupHelper(COINITIEE fFlags)
 
 #ifndef CROSSGEN_COMPILE
 
+        InitializeGarbageCollector1();
+
         // Initialize remoting
 
         // weak_short, weak_long, strong; no pin
-        if (!Ref_Initialize())
+        if (!GCHeapUtilities::GetGCHandleTable()->Initialize())
             IfFailGo(E_OUTOFMEMORY);
 
         // Initialize contexts
@@ -870,7 +872,7 @@ void EEStartupHelper(COINITIEE fFlags)
 
         GCInterface::m_MemoryPressureLock.Init(CrstGCMemoryPressure);
 
-        InitializeGarbageCollector1();
+        // InitializeGarbageCollector1();
 
 #endif // CROSSGEN_COMPILE
 
@@ -1833,7 +1835,7 @@ part2:
 #ifdef SHOULD_WE_CLEANUP
                 if (!g_fFastExitProcess)
                 {
-                    Ref_Shutdown(); // shut down the handle table
+                    GCHeapUtilities::GetGCHandleTable()->Shutdown();
                 }
 #endif /* SHOULD_WE_CLEANUP */
 

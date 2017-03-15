@@ -6999,7 +6999,7 @@ BOOL ReconnectWrapper(OBJECTREF* pOldRef, OBJECTREF* pNewRef)
     pInteropInfo->SetCCW(NULL);
         
     // Next, point the CCW at the new object
-    StoreObjectInHandle(pCCW->GetObjectHandle(), (*pNewRef));
+    GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(pCCW->GetObjectHandle(), OBJECTREFToObject(*pNewRef));
 
     // Finally, point the new object at the CCW
     pNewSyncBlock->GetInteropInfo()->SetCCW(pCCW);

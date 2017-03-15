@@ -1431,8 +1431,9 @@ FCIMPL1( void, Log::AddLogSwitch,
     {
         // Create a strong reference handle to the LogSwitch object
         OBJECTHANDLE ObjHandle = pThread->GetDomain()->CreateStrongHandle(NULL);
-        StoreObjectInHandle(ObjHandle, ObjectToOBJECTREF(gc.m_LogSwitch));
-        // Use  ObzjectFromHandle(ObjHandle) to get back the object. 
+
+        GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(ObjHandle, OBJECTREFToObject(ObjectToOBJECTREF(gc.m_LogSwitch))); /////////// roundtrip to objectref???
+        // Use ObzjectFromHandle(ObjHandle) to get back the object. 
         
         hresult = g_sLogHashTable.AddEntryToHashTable(pstrCategoryName, ObjHandle);
 

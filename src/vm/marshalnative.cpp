@@ -706,7 +706,7 @@ FCIMPL3(VOID, MarshalNative::GCHandleInternalSet, OBJECTHANDLE handle, Object *o
     }
 
     // Update the stored object reference.
-    StoreObjectInHandle(handle, objRef);
+    GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(handle, OBJECTREFToObject(objRef));
     HELPER_METHOD_FRAME_END();
 }
 FCIMPLEND
