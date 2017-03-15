@@ -1003,7 +1003,7 @@ BOOL BaseDomain::ContainsOBJECTHANDLE(OBJECTHANDLE handle)
     }
     CONTRACTL_END;
 
-    return Ref_ContainHandle(m_hHandleTableBucket,handle);
+    return GCHeapUtilities::GetGCHandleTable()->ContainsHandle(m_hHandleTableBucket, handle);
 }
 
 DWORD BaseDomain::AllocateContextStaticsOffset(DWORD* pOffsetSlot)
@@ -4267,9 +4267,9 @@ void AppDomain::Init()
 
 #ifdef FEATURE_APPDOMAIN_RESOURCE_MONITORING
     // NOTE: it's important that we initialize ARM data structures before calling
-    // Ref_CreateHandleTableBucket, this is because AD::Init() can race with GC
-    // and once we add ourselves to the handle table map the GC can start walking
-    // our handles and calling AD::RecordSurvivedBytes() which touches ARM data.
+    // CreateHandleTableBucket, this is because AD::Init() can race with GC and
+    // once we add ourselves to the handle table map the GC can start walking our
+    // handles and calling AD::RecordSurvivedBytes() which touches ARM data.
     if (GCHeapUtilities::IsServerHeap())
         m_dwNumHeaps = CPUGroupInfo::CanEnableGCCPUGroups() ?
                            CPUGroupInfo::GetNumActiveProcessors() :
@@ -4294,7 +4294,7 @@ void AppDomain::Init()
     }
     else
     {
-        m_hHandleTableBucket = Ref_CreateHandleTableBucket(m_dwIndex);
+        m_hHandleTableBucket = GCHeapUtilities::GetGCHandleTable()->CreateHandleTableBucket(m_dwIndex.m_dwIndex); /////really the dword has same name as the adindex?
     }
 
 #ifdef _DEBUG
@@ -4604,7 +4604,7 @@ void AppDomain::Terminate()
 #endif // _DEBUG
 
     if (m_hHandleTableBucket) {
-        Ref_DestroyHandleTableBucket(m_hHandleTableBucket);
+        GCHeapUtilities::GetGCHandleTable()->DestroyHandleTableBucket(m_hHandleTableBucket);
         m_hHandleTableBucket = NULL;
     }
 
@@ -9237,7 +9237,7 @@ void AppDomain::ClearGCHandles()
         _ASSERTE (!"AD index mismatch");
 #endif // _DEBUG
 
-    Ref_RemoveHandleTableBucket(pBucket);
+    GCHeapUtilities::GetGCHandleTable()->RemoveHandleTableBucket(pBucket);
 }
 
 // When an AD is unloaded, we will release all objects in this AD.
@@ -9260,7 +9260,7 @@ void AppDomain::HandleAsyncPinHandles()
     // 3. When the Overlapped is picked up by completion port, we wait until all previous IO jobs are processed.
     // 4. Then we can delete all AsyncPinHandle marked with READYTOCLEAN.
     HandleTableBucket *pBucketInDefault = SystemDomain::System()->DefaultDomain()->m_hHandleTableBucket;
-    Ref_RelocateAsyncPinHandles(pBucket, pBucketInDefault);
+    GCHeapUtilities::GetGCHandleTable()->RelocateAsyncPinHandles(pBucket, pBucketInDefault);
 
     OverlappedDataObject::RequestCleanup();
 }

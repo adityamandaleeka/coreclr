@@ -417,6 +417,21 @@ public:
     virtual bool Initialize() = 0;
 
     virtual void Shutdown() = 0;
+
+    ///// the param used to be an ADIndex.
+    virtual HandleTableBucket* CreateHandleTableBucket(uint32_t appDomainIndex) = 0;
+
+    virtual BOOL HandleAsyncPinHandles() = 0;
+
+    virtual void RelocateAsyncPinHandles(HandleTableBucket *pSource, HandleTableBucket *pTarget) = 0;
+
+    virtual void RemoveHandleTableBucket(HandleTableBucket *pBucket) = 0;
+
+    virtual void DestroyHandleTableBucket(HandleTableBucket *pBucket) = 0;
+
+    virtual BOOL ContainsHandle(HandleTableBucket *pBucket, OBJECTHANDLE handle) = 0;
+
+    virtual void TraceRefCountedHandles(HANDLESCANPROC callback, uintptr_t lParam1, uintptr_t lParam2) = 0;
     ///// END REF STUFF
 
     // Returns whether or not the given size is a valid segment size.
@@ -502,6 +517,8 @@ public:
     virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
 
     virtual void SetDependentHandleSecondary(OBJECTHANDLE handle, Object* secondary) = 0;
+
+    virtual void ResetObjectHandle(OBJECTHANDLE handle) = 0;
 };
 
 // IGCHeap is the interface that the VM will use when interacting with the GC.

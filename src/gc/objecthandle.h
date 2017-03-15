@@ -30,7 +30,6 @@ struct HandleTableMap
 
 GVAL_DECL(HandleTableMap, g_HandleTableMap);
 
-////////// THESE ARE ONLY USED IN GC/*
 /*
  * Type mask definitions for HNDTYPE_VARIABLE handles.
  */
@@ -54,27 +53,11 @@ void SzetDependentHandleSecondary(OBJECTHANDLE handle, OBJECTREF secondary);
 
 OBJECTHANDLE CrzeateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_t type);
 
-inline void  DestroyVariableHandle(OBJECTHANDLE handle)
-{
-    WRAPPER_NO_CONTRACT;
-
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_VARIABLE, handle);
-}
-
-void GCHandleValidatePinnedObject(OBJECTREF obj);
-
 /*
  * Convenience prototypes for using the global handles
  */
 
 int GetCurrentThreadHomeHeapNumber();
-
-inline void ResetOBJECTHANDLE(OBJECTHANDLE handle)
-{
-    WRAPPER_NO_CONTRACT;
-
-    ::HndAssignHandle(handle, NULL);
-}
 
 /*
  * Table maintenance routines
@@ -87,10 +70,6 @@ void Ref_RelocateAsyncPinHandles(HandleTableBucket *pSource, HandleTableBucket *
 void Ref_RemoveHandleTableBucket(HandleTableBucket *pBucket);
 void Ref_DestroyHandleTableBucket(HandleTableBucket *pBucket);
 BOOL Ref_ContainHandle(HandleTableBucket *pBucket, OBJECTHANDLE handle);
-
-
-////////////
-////////// THIS IS USED BY VM CODE!!!!!!!!!!!!!!!!!!!!!!!!!!
 void Ref_TraceRefCountHandles(HANDLESCANPROC callback, uintptr_t lParam1, uintptr_t lParam2);
 
 /*

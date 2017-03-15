@@ -4771,8 +4771,12 @@ retry:
     _ASSERTE(res == WAIT_TIMEOUT || res == WAIT_OBJECT_0);
 }
 
-///////// moved from objecthandle.h
-typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>,ResetOBJECTHANDLE> ObjectInHandleHolder;
+void ResetOBJECTHANDLE(OBJECTHANDLE handle)
+{
+    GCHeapUtilities::GetGCHandleTable()->ResetObjectHandle(handle);
+}
+
+typedef Holder<OBJECTHANDLE,DoNothing<OBJECTHANDLE>, ResetOBJECTHANDLE> ObjectInHandleHolder;
 
 // Correspondence between an EE Thread and an exposed System.Thread:
 OBJECTREF Thread::GetExposedObject()
