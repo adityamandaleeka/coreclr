@@ -411,10 +411,24 @@ typedef void (* fq_walk_fn)(BOOL, void*);
 typedef void (* fq_scan_fn)(Object** ppObject, ScanContext *pSC, uint32_t dwFlags);
 typedef void (* handle_scan_fn)(Object** pRef, Object* pSec, uint32_t flags, ScanContext* context, BOOL isDependent);
 
+//// comments for  all this stuff?
 class IGCHandleTable {
 public:
+
+    ///// REF STUFF
+    virtual bool Initialize() = 0;
+
+    virtual void Shutdown() = 0;
+    ///// END REF STUFF
+
     // Returns whether or not the given size is a valid segment size.
     virtual Object* ObjectFromHandle(OBJECTHANDLE handle) = 0;
+
+    virtual void StoreObjectInHandle(OBJECTHANDLE handle, Object* object) = 0;
+
+    virtual BOOL StoreFirstObjectInHandle(OBJECTHANDLE handle, Object* object) = 0;
+
+    virtual BOOL ObjectHandleIsNull(OBJECTHANDLE handle) = 0;
 
     virtual void* InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref) = 0;
 
@@ -447,6 +461,7 @@ public:
 
 //////// IWeakReference isn't defined
     // virtual OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, IWeakReference* pWinRTWeakReference) = 0;
+    virtual OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, void* /* IWeakReference* */ pWinRTWeakReference) = 0;
 
     // virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
 
@@ -465,6 +480,14 @@ public:
     virtual void DestroyGlobalStrongHandle(OBJECTHANDLE handle) = 0;
 
     virtual void DestroyDependentHandle(OBJECTHANDLE handle) = 0;
+
+    virtual void DestroyAsyncPinningHandle(OBJECTHANDLE handle) = 0;
+
+    virtual void DestroyRefcountedHandle(OBJECTHANDLE handle) = 0;
+
+    virtual void DestroyWinRTWeakHandle(OBJECTHANDLE handle) = 0;
+
+    virtual void DestroyPinningHandle(OBJECTHANDLE handle) = 0;
 
     virtual OBJECTHANDLE CreateGlobalHandle(Object* object) = 0;
 

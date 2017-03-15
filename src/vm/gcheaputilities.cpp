@@ -35,3 +35,14 @@ uint8_t* g_sw_ww_table = nullptr;
 bool g_sw_ww_enabled_for_gc_heap = false;
 
 #endif // FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
+
+
+void DestroyPinningHandle(OBJECTHANDLE handle)
+{
+    GCHeapUtilities::GetGCHandleTable()->DestroyPinningHandle(handle);
+}
+
+void DezstroyHandle(OBJECTHANDLE handle)
+{
+    GCHeapUtilities::GetGCHandleTable()->DestroyHandle(handle);
+}

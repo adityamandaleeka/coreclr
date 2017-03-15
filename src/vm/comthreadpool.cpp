@@ -552,7 +552,7 @@ FCIMPL2(FC_BOOL_RET, ThreadPoolNative::CorUnregisterWait, LPVOID WaitHandle, Obj
         
         // Store SafeHandle in object handle. Holder will now release both safehandle and objecthandle
         // in case of exceptions
-        StoreObjectInHandle(pWaitInfo->ExternalEventSafeHandle, refSH);
+        GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(pWaitInfo->ExternalEventSafeHandle, OBJECTREFToObject(refSH));
 
         // Acquire safe handle to examine its handle, then release.
         SafeHandleHolder shHolder(&refSH);

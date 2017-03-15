@@ -17,29 +17,6 @@
  */
 #include "handletable.h"
 
-#ifdef FEATURE_COMINTEROP
-#include <weakreference.h>
-#endif // FEATURE_COMINTEROP
-
-/*
- * Convenience macros for accessing handles.  StoreFirstObjectInHandle is like
- * StoreObjectInHandle, except it only succeeds if transitioning from NULL to
- * non-NULL.  In other words, if this handle is being initialized for the first
- * time.
- */
-// #define ObjectFromHandle(handle)                   HndFetchHandle(handle)
-// #define ObzjectFromHandle(handle)                   HndFetchHandle(handle)
-
-#define ObzjectFromHandle(handle)            ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(handle))
-
-
-
-#define StoreObjectInHandle(handle, object)        HndAssignHandle(handle, object)
-// #define IntzerlockedCompareExchangeObjectInHandle(handle, object, oldObj)        HndInterlockedCompareExchangeHandle(handle, object, oldObj)
-#define StoreFirstObjectInHandle(handle, object)   HndFirstAssignHandle(handle, object)
-#define ObjectHandleIsNull(handle)                 HndIsNull(handle)
-// #define IszHandleNullUnchecked(handle)              HndCheckForNullUnchecked(handle)
-
 typedef DPTR(struct HandleTableMap) PTR_HandleTableMap;
 typedef DPTR(struct HandleTableBucket) PTR_HandleTableBucket;
 typedef DPTR(PTR_HandleTableBucket) PTR_PTR_HandleTableBucket;
@@ -67,85 +44,15 @@ GVAL_DECL(HandleTableMap, g_HandleTableMap);
                                     (flag == VHT_STRONG)     || \
                                     (flag == VHT_PINNED))
 
-#ifndef DACCESS_COMPILE
-
-inline void DezstroyHandle(OBJECTHANDLE handle)
-{ 
-    CONTRACTL
-    {
-        NOTHROW;
-        GC_NOTRIGGER;
-        MODE_ANY;
-        CAN_TAKE_LOCK;
-        SO_TOLERANT;
-    }
-    CONTRACTL_END;
-
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
-}
-
-inline void DestroyPinningHandle(OBJECTHANDLE handle)
-{ 
-    WRAPPER_NO_CONTRACT;
-
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_PINNED, handle);
-}
-
-#ifndef FEATURE_REDHAWK
-typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DestroyPinningHandle, NULL> PinningHandleHolder;
-#endif
-
-
-inline void DestroyAsyncPinningHandle(OBJECTHANDLE handle)
-{ 
-    WRAPPER_NO_CONTRACT;
-
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_ASYNCPINNED, handle);
-}
-
-#ifndef FEATURE_REDHAWK
-typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DestroyAsyncPinningHandle, NULL> AsyncPinningHandleHolder;
-#endif
-
-
-#ifdef FEATURE_COMINTEROP
-inline void DestroyRefcountedHandle(OBJECTHANDLE handle)
-{ 
-    WRAPPER_NO_CONTRACT;
-
-    HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_REFCOUNTED, handle);
-}
-
-// inline OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, OBJECTREF object, IWeakReference* pWinRTWeakReference)
-// {
-//     WRAPPER_NO_CONTRACT;
-//     _ASSERTE(pWinRTWeakReference != NULL);
-//     return HndCreateHandle(table, HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
-// }
-
-void DestroyWinRTWeakHandle(OBJECTHANDLE handle);
-
-#endif // FEATURE_COMINTEROP
-
-#endif // !DACCESS_COMPILE
-
 OBJECTREF GetDependentHandleSecondary(OBJECTHANDLE handle);
 
 #ifndef DACCESS_COMPILE
-// OBJECTHANDLE CreateDependentHandle(HHANDLETABLE table, OBJECTREF primary, OBJECTREF secondary);
 void SzetDependentHandleSecondary(OBJECTHANDLE handle, OBJECTREF secondary);
-
-// inline void DestroyDependentHandle(OBJECTHANDLE handle)
-// { 
-//     WRAPPER_NO_CONTRACT;
-
-// 	HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEPENDENT, handle);
-// }
 #endif // !DACCESS_COMPILE
 
 #ifndef DACCESS_COMPILE
 
-// OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_t type);
+OBJECTHANDLE CrzeateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_t type);
 
 inline void  DestroyVariableHandle(OBJECTHANDLE handle)
 {
@@ -157,49 +64,6 @@ inline void  DestroyVariableHandle(OBJECTHANDLE handle)
 void GCHandleValidatePinnedObject(OBJECTREF obj);
 
 /*
- * Holder for OBJECTHANDLE
- */
-
-#ifndef FEATURE_REDHAWK
-typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DezstroyHandle > OHWrapper;
-
-class OBJECTHANDLEHolder : public OHWrapper
-{
-public:
-    FORCEINLINE OBJECTHANDLEHolder(OBJECTHANDLE p = NULL) : OHWrapper(p)
-    {
-        LIMITED_METHOD_CONTRACT;
-    }
-    FORCEINLINE void operator=(OBJECTHANDLE p)
-    {
-        WRAPPER_NO_CONTRACT;
-
-        OHWrapper::operator=(p);
-    }
-};
-#endif
-
-#ifdef FEATURE_COMINTEROP
-
-typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DestroyRefcountedHandle> RefCountedOHWrapper;
-
-class RCOBJECTHANDLEHolder : public RefCountedOHWrapper
-{
-public:
-    FORCEINLINE RCOBJECTHANDLEHolder(OBJECTHANDLE p = NULL) : RefCountedOHWrapper(p)
-    {
-        LIMITED_METHOD_CONTRACT;
-    }
-    FORCEINLINE void operator=(OBJECTHANDLE p)
-    {
-        WRAPPER_NO_CONTRACT;
-
-        RefCountedOHWrapper::operator=(p);
-    }
-};
-
-#endif // FEATURE_COMINTEROP
-/*
  * Convenience prototypes for using the global handles
  */
 
@@ -209,7 +73,7 @@ inline void ResetOBJECTHANDLE(OBJECTHANDLE handle)
 {
     WRAPPER_NO_CONTRACT;
 
-    StoreObjectInHandle(handle, NULL);
+    ::HndAssignHandle(handle, NULL);
 }
 
 /*

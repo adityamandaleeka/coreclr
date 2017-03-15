@@ -103,6 +103,14 @@ FCIMPL3(void, CheckVMForIOPacket, LPOVERLAPPED* lpOverlapped, DWORD* errorCode, 
 }
 FCIMPLEND
 
+void DestroyAsyncPinningHandle(OBJECTHANDLE handle)
+{
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    pHandleTable->DestroyAsyncPinningHandle(handle);
+}
+
+typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DestroyAsyncPinningHandle, NULL> AsyncPinningHandleHolder;
+
 FCIMPL1(void*, AllocateNativeOverlapped, OverlappedDataObject* overlappedUNSAFE)
 {
     FCALL_CONTRACT;

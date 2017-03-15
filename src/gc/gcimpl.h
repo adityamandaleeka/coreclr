@@ -39,12 +39,23 @@ void GCProfileWalkHeap();
 class gc_heap;
 class CFinalize;
 
-//// move to another file?
+//// move to another file!!!!
 class GCHandleTable : public IGCHandleTable
 {
 public:
+
+    virtual bool Initialize();
+
+    virtual void Shutdown();
+
     ////////////
     virtual Object* ObjectFromHandle(OBJECTHANDLE handle);
+
+    virtual void StoreObjectInHandle(OBJECTHANDLE handle, Object* object);
+
+    virtual BOOL StoreFirstObjectInHandle(OBJECTHANDLE handle, Object* object);
+
+    virtual BOOL ObjectHandleIsNull(OBJECTHANDLE handle);
 
     virtual void* InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref);
 
@@ -80,6 +91,8 @@ public:
 
     // virtual OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, IWeakReference* pWinRTWeakReference);
 
+    virtual OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, void* /* IWeakReference* */ pWinRTWeakReference);
+
     virtual void DestroyShortWeakHandle(OBJECTHANDLE handle);
 
     virtual void DestroyGlobalShortWeakHandle(OBJECTHANDLE handle);
@@ -93,6 +106,14 @@ public:
     virtual void DestroyGlobalStrongHandle(OBJECTHANDLE handle);
 
     virtual void DestroyDependentHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyAsyncPinningHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyRefcountedHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyWinRTWeakHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyPinningHandle(OBJECTHANDLE handle);
 
     virtual OBJECTHANDLE CreateGlobalHandle(Object* object);
 

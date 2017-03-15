@@ -3570,7 +3570,7 @@ void DispatchExInfo::DeleteMember(DISPID DispID)
             removeMember.Call(Args);
 
             // Set the handle to point to NULL to indicate the member has been removed.
-            StoreObjectInHandle(pDispMemberInfo->m_hndMemberInfo, NULL);
+            GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(pDispMemberInfo->m_hndMemberInfo, NULL);
 
             GCPROTECT_END();
         }

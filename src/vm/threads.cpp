@@ -2825,7 +2825,8 @@ int Thread::IncExternalCount()
         {
             GCX_COOP();
             // Store the object in the strong handle.
-            StoreObjectInHandle(m_StrongHndToExposedObject, ObzjectFromHandle(m_ExposedObject));
+            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+            pHandleTable->StoreObjectInHandle(m_StrongHndToExposedObject, pHandleTable->ObjectFromHandle(m_ExposedObject));
         }
     }
 
@@ -2970,7 +2971,7 @@ int Thread::DecExternalCount(BOOL holdingLock)
             // Clear the handle and leave the lock.
             // We do not have to to DisablePreemptiveGC here, because
             // we just want to put NULL into a handle.
-            StoreObjectInHandle(m_StrongHndToExposedObject, NULL);
+            GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(m_StrongHndToExposedObject, NULL);
 
             tsLock.Release();
 
@@ -4804,11 +4805,13 @@ OBJECTREF Thread::GetExposedObject()
         // Take a lock to make sure that only one thread creates the object.
         ThreadStoreLockHolder tsHolder(fNeedThreadStore);
 
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+
         // Check to see if another thread has not already created the exposed object.
-        if (ObzjectFromHandle(m_ExposedObject) == NULL)
+        if (pHandleTable->ObjectFromHandle(m_ExposedObject) == NULL)
         {
             // Keep a weak reference to the exposed object.
-            StoreObjectInHandle(m_ExposedObject, (OBJECTREF) attempt);
+            pHandleTable->StoreObjectInHandle(m_ExposedObject, OBJECTREFToObject((OBJECTREF) attempt));
 
             ObjectInHandleHolder exposedHolder(m_ExposedObject);
 
@@ -4821,7 +4824,7 @@ OBJECTREF Thread::GetExposedObject()
 #endif
             // Check to see if we need to store a strong pointer to the object.
             if (retVal > 1)
-                StoreObjectInHandle(m_StrongHndToExposedObject, (OBJECTREF) attempt);
+                pHandleTable->StoreObjectInHandle(m_StrongHndToExposedObject, OBJECTREFToObject((OBJECTREF) attempt));
 
             ObjectInHandleHolder strongHolder(m_StrongHndToExposedObject);
 
@@ -4860,6 +4863,8 @@ void Thread::SetExposedObject(OBJECTREF exposed)
     }
     CONTRACTL_END;
 
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+
     if (exposed != NULL)
     {
         _ASSERTE (GetThread() != this);
@@ -4867,7 +4872,7 @@ void Thread::SetExposedObject(OBJECTREF exposed)
         _ASSERTE(ObzjectFromHandle(m_ExposedObject) == NULL);
         // The exposed object keeps us alive until it is GC'ed.  This doesn't mean the
         // physical thread continues to run, of course.
-        StoreObjectInHandle(m_ExposedObject, exposed);
+        pHandleTable->StoreObjectInHandle(m_ExposedObject, OBJECTREFToObject(exposed));
         // This makes sure the contexts on the backing thread
         // and the managed thread start off in sync with each other.
         // BEWARE: the IncExternalCount call below may cause GC to happen.
@@ -4882,8 +4887,8 @@ void Thread::SetExposedObject(OBJECTREF exposed)
     {
         // Simply set both of the handles to NULL. The GC of the old exposed thread
         // object will take care of decrementing the external ref count.
-        StoreObjectInHandle(m_ExposedObject, NULL);
-        StoreObjectInHandle(m_StrongHndToExposedObject, NULL);
+        pHandleTable->StoreObjectInHandle(m_ExposedObject, NULL);
+        pHandleTable->StoreObjectInHandle(m_StrongHndToExposedObject, NULL);
     }
 }
 
