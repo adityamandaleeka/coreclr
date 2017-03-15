@@ -142,6 +142,29 @@ public :
     }
 };
 
+void DestroyRefcountedHandle(OBJECTHANDLE handle)
+{
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    pHandleTable->DestroyRefcountedHandle(handle);
+}
+
+typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DestroyRefcountedHandle> RefCountedOHWrapper;
+
+class RCOBJECTHANDLEHolder : public RefCountedOHWrapper
+{
+public:
+    FORCEINLINE RCOBJECTHANDLEHolder(OBJECTHANDLE p = NULL) : RefCountedOHWrapper(p)
+    {
+        LIMITED_METHOD_CONTRACT;
+    }
+    FORCEINLINE void operator=(OBJECTHANDLE p)
+    {
+        WRAPPER_NO_CONTRACT;
+
+        RefCountedOHWrapper::operator=(p);
+    }
+};
+
 // Calls Destruct on ComCallMethodDesc's in an array - used as backout code when laying out ComMethodTable.
 void DestructComCallMethodDescs(ArrayList *pDescArray)
 {
@@ -2811,7 +2834,8 @@ ComCallWrapper* ComCallWrapper::CreateWrapper(OBJECTREF* ppObj, ComCallWrapperTe
                     {
                         // store the object in the handle - this must happen before we publish the CCW
                         // in the sync block, so that other threads don't see a CCW pointing to nothing
-                        StoreObjectInHandle( oh, pServer );
+                        GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(oh, OBJECTREFToObject(pServer));
+                        // StzoreObjectInHandle( oh, pServer );
 
                         // finally, store the wrapper for the object in the sync block
                         pSyncBlock->GetInteropInfo()->SetCCW(pNewCCW);

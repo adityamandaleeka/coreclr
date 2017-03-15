@@ -43,12 +43,23 @@ extern bool g_fFinalizerRunOnShutDown;
 extern bool g_built_with_svr_gc;
 extern uint8_t g_build_variant;
 extern VOLATILE(int32_t) g_no_gc_lock;
-//// move to another file?
+//// move to another file!!!!
 class GCHandleTable : public IGCHandleTable
 {
 public:
+
+    virtual bool Initialize();
+
+    virtual void Shutdown();
+
     ////////////
     virtual Object* ObjectFromHandle(OBJECTHANDLE handle);
+
+    virtual void StoreObjectInHandle(OBJECTHANDLE handle, Object* object);
+
+    virtual BOOL StoreFirstObjectInHandle(OBJECTHANDLE handle, Object* object);
+
+    virtual BOOL ObjectHandleIsNull(OBJECTHANDLE handle);
 
     virtual void* InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref);
 
@@ -84,6 +95,8 @@ public:
 
     // virtual OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, IWeakReference* pWinRTWeakReference);
 
+    virtual OBJECTHANDLE CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, void* /* IWeakReference* */ pWinRTWeakReference);
+
     virtual void DestroyShortWeakHandle(OBJECTHANDLE handle);
 
     virtual void DestroyGlobalShortWeakHandle(OBJECTHANDLE handle);
@@ -97,6 +110,14 @@ public:
     virtual void DestroyGlobalStrongHandle(OBJECTHANDLE handle);
 
     virtual void DestroyDependentHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyAsyncPinningHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyRefcountedHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyWinRTWeakHandle(OBJECTHANDLE handle);
+
+    virtual void DestroyPinningHandle(OBJECTHANDLE handle);
 
     virtual OBJECTHANDLE CreateGlobalHandle(Object* object);
 

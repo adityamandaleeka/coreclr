@@ -32,7 +32,7 @@ extern "C" gc_alloc_context g_global_alloc_context;
 ///// we'll probably need this for dac stuff, so may have to do the gptr stuff
 extern "C" IGCHandleTable* g_pGCHandleTable;
 extern "C" uint32_t* g_card_bundle_table;
-extern "C" uint8_t* g_ephemeral_low;
+    extern "C" uint8_t* g_ephemeral_low;
 extern "C" uint8_t* g_ephemeral_high;
 
 #ifdef FEATURE_USE_SOFTWARE_WRITE_WATCH_FOR_GC_HEAP
@@ -211,6 +211,34 @@ public:
 private:
     // This class should never be instantiated.
     GCHeapUtilities() = delete;
+};
+
+
+///// THESE DON'T BELONG HERE. FIND A BETTER PLACE
+#define ObzjectFromHandle(handle)            ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(handle))
+// #define StzoreObjectInHandle(handle, object)  GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(handle, OBJECTREFToObject(object))
+
+void DestroyPinningHandle(OBJECTHANDLE handle);
+
+typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DestroyPinningHandle, NULL> PinningHandleHolder;
+
+void DezstroyHandle(OBJECTHANDLE handle);
+
+typedef Wrapper<OBJECTHANDLE, DoNothing<OBJECTHANDLE>, DezstroyHandle> OHWrapper;
+
+class OBJECTHANDLEHolder : public OHWrapper
+{
+public:
+    FORCEINLINE OBJECTHANDLEHolder(OBJECTHANDLE p = NULL) : OHWrapper(p)
+    {
+        LIMITED_METHOD_CONTRACT;
+    }
+    FORCEINLINE void operator=(OBJECTHANDLE p)
+    {
+        WRAPPER_NO_CONTRACT;
+
+        OHWrapper::operator=(p);
+    }
 };
 
 #endif // _GCHEAPUTILITIES_H_

@@ -890,7 +890,7 @@ OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* pr
     return handle;
 }
 
-void SzetDependentHandleSecondary(OBJECTHANDLE handle, Object* secondary)
+void SzetDependentHandleSecondary(OBJECTHANDLE handle, OBJECTREF secondary)
 { 
     CONTRACTL
     {
@@ -908,17 +908,15 @@ void SzetDependentHandleSecondary(OBJECTHANDLE handle, Object* secondary)
     // handle should not be in unloaded domain
     ValidateAppDomainForHandle(handle);
 
-    OBJECTREF objref = ObjectToOBJECTREF(secondary);
-
     // Make sure the objref is valid before it is assigned to a handle
-    ValidateAssignObjrefForHandle(ObjectToOBJECTREF(objref), HndGetHandleTableADIndex(HndGetHandleTable(handle)));
+    ValidateAssignObjrefForHandle(ObjectToOBJECTREF(secondary), HndGetHandleTableADIndex(HndGetHandleTable(handle)));
 #endif
     // unwrap the objectref we were given
-    _UNCHECKED_OBJECTREF value = OBJECTREF_TO_UNCHECKED_OBJECTREF(objref);
+    _UNCHECKED_OBJECTREF value = OBJECTREF_TO_UNCHECKED_OBJECTREF(secondary);
 
     // if we are doing a non-NULL pointer store then invoke the write-barrier
     if (value)
-        HndWriteBarrier(handle, objref);
+        HndWriteBarrier(handle, secondary);
 
     // store the pointer
     HndSetHandleExtraInfo(handle, HNDTYPE_DEPENDENT, (uintptr_t)value);
@@ -935,7 +933,7 @@ void SzetDependentHandleSecondary(OBJECTHANDLE handle, Object* secondary)
  * N.B. This routine is not a macro since we do validation in RETAIL.
  * We always validate the type here because it can come from external callers.
  */
-OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type)
+OBJECTHANDLE CrzeateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32_t type)
 {
     WRAPPER_NO_CONTRACT;
 

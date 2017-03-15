@@ -10,6 +10,10 @@
 
 #include "gcpriv.h"
 
+#ifdef FEATURE_COMINTEROP
+#include <weakreference.h>
+#endif
+
 #ifndef DACCESS_COMPILE
 
 COUNTER_ONLY(PERF_COUNTER_TIMER_PRECISION g_TotalTimeInGC = 0);
@@ -438,10 +442,36 @@ CLREvent * GCHeap::GetWaitForGCEvent()
 }
 
 
-///// for now the GCHandleTable implementations of the handle table functions are here, and just call the old functions
+///// for now the GCHandleTable implementations of the handle table functions are here. move to sep file
+
+bool GCHandleTable::Initialize()
+{
+    return Ref_Initialize();
+}
+
+void GCHandleTable::Shutdown()
+{
+    Ref_Shutdown();
+}
+
 Object* GCHandleTable::ObjectFromHandle(OBJECTHANDLE handle)
 {
-    return OBJECTREFToObject(HndFetchHandle(handle));
+    return OBJECTREFToObject(::HndFetchHandle(handle));
+}
+
+void GCHandleTable::StoreObjectInHandle(OBJECTHANDLE handle, Object* object)
+{
+    return ::HndAssignHandle(handle, ObjectToOBJECTREF(object));
+}
+
+BOOL GCHandleTable::StoreFirstObjectInHandle(OBJECTHANDLE handle, Object* object)
+{
+    return ::HndFirstAssignHandle(handle, ObjectToOBJECTREF(object));
+}
+
+BOOL GCHandleTable::ObjectHandleIsNull(OBJECTHANDLE handle)
+{
+    return ::HndIsNull(handle);
 }
 
 void* GCHandleTable::InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handle, Object* objref, Object* oldObjref)
@@ -451,12 +481,11 @@ void* GCHandleTable::InterlockedCompareExchangeObjectInHandle(OBJECTHANDLE handl
 
 void GCHandleTable::DestroyHandle(OBJECTHANDLE handle)
 {
-    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
-}
+    ::HndDestroyHandle(::HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle); }
 
 void GCHandleTable::DestroyTypedHandle(OBJECTHANDLE handle)
 {
-    HndDestroyHandleOfUnknownType(HndGetHandleTable(handle), handle);
+    ::HndDestroyHandleOfUnknownType(::HndGetHandleTable(handle), handle);
 }
 
 BOOL GCHandleTable::IsHandleNullUnchecked(OBJECTHANDLE handle) 
@@ -472,7 +501,7 @@ OBJECTHANDLE GCHandleTable::CreateTypedHandle(HHANDLETABLE table, Object* object
 // Create a new STRONG handle in the same table as an existing handle.
 OBJECTHANDLE GCHandleTable::CreateDuplicateHandle(OBJECTHANDLE handle)
 {
-    return ::HndCreateHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, ObjectToOBJECTREF(ObjectFromHandle(handle)));
+    return ::HndCreateHandle(::HndGetHandleTable(handle), HNDTYPE_DEFAULT, ObjectToOBJECTREF(ObjectFromHandle(handle)));
 }
 
 ////// try to get out of needing this on the interface
@@ -522,10 +551,10 @@ OBJECTHANDLE GCHandleTable::CreateSizedRefHandle(HHANDLETABLE table, Object* obj
     return ::HndCreateHandle(table, HNDTYPE_SIZEDREF, ObjectToOBJECTREF(object), (uintptr_t)0);
 }
 
-// OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type)
-// {
-//     return ::CreateVariableHandle(hTable, ObjectToOBJECTREF(object), type);
-// }
+OBJECTHANDLE GCHandleTable::CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type)
+{
+    return ::CrzeateVariableHandle(hTable, ObjectToOBJECTREF(object), type);
+}
 
 OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary)
 {
@@ -533,44 +562,82 @@ OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* pr
     return ::HndCreateHandle(table, HNDTYPE_SIZEDREF, ObjectToOBJECTREF(primary), (uintptr_t)0);
 }
 
-// OBJECTHANDLE GCHandleTable::CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, IWeakReference* pWinRTWeakReference)
-// {
-//     return ::HndCreateHandle(table, HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
-// }
+OBJECTHANDLE GCHandleTable::CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, void* /* IWeakReference* */ pWinRTWeakReference)
+{
+#ifndef FEATURE_COMINTEROP
+    assert(!"Should not call GCHandleTable::CreateWinRTWeakHandle without FEATURE_COMINTEROP defined!");
+    return NULL;
+#else
+    return ::HndCreateHandle(table, HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
+#endif
+}
 
 void GCHandleTable::DestroyGlobalShortWeakHandle(OBJECTHANDLE handle)
 {
-    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_SHORT, handle);
+    ::HndDestroyHandle(::HndGetHandleTable(handle), HNDTYPE_WEAK_SHORT, handle);
 }
 
 void GCHandleTable::DestroyShortWeakHandle(OBJECTHANDLE handle)
 {
-    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_SHORT, handle);
+    ::HndDestroyHandle(::HndGetHandleTable(handle), HNDTYPE_WEAK_SHORT, handle);
 }
 
 void GCHandleTable::DestroyStrongHandle(OBJECTHANDLE handle)
 {
-    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
+    ::HndDestroyHandle(::HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
 }
 
 void GCHandleTable::DestroyLongWeakHandle(OBJECTHANDLE handle)
 {
-    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_WEAK_LONG, handle);
+    ::HndDestroyHandle(::HndGetHandleTable(handle), HNDTYPE_WEAK_LONG, handle);
 }
 
 void GCHandleTable::DestroyGlobalHandle(OBJECTHANDLE handle)
 {
-    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
+    ::HndDestroyHandle(::HndGetHandleTable(handle), HNDTYPE_DEFAULT, handle);
 }
 
 void GCHandleTable::DestroyGlobalStrongHandle(OBJECTHANDLE handle)
 {
-    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
+    ::HndDestroyHandle(::HndGetHandleTable(handle), HNDTYPE_STRONG, handle);
 }
 
 void GCHandleTable::DestroyDependentHandle(OBJECTHANDLE handle)
 {
-    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_DEPENDENT, handle);
+    ::HndDestroyHandle(::HndGetHandleTable(handle), HNDTYPE_DEPENDENT, handle);
+}
+
+void GCHandleTable::DestroyAsyncPinningHandle(OBJECTHANDLE handle)
+{
+    ::HndDestroyHandle(::HndGetHandleTable(handle), HNDTYPE_ASYNCPINNED, handle);
+}
+
+void GCHandleTable::DestroyRefcountedHandle(OBJECTHANDLE handle)
+{
+    ::HndDestroyHandle(::HndGetHandleTable(handle), HNDTYPE_REFCOUNTED, handle);
+}
+
+void GCHandleTable::DestroyWinRTWeakHandle(OBJECTHANDLE handle)
+{
+#ifdef FEATURE_COMINTEROP
+    // Release the WinRT weak reference if we have one.  We're assuming that this will not reenter the
+    // runtime, since if we are pointing at a managed object, we should not be using a HNDTYPE_WEAK_WINRT
+    // but rather a HNDTYPE_WEAK_SHORT or HNDTYPE_WEAK_LONG.
+    IWeakReference* pWinRTWeakReference = reinterpret_cast<IWeakReference*>(::HndGetHandleExtraInfo(handle));
+    if (pWinRTWeakReference != nullptr)
+    {
+        pWinRTWeakReference->Release();
+    }
+
+    ::HndDestroyHandle(::::HndGetHandleTable(handle), HNDTYPE_WEAK_WINRT, handle);
+#else
+    assert(!"Should not call GCHandleTable::DestroyWinRTWeakHandle without FEATURE_COMINTEROP defined!");
+#endif
+}
+
+void GCHandleTable::DestroyPinningHandle(OBJECTHANDLE handle)
+{
+    ::HndDestroyHandle(HndGetHandleTable(handle), HNDTYPE_PINNED, handle);
 }
 
 OBJECTHANDLE GCHandleTable::CreateGlobalHandle(Object* object)

@@ -82,7 +82,7 @@ FCIMPL2(VOID, DependentHandle::nSetPrimary, OBJECTHANDLE handle, Object *_primar
     _ASSERTE(handle != NULL);
 
     OBJECTREF primary(_primary);
-    StoreObjectInHandle(handle, primary);
+    GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(handle, OBJECTREFToObject(primary));
 }
 FCIMPLEND
 

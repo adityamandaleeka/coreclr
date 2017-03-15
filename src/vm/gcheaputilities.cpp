@@ -38,3 +38,12 @@ bool g_sw_ww_enabled_for_gc_heap = false;
 
 gc_alloc_context g_global_alloc_context = {};
 
+void DestroyPinningHandle(OBJECTHANDLE handle)
+{
+    GCHeapUtilities::GetGCHandleTable()->DestroyPinningHandle(handle);
+}
+
+void DezstroyHandle(OBJECTHANDLE handle)
+{
+    GCHeapUtilities::GetGCHandleTable()->DestroyHandle(handle);
+}
