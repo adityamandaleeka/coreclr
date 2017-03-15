@@ -742,7 +742,7 @@ BaseDomain::BaseDomain()
 
 #ifndef CROSSGEN_COMPILE
     // Note that m_hHandleTableBucket is overridden by app domains
-    m_hHandleTableBucket = g_HandleTableMap.pBuckets[0];
+    m_hHandleTableBucket = GCHeapUtilities::GetGCHandleTable()->GetFirstHandleTableBucketFromMap();
 #else
     m_hHandleTableBucket = NULL;
 #endif
@@ -4290,7 +4290,7 @@ void AppDomain::Init()
     // default domain cannot be unloaded.
     if (GetId().m_dwId == DefaultADID)
     {
-        m_hHandleTableBucket = g_HandleTableMap.pBuckets[0];
+        m_hHandleTableBucket = GCHeapUtilities::GetGCHandleTable()->GetFirstHandleTableBucketFromMap();
     }
     else
     {

@@ -2085,7 +2085,8 @@ private:
     DacHeapWalker mHeap;
 };
 
-
+/////remove. using to unblock build
+// #include "../../gc/objecthandle.h"
 
 struct DacGcReference;
 class DacHandleWalker : public DefaultCOMImpl<ISOSHandleEnum>

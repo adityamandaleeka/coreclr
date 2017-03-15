@@ -18,6 +18,7 @@
 namespace SVR { 
 #include "gcimpl.h"
 #include "gcee.cpp"
+#include "gchandletable.cpp"
 }
 
 #if defined(FEATURE_PAL) && !defined(DACCESS_COMPILE)
