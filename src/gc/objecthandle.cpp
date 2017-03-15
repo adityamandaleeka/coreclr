@@ -873,22 +873,22 @@ void Ref_EndSynchronousGC(uint32_t condemned, uint32_t maxgen)
 */    
 }
 
-OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary)
-{
-    CONTRACTL
-    {
-        THROWS;
-        GC_NOTRIGGER;
-        MODE_COOPERATIVE;
-    }
-    CONTRACTL_END;
+// OBJECTHANDLE CrzeateDependentHandle(HHANDLETABLE table, Object* primary, Object* secondary)
+// {
+//     CONTRACTL
+//     {
+//         THROWS;
+//         GC_NOTRIGGER;
+//         MODE_COOPERATIVE;
+//     }
+//     CONTRACTL_END;
 
-    OBJECTHANDLE handle = HndCreateHandle(table, HNDTYPE_DEPENDENT, ObjectToOBJECTREF(primary)); 
+//     OBJECTHANDLE handle = HndCreateHandle(table, HNDTYPE_DEPENDENT, ObjectToOBJECTREF(primary)); 
 
-    SetDependentHandleSecondary(handle, secondary);
+//     SetDependentHandleSecondary(handle, secondary);
 
-    return handle;
-}
+//     return handle;
+// }
 
 void SzetDependentHandleSecondary(OBJECTHANDLE handle, OBJECTREF secondary)
 { 
@@ -1820,7 +1820,7 @@ void Ref_VerifyHandleTable(uint32_t condemned, uint32_t maxgen, ScanContext* sc)
     }
 }
 
-int GetCurrentThreadHomeHeapNumber()
+int GzetCurrentThreadHomeHeapNumber()
 {
     WRAPPER_NO_CONTRACT;
 

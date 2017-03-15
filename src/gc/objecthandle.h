@@ -28,6 +28,7 @@ struct HandleTableMap
     uint32_t                    dwMaxIndex;
 };
 
+////// The DAC uses this
 GVAL_DECL(HandleTableMap, g_HandleTableMap);
 
 /*
@@ -43,6 +44,7 @@ GVAL_DECL(HandleTableMap, g_HandleTableMap);
                                     (flag == VHT_STRONG)     || \
                                     (flag == VHT_PINNED))
 
+////// The DAC uses this
 OBJECTREF GetDependentHandleSecondary(OBJECTHANDLE handle);
 
 #ifndef DACCESS_COMPILE
@@ -57,7 +59,7 @@ OBJECTHANDLE CrzeateVariableHandle(HHANDLETABLE hTable, OBJECTREF object, uint32
  * Convenience prototypes for using the global handles
  */
 
-int GetCurrentThreadHomeHeapNumber();
+int GzetCurrentThreadHomeHeapNumber();
 
 /*
  * Table maintenance routines

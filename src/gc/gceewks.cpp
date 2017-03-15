@@ -18,5 +18,6 @@
 namespace WKS { 
 #include "gcimpl.h"
 #include "gcee.cpp"
+#include "gchandletable.cpp"
 }
 
