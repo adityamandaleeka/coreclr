@@ -177,7 +177,7 @@ void RCWRefCache::ShrinkDependentHandles()
         OBJECTHANDLE depHnd = m_depHndList[i];
         
         HndAssignHandle(depHnd, NULL);
-        GCHeapUtilities::GetGCHandleTable()->SetSecondaryOnDependentHandle(depHnd, NULL);
+        GCHeapUtilities::GetGCHandleTable()->SetSecondaryForDependentHandle(depHnd, NULL);
 
         LOG((LF_INTEROP, LL_INFO1000, "\t[RCWRefCache 0x%p] DependentHandle 0x%p cleared @ index %d\n", this, depHnd, (ULONG) i));
     }
@@ -267,7 +267,7 @@ HRESULT RCWRefCache::AddReferenceUsingDependentHandle(RCW *pRCW, ComCallWrapper 
         OBJECTHANDLE depHnd = (OBJECTHANDLE) m_depHndList[m_dwDepHndListFreeIndex];
 
         HndAssignHandle(depHnd, pRCW->GetExposedObject());
-        GCHeapUtilities::GetGCHandleTable()->SetSecondaryOnDependentHandle(depHnd, pCCW->GetObjectRef());
+        GCHeapUtilities::GetGCHandleTable()->SetSecondaryForDependentHandle(depHnd, pCCW->GetObjectRef());
 
         STRESS_LOG3(
             LF_INTEROP, LL_INFO1000, 
