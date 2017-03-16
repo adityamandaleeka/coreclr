@@ -518,13 +518,15 @@ public:
 
     virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
 
-    virtual Object* GetSecondaryOnDependentHandle(OBJECTHANDLE handle) = 0;
+    virtual Object* GetSecondaryForDependentHandle(OBJECTHANDLE handle) = 0;
 
-    virtual void SetSecondaryOnDependentHandle(OBJECTHANDLE handle, Object* secondary) = 0;
+    virtual void SetSecondaryForDependentHandle(OBJECTHANDLE handle, Object* secondary) = 0;
 
     virtual void ResetObjectHandle(OBJECTHANDLE handle) = 0;
 
     virtual HandleTableBucket* GetFirstHandleTableBucketFromMap() = 0;
+
+    virtual HHANDLETABLE GetHandleTableForHandle(OBJECTHANDLE handle) = 0;
 };
 
 ///////// temporary to get DAC to build

@@ -768,8 +768,9 @@ FCIMPL1(VOID, MarshalNative::GCHandleInternalCheckDomain, OBJECTHANDLE handle)
 
     if (handle == NULL)
         FCThrowArgumentVoid(W("handle"), W("Argument_ArgumentZero"));
-    
-    ADIndex index = HndGetHandleTableADIndex(HndGetHandleTable(handle));
+
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    ADIndex index = HndGetHandleTableADIndex(pHandleTable->GetHandleTableForHandle(handle));
 
     if (index.m_dwIndex != 1 && index != GetAppDomain()->GetIndex())
         FCThrowArgumentVoid(W("handle"), W("Argument_HandleLeak"));

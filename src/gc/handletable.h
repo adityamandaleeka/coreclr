@@ -62,8 +62,8 @@ void            HndDestroyHandleTable(HHANDLETABLE hTable);
  */
 void            HndSetHandleTableIndex(HHANDLETABLE hTable, uint32_t uTableIndex);
 uint32_t        HndGetHandleTableIndex(HHANDLETABLE hTable);
-ADIndex         HndGetHandleTableADIndex(HHANDLETABLE hTable);
-ADIndex         HndGetHandleADIndex(OBJECTHANDLE handle);
+ADIndex         HndGetHandleTableADIndex(HHANDLETABLE hTable);    /////////// VM 
+ADIndex         HndGetHandleADIndex(OBJECTHANDLE handle);        /////////// DAC
 
 #ifndef DACCESS_COMPILE
 /*
@@ -83,16 +83,16 @@ void            HndDestroyHandles(HHANDLETABLE hTable, uint32_t uType, const OBJ
 /*
  * owner data associated with handles
  */
-void            HndSetHandleExtraInfo(OBJECTHANDLE handle, uint32_t uType, uintptr_t lExtraInfo);
+void            HndSetHandleExtraInfo(OBJECTHANDLE handle, uint32_t uType, uintptr_t lExtraInfo);   ///////////////VM
 uintptr_t          HndCompareExchangeHandleExtraInfo(OBJECTHANDLE handle, uint32_t uType, uintptr_t lOldExtraInfo, uintptr_t lNewExtraInfo);
 #endif // !DACCESS_COMPILE
 
-uintptr_t          HndGetHandleExtraInfo(OBJECTHANDLE handle);
+uintptr_t          HndGetHandleExtraInfo(OBJECTHANDLE handle);   ////////DAC AND VM
 
 /*
  * get parent table of handle
  */
-HHANDLETABLE    HndGetHandleTable(OBJECTHANDLE handle);
+HHANDLETABLE    HndGetHandleTable(OBJECTHANDLE handle);    /////// VM
 
 /*
  * write barrier
@@ -116,7 +116,7 @@ void            HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value);
  * NON-GC handle enumeration
  */
 void HndEnumHandles(HHANDLETABLE hTable, const uint32_t *puType, uint32_t uTypeCount,
-                    HANDLESCANPROC pfnEnum, uintptr_t lParam1, uintptr_t lParam2, bool fAsync);
+                    HANDLESCANPROC pfnEnum, uintptr_t lParam1, uintptr_t lParam2, bool fAsync);   ////////////DAC
 
 /*
  * GC-time handle scanning
@@ -126,8 +126,7 @@ void HndEnumHandles(HHANDLETABLE hTable, const uint32_t *puType, uint32_t uTypeC
 #define HNDGCF_ASYNC        (0x00000002)    // drop the table lock while scanning
 #define HNDGCF_EXTRAINFO    (0x00000004)    // iterate per-handle data while scanning
 
-
-void            HndScanHandlesForGC(HHANDLETABLE hTable,
+void            HndScanHandlesForGC(HHANDLETABLE hTable,         ///////////////////DAC
                                     HANDLESCANPROC scanProc,
                                     uintptr_t param1,
                                     uintptr_t param2,
@@ -169,7 +168,7 @@ void ValidateAppDomainForHandle(OBJECTHANDLE handle);
 /*
  * handle assignment
  */
-void HndAssignHandle(OBJECTHANDLE handle, OBJECTREF objref);
+void HndAssignHandle(OBJECTHANDLE handle, OBJECTREF objref);   /////////VM and debug/ee
 
 /*
  * interlocked-exchange assignment

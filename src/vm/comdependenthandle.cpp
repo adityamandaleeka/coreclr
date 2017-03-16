@@ -74,7 +74,7 @@ FCIMPL3(VOID, DependentHandle::nGetPrimaryAndSecondary, OBJECTHANDLE handle, Obj
     IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
 
     *outPrimary = pHandleTable->ObjectFromHandle(handle);
-    *outSecondary = pHandleTable->GetSecondaryOnDependentHandle(handle);
+    *outSecondary = pHandleTable->GetSecondaryForDependentHandle(handle);
 }
 FCIMPLEND
 
@@ -98,6 +98,6 @@ FCIMPL2(VOID, DependentHandle::nSetSecondary, OBJECTHANDLE handle, Object *_seco
     OBJECTREF secondary(_secondary);
 
     IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    pHandleTable->SetSecondaryOnDependentHandle(handle, OBJECTREFToObject(secondary));
+    pHandleTable->SetSecondaryForDependentHandle(handle, OBJECTREFToObject(secondary));
 }
 FCIMPLEND
