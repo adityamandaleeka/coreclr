@@ -149,7 +149,7 @@ struct segment_info
     void * pvMem; // base of the allocation, not the first object (must add ibFirstObject)
     size_t ibFirstObject;   // offset to the base of the first object in the segment
     size_t ibAllocated; // limit of allocated memory in the segment (>= firstobject)
-    size_t ibCommit; // limit of committed memory in the segment (>= alllocated)
+    size_t ibCommit; // limit of committed memory in the segment (>= allocated)
     size_t ibReserved; // limit of reserved memory in the segment (>= commit)
 };
 

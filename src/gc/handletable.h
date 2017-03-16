@@ -104,14 +104,6 @@ void            HndWriteBarrier(OBJECTHANDLE handle, OBJECTREF value);
  */
 void            HndLogSetEvent(OBJECTHANDLE handle, _UNCHECKED_OBJECTREF value);
 
-<<<<<<< HEAD
-=======
-//  /*
-//   * Scanning callback.
-//   */
-// typedef void (CALLBACK *HANDLESCANPROC)(PTR_UNCHECKED_OBJECTREF pref, uintptr_t *pExtraInfo, uintptr_t param1, uintptr_t param2);
-
->>>>>>> temp
 /*
  * NON-GC handle enumeration
  */
