@@ -23,6 +23,7 @@
 #include "../../vm/rcwwalker.h"
 #include "../../gc/gc.h"
 #include "../../gc/gcscan.h"
+// #include "../../gc/objecthandle.h" /////////////
 
 #undef SERVER_GC
 namespace WKS {
