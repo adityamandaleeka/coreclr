@@ -48,6 +48,9 @@
 
 #include "gcdesc.h"
 
+//////////// TEMPORARY REMOVE THIS
+#define ObzjectFromHandle(handle)            ObjectToOBJECTREF(g_theGCHandleTable->ObjectFromHandle(handle))
+
 //
 // The fast paths for object allocation and write barriers is performance critical. They are often
 // hand written in assembly code, etc.
@@ -201,8 +204,7 @@ int __cdecl main(int argc, char* argv[])
         return -1;
 
     // Create strong handle and store the object into it
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    OBJECTHANDLE oh = pHandleTable->CreateGlobalHandle(pObj);
+    OBJECTHANDLE oh = g_theGCHandleTable->CreateGlobalHandle(pObj);
     if (oh == NULL)
         return -1;
 
@@ -225,8 +227,7 @@ int __cdecl main(int argc, char* argv[])
     }
 
     // Create weak handle that points to our object
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    OBJECTHANDLE ohWeak = pHandleTable->CreateGlobalWeakHandle(ObzjectFromHandle(oh));
+    OBJECTHANDLE ohWeak = g_theGCHandleTable->CreateGlobalWeakHandle(ObzjectFromHandle(oh));
     if (ohWeak == NULL)
         return -1;
 

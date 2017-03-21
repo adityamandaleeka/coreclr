@@ -21,6 +21,7 @@ SVAL_IMPL_INIT(uint32_t,IGCHeap,gcHeapType,IGCHeap::GC_HEAP_INVALID);
 SVAL_IMPL_INIT(uint32_t,IGCHeap,maxGeneration,2);
 
 IGCHeapInternal* g_theGCHeap;
+IGCHandleTable* g_theGCHandleTable;
 
 #ifdef FEATURE_STANDALONE_GC
 IGCToCLR* g_theGCToCLR;

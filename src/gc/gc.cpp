@@ -33718,10 +33718,9 @@ HRESULT GCHeap::Initialize ()
 #ifndef FEATURE_REDHAWK // Redhawk forces relocation a different way
 #if defined (STRESS_HEAP) && !defined (MULTIPLE_HEAPS)
     if (GCStress<cfg_any>::IsEnabled())  {
-        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
         for(int i = 0; i < GCHeap::NUM_HEAP_STRESS_OBJS; i++)
         {
-            m_StressObjs[i] = pHandleTable->CreateGlobalHandle(0);
+            m_StressObjs[i] = g_theGCHandleTable->CreateGlobalHandle(0);
         }
 
         m_CurStressObj = 0;
@@ -34242,7 +34241,7 @@ BOOL GCHeap::StressHeap(gc_alloc_context * context)
                     if (g_pConfig->AppDomainLeaks() && str->SetAppDomainNoThrow())
                     {
 #endif
-                        GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(m_StressObjs[i], str);
+                        g_theGCHandleTable->StoreObjectInHandle(m_StressObjs[i], str);
 #if CHECK_APP_DOMAIN_LEAKS
                     }
 #endif
@@ -34275,8 +34274,7 @@ BOOL GCHeap::StressHeap(gc_alloc_context * context)
             {
                 // Let the string itself become garbage.
                 // will be realloced next time around
-                GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(m_StressObjs[m_CurStressObj], 0);
-                // StzoreObjectInHandle(m_StressObjs[m_CurStressObj], 0);
+                g_theGCHandleTable->StoreObjectInHandle(m_StressObjs[m_CurStressObj], 0);
             }
         }
     }

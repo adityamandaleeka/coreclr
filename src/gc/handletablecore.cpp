@@ -1004,8 +1004,7 @@ void SegmentRelocateAsyncPinHandles (TableSegment *pSegment, HandleTable *pTarge
                 }
                 BashMTForPinnedObject(ObjectToOBJECTREF(value));
 
-                IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-                overlapped->m_pinSelf = pHandleTable->CreateAsyncPinningHandle((HHANDLETABLE)pTargetTable, value);
+                overlapped->m_pinSelf = g_theGCHandleTable->CreateAsyncPinningHandle((HHANDLETABLE)pTargetTable, value);
                 *pValue = NULL;
             }
             pValue ++;
