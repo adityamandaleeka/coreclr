@@ -204,7 +204,7 @@ int __cdecl main(int argc, char* argv[])
         return -1;
 
     // Create strong handle and store the object into it
-    OBJECTHANDLE oh = g_theGCHandleTable->CreateGlobalHandle(pObj);
+    OBJECTHANDLE oh = pGCHandleTable->CreateGlobalHandle(pObj);
     if (oh == NULL)
         return -1;
 
@@ -227,12 +227,12 @@ int __cdecl main(int argc, char* argv[])
     }
 
     // Create weak handle that points to our object
-    OBJECTHANDLE ohWeak = g_theGCHandleTable->CreateGlobalWeakHandle(ObzjectFromHandle(oh));
+    OBJECTHANDLE ohWeak = pGCHandleTable->CreateGlobalWeakHandle(ObzjectFromHandle(oh));
     if (ohWeak == NULL)
         return -1;
 
     // Destroy the strong handle so that nothing will be keeping out object alive
-    DestroyGlobalHandle(oh);
+    pGCHandleTable->DestroyGlobalHandle(oh);
 
     // Explicitly trigger full GC
     pGCHeap->GarbageCollect();

@@ -1140,7 +1140,7 @@ EnCAddedField *EnCAddedField::Allocate(OBJECTREF thisPointer, EnCFieldDesc *pFD)
 
         // store the empty boxed object into the helper object
         IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-        OBJECTREF pHelperObj = pHandleTable->GetSecondaryForDependentHandle(pEntry->m_FieldData);
+        OBJECTREF pHelperObj = ObjectToOBJECTREF(pHandleTable->GetSecondaryForDependentHandle(pEntry->m_FieldData));
         OBJECTREF *pHelperRef = (OBJECTREF *)pHelperField->GetAddress( pHelperObj->GetAddress() );
         SetObjectReference( pHelperRef, obj, pDomain );
 
@@ -1246,7 +1246,7 @@ PTR_CBYTE EnCSyncBlockInfo::ResolveField(OBJECTREF thisPointer, EnCFieldDesc *pF
     // we found a matching entry in the list of EnCAddedFields
     // Get the EnC helper object (see the detailed description in Allocate above)
     IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    OBJECTREF pHelper = pHandleTable->GetSecondaryForDependentHandle(pEntry->m_FieldData);
+    OBJECTREF pHelper = ObjectToOBJECTREF(pHandleTable->GetSecondaryForDependentHandle(pEntry->m_FieldData));
     _ASSERTE(pHelper != NULL);
 
     FieldDesc *pHelperFieldDesc = NULL;
@@ -1336,7 +1336,7 @@ PTR_CBYTE EnCSyncBlockInfo::ResolveOrAllocateField(OBJECTREF thisPointer, EnCFie
     // we found a matching entry in the list of EnCAddedFields
     // Get the EnC helper object (see the detailed description in Allocate above)
     IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    OBJECTREF pHelper = pHandleTable->GetSecondaryForDependentHandle(pEntry->m_FieldData);
+    OBJECTREF pHelper = ObjectToOBJECTREF(pHandleTable->GetSecondaryForDependentHandle(pEntry->m_FieldData));
     _ASSERTE(pHelper != NULL);
 
     FieldDesc * pHelperField = NULL;
@@ -1368,7 +1368,7 @@ void EnCSyncBlockInfo::Cleanup()
     while (pEntry) 
     {
         // Clean up the handle we created in EnCAddedField::Allocate
-        DestroyDependentHandle(*(OBJECTHANDLE*)&pEntry->m_FieldData);
+        GCHeapUtilities::GetGCHandleTable()->DestroyDependentHandle(*(OBJECTHANDLE*)&pEntry->m_FieldData);
 
         // Delete this list entry and move onto the next
         EnCAddedField *next = pEntry->m_pNext;

@@ -1853,7 +1853,7 @@ void AppDomain::RemoveWinRTFactoryObjects(LPVOID pCtxCookie)
                 // it on our local list and release them all after we're done iterating the hashtable.
                 ctxEntryListReleaseHolder.m_list.Push(it->m_pCtxEntry);
 
-                DestroyHandle(it->m_ohFactoryObject);
+                GCHeapUtilities::GetGCHandleTable()->DestroyHandle(it->m_ohFactoryObject);
                 m_pWinRTFactoryCache->Remove(it);
             }
         }
@@ -1883,7 +1883,7 @@ OBJECTREF AppDomain::GetMissingObject()
         if (FastInterlockCompareExchangePointer(&m_hndMissing, hndMissing, NULL) != NULL)
         {
             // Exchanged failed. The m_hndMissing did not equal NULL and was returned.
-            DestroyHandle(hndMissing);
+            GCHeapUtilities::GetGCHandleTable()->DestroyHandle(hndMissing);
         }
     }
 

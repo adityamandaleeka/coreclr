@@ -974,11 +974,11 @@ OBJECTREF MethodTable::GetObjCreateDelegate()
         NOTHROW;
     }
     CONTRACTL_END;
+
     _ASSERT(!IsInterface());
     if (GetOHDelegate())
     {
-        IGCHeap * pHeap = GCHeapUtilities::GetGCHeap();
-        return pHeap->ObjectFromHandle(GetOHDelegate());
+        return GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(GetOHDelegate());
     }
     else
     {

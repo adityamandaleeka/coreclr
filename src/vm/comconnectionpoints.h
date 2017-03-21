@@ -51,7 +51,7 @@ struct ConnectionCookie
     ~ConnectionCookie()
     {
         WRAPPER_NO_CONTRACT;
-        DestroyHandle(m_hndEventProvObj);
+        GCHeapUtilities::GetGCHandleTable()->DestroyHandle(m_hndEventProvObj);
     }
 
     // Currently called only from Cooperative mode.
