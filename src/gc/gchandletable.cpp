@@ -172,7 +172,7 @@ OBJECTHANDLE GCHandleTable::CreateDependentHandle(HHANDLETABLE table, Object* pr
 OBJECTHANDLE GCHandleTable::CreateWinRTWeakHandle(HHANDLETABLE table, Object* object, void* /* IWeakReference* */ pWinRTWeakReference)
 {
 #ifdef FEATURE_COMINTEROP
-    return ::HndCreateHandle(table, HNDTYPE_WEAK_WINRT, object, reinterpret_cast<uintptr_t>(pWinRTWeakReference));
+    return ::HndCreateHandle(table, HNDTYPE_WEAK_WINRT, ObjectToOBJECTREF(object), reinterpret_cast<uintptr_t>(pWinRTWeakReference));
 #else
     assert(!"Should not call GCHandleTable::CreateWinRTWeakHandle without FEATURE_COMINTEROP defined!");
     return NULL;

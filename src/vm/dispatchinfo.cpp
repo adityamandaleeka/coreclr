@@ -141,7 +141,7 @@ DispatchMemberInfo::~DispatchMemberInfo()
 
     // Destroy the member info object.
     if (m_hndMemberInfo)
-        DestroyHandle(m_hndMemberInfo);
+        GCHeapUtilities::GetGCHandleTable()->DestroyHandle(m_hndMemberInfo);
 
     // Clear the name of the member.
     m_strName.Clear();
@@ -1869,7 +1869,7 @@ void DispatchInfo::InvokeMemberWorker(DispatchMemberInfo*   pDispMemberInfo,
         
         if (aByrefStaticArrayBackupObjHandle[i])
         {
-            DestroyHandle(aByrefStaticArrayBackupObjHandle[i]);
+            GCHeapUtilities::GetGCHandleTable()->DestroyHandle(aByrefStaticArrayBackupObjHandle[i]);
             aByrefStaticArrayBackupObjHandle[i] = NULL;
         }
     }
@@ -2256,7 +2256,7 @@ HRESULT DispatchInfo::InvokeMember(SimpleComCallWrapper *pSimpleWrap, DISPID id,
                 // Destroy all the handles we allocated for the byref static safe array's.
                 if (aByrefStaticArrayBackupObjHandle[i] != NULL)
                 {
-                    DestroyHandle(aByrefStaticArrayBackupObjHandle[i]);
+                    GCHeapUtilities::GetGCHandleTable()->DestroyHandle(aByrefStaticArrayBackupObjHandle[i]);
                     aByrefStaticArrayBackupObjHandle[i] = NULL;
                 }
             }
@@ -2348,7 +2348,7 @@ void DispatchInfo::DestroyMemberInfoHandles()
     while (pCurrMember)
     {
         // Destroy the handle
-        DestroyHandle(pCurrMember->m_hndMemberInfo);
+        GCHeapUtilities::GetGCHandleTable()->DestroyHandle(pCurrMember->m_hndMemberInfo);
         pCurrMember->m_hndMemberInfo = NULL;
         // Process the next member.
         pCurrMember = pCurrMember->m_pNext;
@@ -2953,7 +2953,7 @@ OBJECTREF DispatchInfo::GetOleAutBinder()
 
     // Keep a handle to the OleAutBinder instance.
     IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    m_hndOleAutBinder = pHandleTable->CreateGlobalHandle(OleAutBinder);
+    m_hndOleAutBinder = pHandleTable->CreateGlobalHandle(OBJECTREFToObject(OleAutBinder));
 
     return OleAutBinder;
 }

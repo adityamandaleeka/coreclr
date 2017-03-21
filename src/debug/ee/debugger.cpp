@@ -32,6 +32,7 @@
 #include "../../vm/dwreport.h"
 #include "../../vm/eepolicy.h"
 #include "../../vm/excep.h"
+#include "../../vm/gcheaputilities.h"
 #if defined(FEATURE_DBGIPC_TRANSPORT_VM)
 #include "dbgtransportsession.h"
 #endif // FEATURE_DBGIPC_TRANSPORT_VM
@@ -11347,12 +11348,12 @@ bool Debugger::HandleIPCEvent(DebuggerIPCEvent * pEvent)
             if (pEvent->DisposeHandle.fStrong == TRUE)
             {
                 ///////////// HOW SHOULD THE DEBUGGER CALL THIS?
-                // DestroyStrongHandle(objectHandle);
+                GCHeapUtilities::GetGCHandleTable()->DestroyStrongHandle(objectHandle);
             }
             else
             {
                 ///////////// HOW SHOULD THE DEBUGGER CALL THIS?
-                // DestroyLongWeakHandle(objectHandle);
+                GCHeapUtilities::GetGCHandleTable()->DestroyLongWeakHandle(objectHandle);
             }
             break;
         }

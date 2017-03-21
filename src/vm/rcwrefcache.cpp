@@ -141,9 +141,9 @@ void RCWRefCache::ShrinkDependentHandles()
             _ASSERTE(newSize > 0);
             
             for (SIZE_T i = newSize; i < depHndListSize; ++i)
-            {   
+            {
                 OBJECTHANDLE hnd = m_depHndList.Pop();
-                DestroyDependentHandle(hnd);
+                GCHeapUtilities::GetGCHandleTable()->DestroyDependentHandle(hnd);
                 LOG((LF_INTEROP, LL_INFO1000, 
                     "\t[RCWRefCache 0x%p] DependentHandle 0x%p destroyed @ index %d\n", 
                     this, hnd, (ULONG)(depHndListSize - (i - newSize + 1))));
@@ -269,7 +269,7 @@ HRESULT RCWRefCache::AddReferenceUsingDependentHandle(RCW *pRCW, ComCallWrapper 
 
         IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
         pHandleTable->StoreObjectInHandle(depHnd, OBJECTREFToObject(pRCW->GetExposedObject()));
-        GCHeapUtilities::GetGCHandleTable()->SetSecondaryForDependentHandle(depHnd, pCCW->GetObjectRef());
+        GCHeapUtilities::GetGCHandleTable()->SetSecondaryForDependentHandle(depHnd, OBJECTREFToObject(pCCW->GetObjectRef()));
 
         STRESS_LOG3(
             LF_INTEROP, LL_INFO1000, 

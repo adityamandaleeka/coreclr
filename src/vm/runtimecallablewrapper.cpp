@@ -1965,13 +1965,14 @@ RCWAuxiliaryData::~RCWAuxiliaryData()
         pEntry = pNextEntry;
     }
 
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable(); 
     if (VARIANCE_STUB_TARGET_IS_HANDLE(m_ohObjectVariantCallTarget_IEnumerable))
     {
-        DestroyHandle(m_ohObjectVariantCallTarget_IEnumerable);
+        pHandleTable->DestroyHandle(m_ohObjectVariantCallTarget_IEnumerable);
     }
     if (VARIANCE_STUB_TARGET_IS_HANDLE(m_ohObjectVariantCallTarget_IReadOnlyList))
     {
-        DestroyHandle(m_ohObjectVariantCallTarget_IReadOnlyList);
+        pHandleTable->DestroyHandle(m_ohObjectVariantCallTarget_IReadOnlyList);
     }
 }
 
