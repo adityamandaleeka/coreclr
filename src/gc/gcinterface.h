@@ -436,6 +436,10 @@ public:
     virtual void TraceRefCountedHandles(HANDLESCANPROC callback, uintptr_t lParam1, uintptr_t lParam2) = 0;
     ///// END REF STUFF
 
+    //// Hnd Stuff
+    
+    //// End Hnd Stuff
+
     // Returns whether or not the given size is a valid segment size.
     virtual Object* ObjectFromHandle(OBJECTHANDLE handle) = 0;
 
@@ -519,6 +523,9 @@ public:
     virtual OBJECTHANDLE CreateVariableHandle(HHANDLETABLE hTable, Object* object, uint32_t type) = 0;
 
     virtual Object* GetSecondaryForDependentHandle(OBJECTHANDLE handle) = 0;
+
+    //// returns a pointer that can be cast to IWeakReference*
+    virtual void* GetWeakReferenceForWinRTWeakHandle(OBJECTHANDLE handle) = 0;
 
     virtual void SetSecondaryForDependentHandle(OBJECTHANDLE handle, Object* secondary) = 0;
 

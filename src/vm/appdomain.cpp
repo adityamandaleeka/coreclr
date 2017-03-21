@@ -1761,7 +1761,8 @@ void AppDomain::CacheWinRTFactoryObject(MethodTable *pClassMT, OBJECTREF *refFac
         pNewCtxEntry = pEntry->m_pCtxEntry;
         pEntry->m_pCtxEntry = pTemp;
 
-        HndAssignHandle(pEntry->m_ohFactoryObject, *refFactory);
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        pHandleTable->StoreObjectInHandle(pEntry->m_ohFactoryObject, OBJECTREFToObject(*refFactory));
     }
 }
 
