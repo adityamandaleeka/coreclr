@@ -92,7 +92,7 @@ uintptr_t          HndGetHandleExtraInfo(OBJECTHANDLE handle);   ////////DAC AND
 /*
  * get parent table of handle
  */
-HHANDLETABLE    HndGetHandleTable(OBJECTHANDLE handle);    /////// VM
+HHANDLETABLE    HndGetHandleTable(OBJECTHANDLE handle);
 
 /*
  * write barrier
@@ -160,7 +160,7 @@ void ValidateAppDomainForHandle(OBJECTHANDLE handle);
 /*
  * handle assignment
  */
-void HndAssignHandle(OBJECTHANDLE handle, OBJECTREF objref);   /////////VM and debug/ee
+void HndAssignHandle(OBJECTHANDLE handle, OBJECTREF objref);   /////////VM and debug/ee. JUST DEBUG NOW
 
 /*
  * interlocked-exchange assignment

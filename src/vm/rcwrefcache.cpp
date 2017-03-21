@@ -175,9 +175,10 @@ void RCWRefCache::ShrinkDependentHandles()
     for (SIZE_T i = m_dwDepHndListFreeIndex; i < m_depHndList.Size(); ++i)
     {
         OBJECTHANDLE depHnd = m_depHndList[i];
-        
-        HndAssignHandle(depHnd, NULL);
-        GCHeapUtilities::GetGCHandleTable()->SetSecondaryForDependentHandle(depHnd, NULL);
+
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        pHandleTable->StoreObjectInHandle(depHnd, NULL);
+        pHandleTable->SetSecondaryForDependentHandle(depHnd, NULL);
 
         LOG((LF_INTEROP, LL_INFO1000, "\t[RCWRefCache 0x%p] DependentHandle 0x%p cleared @ index %d\n", this, depHnd, (ULONG) i));
     }
@@ -266,7 +267,8 @@ HRESULT RCWRefCache::AddReferenceUsingDependentHandle(RCW *pRCW, ComCallWrapper 
         // Yes, there is a valid DependentHandle entry on the list, use that
         OBJECTHANDLE depHnd = (OBJECTHANDLE) m_depHndList[m_dwDepHndListFreeIndex];
 
-        HndAssignHandle(depHnd, pRCW->GetExposedObject());
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        pHandleTable->StoreObjectInHandle(depHnd, OBJECTREFToObject(pRCW->GetExposedObject()));
         GCHeapUtilities::GetGCHandleTable()->SetSecondaryForDependentHandle(depHnd, pCCW->GetObjectRef());
 
         STRESS_LOG3(

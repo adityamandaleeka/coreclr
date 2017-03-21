@@ -225,7 +225,10 @@ NOINLINE Object* LoadWinRTWeakReferenceTarget(WEAKREFERENCEREF weakReference, Ty
                 // it's always set to NULL here and there's nothing for it to release.
                 _ASSERTE(pWinRTWeakReference.IsNull());
                 CONTRACT_VIOLATION(GCViolation);
-                pWinRTWeakReference = reinterpret_cast<IWeakReference*>(HndGetHandleExtraInfo(handle.Handle));
+
+                void* weakRef = GCHeapUtilities::GetGCHandleTable()->GetWeakReferenceForWinRTWeakHandle(handle.Handle);
+
+                pWinRTWeakReference = static_cast<IWeakReference*>(weakRef);
                 if (!pWinRTWeakReference.IsNull())
                 {
                     pWinRTWeakReference->AddRef();
@@ -755,7 +758,8 @@ NOINLINE void SetWeakReferenceTarget(WEAKREFERENCEREF weakReference, OBJECTREF t
         // and update it with the new weak reference pointer.  If the incoming object is not an RCW that can
         // use IWeakReference, then pTargetWeakReference will be null.  Therefore, no matter what the incoming
         // object type is, we can unconditionally store pTargetWeakReference to the object handle's extra data.
-        IWeakReference* pExistingWeakReference = reinterpret_cast<IWeakReference*>(HndGetHandleExtraInfo(handle.Handle));
+        void* weakRef = GCHeapUtilities::GetGCHandleTable()->GetWeakReferenceForWinRTWeakHandle(handle.Handle);
+        IWeakReference* pExistingWeakReference = static_cast<IWeakReference*>(weakRef);
         HndSetHandleExtraInfo(handle.Handle, HNDTYPE_WEAK_WINRT, reinterpret_cast<LPARAM>(pTargetWeakReference.GetValue()));
         pHandleTable->StoreObjectInHandle(handle.Handle, OBJECTREFToObject(target));
 
