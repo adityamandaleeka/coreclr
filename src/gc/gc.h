@@ -264,6 +264,8 @@ extern void FinalizeWeakReference(Object * obj);
 // The single GC heap instance, shared with the VM.
 extern IGCHeapInternal* g_theGCHeap;
 
+extern IGCHandleTable* g_theGCHandleTable;
+
 #ifndef DACCESS_COMPILE
 inline BOOL IsGCInProgress(bool bConsiderGCStart = FALSE)
 {
