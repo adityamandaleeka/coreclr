@@ -9,6 +9,7 @@
 // sets up vars for GC
 
 #include "gcpriv.h"
+#include "gchandletable.h"
 
 #ifndef DACCESS_COMPILE
 

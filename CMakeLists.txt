@@ -557,9 +557,9 @@ add_subdirectory(src/pal/prebuilt/inc)
 
 add_subdirectory(src/debug/debug-pal)
 
-if(WIN32)
-  add_subdirectory(src/gc/sample)
-endif()
+# if(WIN32)
+#   add_subdirectory(src/gc/sample)
+# endif()
 
 # Above projects do not build with these compile options
 # All of the compiler options are specified in file compileoptions.cmake

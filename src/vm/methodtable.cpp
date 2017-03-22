@@ -978,7 +978,7 @@ OBJECTREF MethodTable::GetObjCreateDelegate()
     _ASSERT(!IsInterface());
     if (GetOHDelegate())
     {
-        return GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(GetOHDelegate());
+        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(GetOHDelegate()));
     }
     else
     {

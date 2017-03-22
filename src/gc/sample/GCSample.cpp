@@ -129,12 +129,6 @@ int __cdecl main(int argc, char* argv[])
     g_pFreeObjectMethodTable = &freeObjectMT;
 
     //
-    // Initialize handle table
-    //
-    if (!Ref_Initialize())
-        return -1;
-
-    //
     // Initialize GC heap
     //
     GcDacVars dacVars;
@@ -146,6 +140,12 @@ int __cdecl main(int argc, char* argv[])
     }
 
     if (FAILED(pGCHeap->Initialize()))
+        return -1;
+
+    //
+    // Initialize handle table
+    //
+    if (!pGCHandleTable->Initialize())
         return -1;
 
     //

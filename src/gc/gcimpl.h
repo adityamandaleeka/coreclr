@@ -39,9 +39,6 @@ void GCProfileWalkHeap();
 class gc_heap;
 class CFinalize;
 
-////// should this include be somewhere else?
-#include "gchandletable.h"
-
 class GCHeap : public IGCHeapInternal
 {
 protected:
