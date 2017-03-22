@@ -76,6 +76,11 @@ void GCHandleTable::TraceRefCountedHandles(HANDLESCANPROC callback, uintptr_t lP
 #endif
 }
 
+uint32_t GCHandleTable::GetHandleTableAppDomainIndex(HHANDLETABLE hTable)
+{
+    return ::HndGetHandleTableADIndex(hTable).m_dwIndex;
+}
+
 Object* GCHandleTable::ObjectFromHandle(OBJECTHANDLE handle)
 {
     return OBJECTREFToObject(::HndFetchHandle(handle));
