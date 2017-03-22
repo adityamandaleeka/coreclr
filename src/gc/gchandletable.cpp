@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 // 
 
+#include "common.h"
 #include "gchandletable.h"
 #include "objecthandle.h"
 
@@ -22,17 +23,32 @@ void GCHandleTable::Shutdown()
 
 HandleTableBucket* GCHandleTable::CreateHandleTableBucket(uint32_t appDomainIndex)
 {
+#ifdef FEATURE_REDHAWK
+    assert(!"Should not call GCHandleTable::CreateHandleTableBucket with FEATURE_REDHAWK defined!");
+    return nullptr;
+#else
     return Ref_CreateHandleTableBucket(ADIndex(appDomainIndex));
+#endif
 }
 
 BOOL GCHandleTable::HandleAsyncPinHandles()
 {
+#ifdef FEATURE_REDHAWK
+    assert(!"Should not call GCHandleTable::HandleAsyncPinHandles with FEATURE_REDHAWK defined!");
+    return FALSE;
+#else
     return Ref_HandleAsyncPinHandles();
+#endif
 }
 
 void GCHandleTable::RelocateAsyncPinHandles(HandleTableBucket *pSource, HandleTableBucket *pTarget)
 {
+#ifdef FEATURE_REDHAWK
+    assert(!"Should not call GCHandleTable::RelocateAsyncPinHandles with FEATURE_REDHAWK defined!");
+    return;
+#else
     Ref_RelocateAsyncPinHandles(pSource, pTarget);
+#endif
 }
 
 void GCHandleTable::RemoveHandleTableBucket(HandleTableBucket *pBucket)
