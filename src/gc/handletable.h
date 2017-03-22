@@ -62,7 +62,7 @@ void            HndDestroyHandleTable(HHANDLETABLE hTable);
  */
 void            HndSetHandleTableIndex(HHANDLETABLE hTable, uint32_t uTableIndex);
 uint32_t        HndGetHandleTableIndex(HHANDLETABLE hTable);
-ADIndex         HndGetHandleTableADIndex(HHANDLETABLE hTable);    /////////// VM 
+ADIndex         HndGetHandleTableADIndex(HHANDLETABLE hTable);    /////////// VM. FIXED.
 ADIndex         HndGetHandleADIndex(OBJECTHANDLE handle);        /////////// DAC
 
 #ifndef DACCESS_COMPILE

@@ -435,7 +435,7 @@ public:
     ///// END REF STUFF
 
     //// Hnd Stuff
-    
+    virtual uint32_t GetHandleTableAppDomainIndex(HHANDLETABLE hTable) = 0;
     //// End Hnd Stuff
 
     // Returns whether or not the given size is a valid segment size.
