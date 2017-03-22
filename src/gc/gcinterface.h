@@ -527,6 +527,8 @@ public:
     //// returns a pointer that can be cast to IWeakReference*
     virtual void* GetWeakReferenceForWinRTWeakHandle(OBJECTHANDLE handle) = 0;
 
+    virtual void SetWeakReferenceForWinRTWeakHandle(OBJECTHANDLE handle, void* weakRef) = 0;
+
     virtual void SetSecondaryForDependentHandle(OBJECTHANDLE handle, Object* secondary) = 0;
 
     virtual void ResetObjectHandle(OBJECTHANDLE handle) = 0;

@@ -83,11 +83,11 @@ void            HndDestroyHandles(HHANDLETABLE hTable, uint32_t uType, const OBJ
 /*
  * owner data associated with handles
  */
-void            HndSetHandleExtraInfo(OBJECTHANDLE handle, uint32_t uType, uintptr_t lExtraInfo);   ///////////////VM
+void            HndSetHandleExtraInfo(OBJECTHANDLE handle, uint32_t uType, uintptr_t lExtraInfo);   ///////////////VM. FIXED.
 uintptr_t          HndCompareExchangeHandleExtraInfo(OBJECTHANDLE handle, uint32_t uType, uintptr_t lOldExtraInfo, uintptr_t lNewExtraInfo);
 #endif // !DACCESS_COMPILE
 
-uintptr_t          HndGetHandleExtraInfo(OBJECTHANDLE handle);   ////////DAC AND VM
+uintptr_t          HndGetHandleExtraInfo(OBJECTHANDLE handle);   ////////DAC AND VM. VM FIXED NOW.
 
 /*
  * get parent table of handle

@@ -314,6 +314,11 @@ void* GCHandleTable::GetWeakReferenceForWinRTWeakHandle(OBJECTHANDLE handle)
     return (void*)::HndGetHandleExtraInfo(handle);
 }
 
+void GCHandleTable::SetWeakReferenceForWinRTWeakHandle(OBJECTHANDLE handle, void* weakRef)
+{
+    ::HndSetHandleExtraInfo(handle, HNDTYPE_WEAK_WINRT, (uintptr_t)weakRef);
+}
+
 void GCHandleTable::ResetObjectHandle(OBJECTHANDLE handle)
 {
     ::HndAssignHandle(handle, NULL);

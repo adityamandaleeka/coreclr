@@ -115,6 +115,8 @@ public:
 
     virtual void* GetWeakReferenceForWinRTWeakHandle(OBJECTHANDLE handle);
 
+    virtual void SetWeakReferenceForWinRTWeakHandle(OBJECTHANDLE handle, void* weakRef);
+
     virtual void ResetObjectHandle(OBJECTHANDLE handle);
 
     virtual HandleTableBucket* GetFirstHandleTableBucketFromMap();

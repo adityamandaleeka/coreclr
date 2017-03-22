@@ -760,7 +760,9 @@ NOINLINE void SetWeakReferenceTarget(WEAKREFERENCEREF weakReference, OBJECTREF t
         // object type is, we can unconditionally store pTargetWeakReference to the object handle's extra data.
         void* weakRef = GCHeapUtilities::GetGCHandleTable()->GetWeakReferenceForWinRTWeakHandle(handle.Handle);
         IWeakReference* pExistingWeakReference = static_cast<IWeakReference*>(weakRef);
-        HndSetHandleExtraInfo(handle.Handle, HNDTYPE_WEAK_WINRT, reinterpret_cast<LPARAM>(pTargetWeakReference.GetValue()));
+
+        // HndSetHandleExtraInfo(handle.Handle, HNDTYPE_WEAK_WINRT, reinterpret_cast<LPARAM>(pTargetWeakReference.GetValue()));
+        pHandleTable->SetWeakReferenceForWinRTWeakHandle(handle.Handle, (void*)pTargetWeakReference.GetValue());
         pHandleTable->StoreObjectInHandle(handle.Handle, OBJECTREFToObject(target));
 
         if (pExistingWeakReference != nullptr)
