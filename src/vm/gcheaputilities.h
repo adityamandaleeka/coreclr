@@ -215,7 +215,6 @@ private:
 
 ///// THESE DON'T BELONG HERE. FIND A BETTER PLACE
 #define ObzjectFromHandle(handle)            ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(handle))
-// #define StzoreObjectInHandle(handle, object)  GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(handle, OBJECTREFToObject(object))
 
 void DestroyPinningHandle(OBJECTHANDLE handle);
 

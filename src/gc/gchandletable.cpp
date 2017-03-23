@@ -81,6 +81,11 @@ uint32_t GCHandleTable::GetHandleTableAppDomainIndex(HHANDLETABLE hTable)
     return ::HndGetHandleTableADIndex(hTable).m_dwIndex;
 }
 
+uint32_t GCHandleTable::GetHandleType(OBJECTHANDLE handle)
+{
+    return ::HandleFetchType(handle);
+}
+
 Object* GCHandleTable::ObjectFromHandle(OBJECTHANDLE handle)
 {
     return OBJECTREFToObject(::HndFetchHandle(handle));
@@ -136,12 +141,6 @@ int GCHandleTable::GetCurrentThreadHomeHeapNumber()
 {
     return GzetCurrentThreadHomeHeapNumber();
 }
-
-
-// OBJECTHANDLE GCHandleTable::CreateZZZHandle(HHANDLETABLE table, Object* object, uint32_t handleType)
-// {
-//     return ::HndCreateHandle(table, handleType, ObjectToOBJECTREF(object));
-// }
 
 OBJECTHANDLE GCHandleTable::CreateHandle(HHANDLETABLE table, Object* object)
 {

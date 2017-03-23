@@ -38,7 +38,7 @@ const LPVOID specialWeakReferenceHandles[3] = { 0, 0, 0 };
 //
 // Note that the bit is stolen only in the local copy of the object handle, held in the m_handle
 // field of the weak reference object.  The handle in the handle table itself does not have its
-// bottom bit stolen, and requires using HandleFetchType to determine what type it is.  The bit
+// bottom bit stolen, and requires using GetHandleType to determine what type it is.  The bit
 // is strictly a performance optimization for the weak reference implementation, and it is
 // responsible for setting up the bit as it needs and ensuring that it is cleared whenever an
 // object handle leaves the weak reference code, for instance to interact with the handle table
@@ -216,7 +216,7 @@ NOINLINE Object* LoadWinRTWeakReferenceTarget(WEAKREFERENCEREF weakReference, Ty
             }
             else if(IsWinRTWeakReferenceHandle(handle.RawHandle))
             {
-                _ASSERTE(HandleFetchType(handle.Handle) == HNDTYPE_WEAK_WINRT);
+                _ASSERTE(GCHeapUtilities::GetGCHandleTable()->GetHandleType(handle.Handle) == HNDTYPE_WEAK_WINRT);
 
                 // Retrieve the associated IWeakReference* for this weak reference.  Add a reference to it while we release
                 // the spin lock so that another thread doesn't release it out from underneath us.
@@ -509,7 +509,7 @@ void FinalizeWeakReference(Object * obj)
         handleToDestroy = GetHandleValue(handle);
 
         // Cache the old handle value
-        UINT handleType = HandleFetchType(handleToDestroy);
+        UINT handleType = GCHeapUtilities::GetGCHandleTable()->GetHandleType(handleToDestroy);
 #ifdef FEATURE_COMINTEROP
         _ASSERTE(handleType == HNDTYPE_WEAK_LONG || handleType == HNDTYPE_WEAK_SHORT || handleType == HNDTYPE_WEAK_WINRT);
         isWeakWinRTHandle = handleType == HNDTYPE_WEAK_WINRT;
@@ -937,7 +937,7 @@ FCIMPL1(FC_BOOL_RET, WeakReferenceNative::IsTrackResurrection, WeakReferenceObje
         }
         else
         {
-            trackResurrection = HandleFetchType(GetHandleValue(handle)) == HNDTYPE_WEAK_LONG;
+            trackResurrection = GCHeapUtilities::GetGCHandleTable()->GetHandleType(GetHandleValue(handle)) == HNDTYPE_WEAK_LONG;
         }
 
         ReleaseWeakHandleSpinLock(pThis, handle);
@@ -975,7 +975,7 @@ FCIMPL1(FC_BOOL_RET, WeakReferenceOfTNative::IsTrackResurrection, WeakReferenceO
         }
         else
         {
-            trackResurrection = HandleFetchType(GetHandleValue(handle)) == HNDTYPE_WEAK_LONG;
+            trackResurrection = GCHeapUtilities::GetGCHandleTable()->GetHandleType(GetHandleValue(handle)) == HNDTYPE_WEAK_LONG;
         }
 
         ReleaseWeakHandleSpinLock(pThis, handle);
