@@ -11,6 +11,7 @@
 #include "gc.h"
 #include "gcscan.h"
 #include "handletablepriv.h"
+#include "objecthandle.h"
 
 #ifdef SERVER_GC
 #undef SERVER_GC
