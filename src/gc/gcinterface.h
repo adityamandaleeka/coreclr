@@ -413,7 +413,6 @@ typedef void (* handle_scan_fn)(Object** pRef, Object* pSec, uint32_t flags, Sca
 class IGCHandleTable {
 public:
 
-    ///// REF STUFF
     virtual bool Initialize() = 0;
 
     virtual void Shutdown() = 0;
@@ -432,11 +431,10 @@ public:
     virtual BOOL ContainsHandle(HandleTableBucket *pBucket, OBJECTHANDLE handle) = 0;
 
     virtual void TraceRefCountedHandles(HANDLESCANPROC callback, uintptr_t lParam1, uintptr_t lParam2) = 0;
-    ///// END REF STUFF
 
-    //// Hnd Stuff
     virtual uint32_t GetHandleTableAppDomainIndex(HHANDLETABLE hTable) = 0;
-    //// End Hnd Stuff
+
+    virtual uint32_t GetHandleType(OBJECTHANDLE handle) = 0;
 
     // Returns whether or not the given size is a valid segment size.
     virtual Object* ObjectFromHandle(OBJECTHANDLE handle) = 0;

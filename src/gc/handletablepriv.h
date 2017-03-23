@@ -724,7 +724,7 @@ void HandleQuickSetUserData(OBJECTHANDLE handle, uintptr_t lUserData);
  * Computes the type index for a given handle.
  *
  */
-uint32_t HandleFetchType(OBJECTHANDLE handle);
+uint32_t HandleFetchType(OBJECTHANDLE handle); //////// VM 
 
 
 /*

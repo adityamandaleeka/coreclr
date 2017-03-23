@@ -30,6 +30,9 @@ public:
     virtual void TraceRefCountedHandles(HANDLESCANPROC callback, uintptr_t lParam1, uintptr_t lParam2);
 
     virtual uint32_t GetHandleTableAppDomainIndex(HHANDLETABLE hTable);
+
+    virtual uint32_t GetHandleType(OBJECTHANDLE handle);
+
     ////////////
     virtual Object* ObjectFromHandle(OBJECTHANDLE handle);
 

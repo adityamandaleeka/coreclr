@@ -660,11 +660,12 @@ FCIMPL1(VOID, MarshalNative::GCHandleInternalFree, OBJECTHANDLE handle)
     
     HELPER_METHOD_FRAME_BEGIN_0();
 
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+
 #ifdef MDA_SUPPORTED
-    UINT handleType = HandleFetchType(handle);
+    UINT handleType = pHandleTable->GetHandleType(handle);
 #endif
 
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
     pHandleTable->DestroyTypedHandle(handle);
 
 #ifdef MDA_SUPPORTED
@@ -783,7 +784,7 @@ FCIMPL1(INT32, MarshalNative::GCHandleInternalGetHandleType, OBJECTHANDLE handle
 {
     FCALL_CONTRACT;
 
-    return HandleFetchType(handle);
+    return GCHeapUtilities::GetGCHandleTable()->GetHandleType(handle);
 }
 FCIMPLEND
 

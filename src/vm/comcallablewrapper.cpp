@@ -2835,7 +2835,6 @@ ComCallWrapper* ComCallWrapper::CreateWrapper(OBJECTREF* ppObj, ComCallWrapperTe
                         // store the object in the handle - this must happen before we publish the CCW
                         // in the sync block, so that other threads don't see a CCW pointing to nothing
                         GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(oh, OBJECTREFToObject(pServer));
-                        // StzoreObjectInHandle( oh, pServer );
 
                         // finally, store the wrapper for the object in the sync block
                         pSyncBlock->GetInteropInfo()->SetCCW(pNewCCW);

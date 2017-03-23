@@ -254,7 +254,7 @@ BOOL STDMETHODCALLTYPE ExecuteEXE(__in LPWSTR pImageNameIn);
 
 #ifndef CROSSGEN_COMPILE
 static void InitializeGarbageCollector1();
-static void InitializeGarbageCollector2();
+// static void InitializeGarbageCollector2();
 
 #ifdef DEBUGGING_SUPPORTED
 static void InitializeDebugger(void);
@@ -583,6 +583,23 @@ void InitGSCookie()
     }
 }
 
+Volatile<BOOL> g_bIsGarbageCollectorFullyInitialized = FALSE;
+    
+void SetGarbageCollectorFullyInitialized()
+{
+    LIMITED_METHOD_CONTRACT;
+    
+    g_bIsGarbageCollectorFullyInitialized = TRUE;
+}
+
+// Tells whether the garbage collector is fully initialized
+// Stronger than IsGCHeapInitialized
+BOOL IsGarbageCollectorFullyInitialized()
+{
+    LIMITED_METHOD_CONTRACT;      
+
+    return g_bIsGarbageCollectorFullyInitialized;
+}
 
 // ---------------------------------------------------------------------------
 // %%Function: EEStartupHelper
@@ -846,21 +863,21 @@ void EEStartupHelper(COINITIEE fFlags)
 
 #ifndef CROSSGEN_COMPILE
 
+        //// remove the 1
         InitializeGarbageCollector1();
 
         // Initialize remoting
 
-        // weak_short, weak_long, strong; no pin
         if (!GCHeapUtilities::GetGCHandleTable()->Initialize())
+        {
             IfFailGo(E_OUTOFMEMORY);
+        }
 
         // Initialize contexts
         Context::Initialize();
 
         g_pEEShutDownEvent = new CLREvent();
         g_pEEShutDownEvent->CreateManualEvent(FALSE);
-
-
 
 #ifdef FEATURE_IPCMAN
         // Initialize CCLRSecurityAttributeManager
@@ -870,8 +887,6 @@ void EEStartupHelper(COINITIEE fFlags)
         VirtualCallStubManager::InitStatic();
 
         GCInterface::m_MemoryPressureLock.Init(CrstGCMemoryPressure);
-
-        // InitializeGarbageCollector1();
 
 #endif // CROSSGEN_COMPILE
 
@@ -891,6 +906,13 @@ void EEStartupHelper(COINITIEE fFlags)
         ExecutionManager::Init();
 
 #ifndef CROSSGEN_COMPILE
+
+        // This isn't done as part of InitializeGarbageCollector() above because thread
+        // creation requires AppDomains to have been set up.
+        FinalizerThread::FinalizerThreadCreate();
+
+        // Now we really have fully initialized the garbage collector
+        SetGarbageCollectorFullyInitialized();
 
 #ifndef FEATURE_PAL
         // Watson initialization must precede InitializeDebugger() and InstallUnhandledExceptionFilter() 
@@ -995,8 +1017,12 @@ void EEStartupHelper(COINITIEE fFlags)
         }
 #endif
 
-        // InitializeGarbageCollector();
-        InitializeGarbageCollector2();
+        // // This isn't done as part of InitializeGarbageCollector() above because thread
+        // // creation requires AppDomains to have been set up.
+        // FinalizerThread::FinalizerThreadCreate();
+
+        // // Now we really have fully initialized the garbage collector
+        // SetGarbageCollectorFullyInitialized();
 
         InitializePinHandleTable();
 
@@ -2408,28 +2434,6 @@ BOOL ExecuteDLL_ReturnOrThrow(HRESULT hr, BOOL fFromThunk)
     return SUCCEEDED(hr);
 }
 
-
-
-
-
-Volatile<BOOL> g_bIsGarbageCollectorFullyInitialized = FALSE;
-    
-void SetGarbageCollectorFullyInitialized()
-{
-    LIMITED_METHOD_CONTRACT;
-    
-    g_bIsGarbageCollectorFullyInitialized = TRUE;
-}
-
-// Tells whether the garbage collector is fully initialized
-// Stronger than IsGCHeapInitialized
-BOOL IsGarbageCollectorFullyInitialized()
-{
-    LIMITED_METHOD_CONTRACT;      
-
-    return g_bIsGarbageCollectorFullyInitialized;
-}
-
 //
 // Initialize the Garbage Collector
 //
@@ -2494,22 +2498,22 @@ void InitializeGarbageCollector1()
     // SetGarbageCollectorFullyInitialized();
 }
 
-void InitializeGarbageCollector2()
-{
-    CONTRACTL{
-        THROWS;
-        GC_TRIGGERS;
-        MODE_ANY;
-    } CONTRACTL_END;
+// void InitializeGarbageCollector2()
+// {
+//     CONTRACTL{
+//         THROWS;
+//         GC_TRIGGERS;
+//         MODE_ANY;
+//     } CONTRACTL_END;
 
-    HRESULT hr;
+//     HRESULT hr;
 
-    // Thread for running finalizers...
-    FinalizerThread::FinalizerThreadCreate();
+//     // Thread for running finalizers...
+//     FinalizerThread::FinalizerThreadCreate();
 
-    // Now we really have fully initialized the garbage collector
-    SetGarbageCollectorFullyInitialized();
-}
+//     // Now we really have fully initialized the garbage collector
+//     SetGarbageCollectorFullyInitialized();
+// }
 
 /*****************************************************************************/
 /* This is here only so that if we get an exception we stop before we catch it */
