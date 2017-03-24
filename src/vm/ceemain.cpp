@@ -253,7 +253,7 @@ BOOL STDMETHODCALLTYPE ExecuteEXE(HMODULE hMod);
 BOOL STDMETHODCALLTYPE ExecuteEXE(__in LPWSTR pImageNameIn);
 
 #ifndef CROSSGEN_COMPILE
-static void InitializeGarbageCollector1();
+static void InitializeGarbageCollector();
 // static void InitializeGarbageCollector2();
 
 #ifdef DEBUGGING_SUPPORTED
@@ -863,8 +863,7 @@ void EEStartupHelper(COINITIEE fFlags)
 
 #ifndef CROSSGEN_COMPILE
 
-        //// remove the 1
-        InitializeGarbageCollector1();
+        InitializeGarbageCollector();
 
         // Initialize remoting
 
@@ -2438,7 +2437,7 @@ BOOL ExecuteDLL_ReturnOrThrow(HRESULT hr, BOOL fFromThunk)
 // Initialize the Garbage Collector
 //
 
-void InitializeGarbageCollector1()
+void InitializeGarbageCollector()
 {
     CONTRACTL{
         THROWS;

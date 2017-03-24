@@ -109,9 +109,10 @@ extern "C" bool g_fFinalizerRunOnShutDown;
 extern "C" bool g_built_with_svr_gc;
 extern "C" uint8_t g_build_variant;
 
+::IGCHandleTable*  CreateGCHandleTable();
+
 namespace WKS {
     ::IGCHeapInternal* CreateGCHeap();
-    ::IGCHandleTable*  CreateGCHandleTable();
     class GCHeap;
     class gc_heap;
     }
@@ -119,7 +120,6 @@ namespace WKS {
 #if defined(FEATURE_SVR_GC)
 namespace SVR {
     ::IGCHeapInternal* CreateGCHeap();
-    ::IGCHandleTable*  CreateGCHandleTable();
     class GCHeap;
     class gc_heap;
 }
@@ -267,6 +267,7 @@ extern void FinalizeWeakReference(Object * obj);
 // The single GC heap instance, shared with the VM.
 extern IGCHeapInternal* g_theGCHeap;
 
+// The single GC handle table instance, shared with the VM.
 extern IGCHandleTable* g_theGCHandleTable;
 
 #ifndef DACCESS_COMPILE

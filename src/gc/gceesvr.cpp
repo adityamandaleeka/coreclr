@@ -12,15 +12,14 @@
 
 #include "gc.h"
 #include "gcscan.h"
-#include "handletablepriv.h"
-#include "objecthandle.h"
 
 #define SERVER_GC 1
+
+#include "gchandletable.h"
 
 namespace SVR { 
 #include "gcimpl.h"
 #include "gcee.cpp"
-#include "gchandletable.cpp"
 }
 
 #if defined(FEATURE_PAL) && !defined(DACCESS_COMPILE)

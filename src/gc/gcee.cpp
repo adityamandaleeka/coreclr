@@ -9,7 +9,6 @@
 // sets up vars for GC
 
 #include "gcpriv.h"
-#include "gchandletable.h"
 
 #ifndef DACCESS_COMPILE
 
@@ -582,10 +581,6 @@ void gc_heap::background_gc_wait_lh (alloc_wait_reason awr)
 /******************************************************************************/
 IGCHeapInternal* CreateGCHeap() {
     return new(nothrow) GCHeap();   // we return wks or svr 
-}
-
-IGCHandleTable* CreateGCHandleTable() {
-    return new(nothrow) GCHandleTable();
 }
 
 void GCHeap::DiagTraceGCSegments()

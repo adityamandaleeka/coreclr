@@ -10,16 +10,14 @@
 
 #include "gc.h"
 #include "gcscan.h"
-#include "handletablepriv.h"
-#include "objecthandle.h"
 
 #ifdef SERVER_GC
 #undef SERVER_GC
 #endif
+#include "gchandletable.h"
 
 namespace WKS { 
 #include "gcimpl.h"
 #include "gcee.cpp"
-#include "gchandletable.cpp"
 }
 

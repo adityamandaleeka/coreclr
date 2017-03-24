@@ -167,13 +167,14 @@ bool InitializeGarbageCollector(IGCToCLR* clrToGC, IGCHeap** gcHeap, IGCHandleTa
 {
     LIMITED_METHOD_CONTRACT;
 
-    IGCHandleTable* handleTable;
-
     IGCHeapInternal* heap;
 
     assert(gcDacVars != nullptr);
     assert(gcHeap != nullptr);
     assert(gcHandleTable != nullptr);
+
+    IGCHandleTable* handleTable = CreateGCHandleTable();
+
 #ifdef FEATURE_SVR_GC
     assert(IGCHeap::gcHeapType != IGCHeap::GC_HEAP_INVALID);
 
@@ -181,18 +182,15 @@ bool InitializeGarbageCollector(IGCToCLR* clrToGC, IGCHeap** gcHeap, IGCHandleTa
     {
         heap = SVR::CreateGCHeap();
         SVR::PopulateDacVars(gcDacVars);
-        handleTable = SVR::CreateGCHandleTable();
     }
     else
     {
         heap = WKS::CreateGCHeap();
         WKS::PopulateDacVars(gcDacVars);
-        handleTable = WKS::CreateGCHandleTable();
     }
 #else
     heap = WKS::CreateGCHeap();
     WKS::PopulateDacVars(gcDacVars);
-    handleTable = WKS::CreateGCHandleTable();
 #endif
 
     if (heap == nullptr)
