@@ -4,8 +4,8 @@
 // 
 
 #include "common.h"
-#include "gchandletable.h"
 #include "objecthandle.h"
+#include "gchandletable.h"
 #include "handletablepriv.h"
 
 #ifdef FEATURE_COMINTEROP
