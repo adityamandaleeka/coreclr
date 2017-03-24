@@ -16,6 +16,7 @@ set(SOURCES
     ../handletablecache.cpp
     ../handletablecore.cpp
     ../handletablescan.cpp
+    ../gchandletable.cpp
     ../objecthandle.cpp
     ../softwarewritewatch.cpp
 )
