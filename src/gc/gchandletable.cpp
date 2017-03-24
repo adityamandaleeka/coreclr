@@ -6,10 +6,15 @@
 #include "common.h"
 #include "gchandletable.h"
 #include "objecthandle.h"
+#include "handletablepriv.h"
 
 #ifdef FEATURE_COMINTEROP
 #include <weakreference.h>
 #endif
+
+IGCHandleTable* CreateGCHandleTable() {
+    return new(nothrow) GCHandleTable();
+}
 
 bool GCHandleTable::Initialize()
 {
