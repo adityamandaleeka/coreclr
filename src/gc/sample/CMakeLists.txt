@@ -8,6 +8,7 @@ include_directories(../env)
 set(SOURCES
     GCSample.cpp
     gcenv.ee.cpp
+    gchandletable_forsample.cpp
     ../gccommon.cpp
     ../gceewks.cpp
     ../gcscan.cpp
@@ -16,7 +17,6 @@ set(SOURCES
     ../handletablecache.cpp
     ../handletablecore.cpp
     ../handletablescan.cpp
-    ../gchandletable.cpp
     ../objecthandle.cpp
     ../softwarewritewatch.cpp
 )
