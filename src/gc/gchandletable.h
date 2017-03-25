@@ -2,10 +2,10 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
-#include "gcinterface.h"
-
 #ifndef GCHANDLETABLE_H_
 #define GCHANDLETABLE_H_
+
+#include "gcinterface.h"
 
 class GCHandleTable : public IGCHandleTable
 {
