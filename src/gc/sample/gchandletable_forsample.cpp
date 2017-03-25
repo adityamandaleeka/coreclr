@@ -3,11 +3,10 @@
 // See the LICENSE file in the project root for more information.
 // 
 
+// This file just includes the regular gchandletable.cpp file, but adds some
+// headers that are necessary for it to build in the GCSample project.
+
 #include "common.h"
-
-#include "windows.h"
-
 #include "gcenv.h"
-#include "gc.h"
 
 #include "gchandletable.cpp"
