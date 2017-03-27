@@ -857,7 +857,7 @@ CSharedMemoryObjectManager::ReferenceObjectByHandle(
         ppobj
         );
 
-    palError = m_HandleManager.GetObzjectFromHandle(
+    palError = m_HandleManager.GetObjectFromHandle(
         pthr,
         hHandleToReference,
         &dwRightsGranted,
@@ -949,7 +949,7 @@ CSharedMemoryObjectManager::ReferenceMultipleObjectsByHandleArray(
 
     for (dw = 0; dw < dwHandleCount; dw += 1)
     {        
-        palError = m_HandleManager.GetObzjectFromHandle(
+        palError = m_HandleManager.GetObjectFromHandle(
             pthr,
             rghHandlesToReference[dw],
             &dwRightsGranted,

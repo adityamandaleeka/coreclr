@@ -83,7 +83,7 @@ public:
 
     DWORD StringObjectGetStringLength(StringObject* so);
 
-    void* GetObzjectFromHandle(OBJECTHANDLE handle);
+    void* GetObjectFromHandle(OBJECTHANDLE handle);
 
     OBJECTHANDLE GetHandleFromObject(void *obj,
                               bool fStrongNewRef,

@@ -170,7 +170,7 @@ AllocateHandleExit:
 }
 
 PAL_ERROR
-CSimpleHandleManager::GetObzjectFromHandle(
+CSimpleHandleManager::GetObjectFromHandle(
     CPalThread *pThread,
     HANDLE h,
     DWORD *pdwRightsGranted,
@@ -186,7 +186,7 @@ CSimpleHandleManager::GetObzjectFromHandle(
     {
         ERROR("Tried to dereference an invalid handle %p\n", h);
         palError = ERROR_INVALID_HANDLE;
-        goto GetObzjectFromHandleExit;
+        goto GetObjectFromHandleExit;
     }
     
     hi = HandleToHandleIndex(h);
@@ -195,7 +195,7 @@ CSimpleHandleManager::GetObzjectFromHandle(
     *ppObject = m_rghteHandleTable[hi].u.pObject;
     (*ppObject)->AddReference();
     
-GetObzjectFromHandleExit:
+GetObjectFromHandleExit:
 
     Unlock(pThread);
 

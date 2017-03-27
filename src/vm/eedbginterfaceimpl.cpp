@@ -196,7 +196,7 @@ DWORD EEDbgInterfaceImpl::StringObjectGetStringLength(StringObject* so)
     return so->GetStringLength(); 
 }
 
-void* EEDbgInterfaceImpl::GetObzjectFromHandle(OBJECTHANDLE handle)
+void* EEDbgInterfaceImpl::GetObjectFromHandle(OBJECTHANDLE handle)
 {
     CONTRACTL
     {
