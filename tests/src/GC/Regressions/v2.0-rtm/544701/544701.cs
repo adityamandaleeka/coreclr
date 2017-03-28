@@ -38,7 +38,7 @@ internal class AllocBug
         }
 
         if (0 == ret)
-            ret = 100;
+            ret = 999; // force CI to show test output 
     }
 
     private void Allocate(int bytesToAlloc)
