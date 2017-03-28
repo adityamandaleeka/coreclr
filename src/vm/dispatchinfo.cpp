@@ -3399,7 +3399,8 @@ DispatchMemberInfo* DispatchExInfo::GetFirstMember()
     }
 
     // Now we need to make sure we skip any members that are deleted.
-    while ((*ppNextMemberInfo) && !ObzjectFromHandle((*ppNextMemberInfo)->m_hndMemberInfo))
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    while (*ppNextMemberInfo && !pHandleTable->ObjectFromHandle((*ppNextMemberInfo)->m_hndMemberInfo))
         ppNextMemberInfo = &((*ppNextMemberInfo)->m_pNext);
 
     RETURN *ppNextMemberInfo;
@@ -3439,7 +3440,8 @@ DispatchMemberInfo* DispatchExInfo::GetNextMember(DISPID CurrMemberDispID)
     }
 
     // Now we need to make sure we skip any members that are deleted.
-    while ((*ppNextMemberInfo) && !ObzjectFromHandle((*ppNextMemberInfo)->m_hndMemberInfo))
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+    while (*ppNextMemberInfo && !pHandleTable->ObjectFromHandle((*ppNextMemberInfo)->m_hndMemberInfo))
         ppNextMemberInfo = &((*ppNextMemberInfo)->m_pNext);
 
     RETURN *ppNextMemberInfo;

@@ -49,7 +49,7 @@
 #include "gcdesc.h"
 
 //////////// TEMPORARY REMOVE THIS
-#define ObzjectFromHandle(handle)            ObjectToOBJECTREF(g_theGCHandleTable->ObjectFromHandle(handle))
+// #define ObzjectFromHandle(handle)            ObjectToOBJECTREF(g_theGCHandleTable->ObjectFromHandle(handle))
 
 //
 // The fast paths for object allocation and write barriers is performance critical. They are often
@@ -210,24 +210,24 @@ int __cdecl main(int argc, char* argv[])
 
     for (int i = 0; i < 1000000; i++)
     {
-        Object * pBefore = ((My *)ObzjectFromHandle(oh))->m_pOther1;
+        Object * pBefore = ((My *)pGCHandleTable->ObjectFromHandle(oh))->m_pOther1;
 
         // Allocate more instances of the same object
         Object * p = AllocateObject(pMyMethodTable);
         if (p == NULL)
             return -1;
 
-        Object * pAfter = ((My *)ObzjectFromHandle(oh))->m_pOther1;
+        Object * pAfter = ((My *)pGCHandleTable->ObjectFromHandle(oh))->m_pOther1;
 
         // Uncomment this assert to see how GC triggered inside AllocateObject moved objects around
         // assert(pBefore == pAfter);
 
         // Store the newly allocated object into a field using WriteBarrier
-        WriteBarrier(&(((My *)ObzjectFromHandle(oh))->m_pOther1), p);
+        WriteBarrier(&(((My *)pGCHandleTable->ObjectFromHandle(oh))->m_pOther1), p);
     }
 
     // Create weak handle that points to our object
-    OBJECTHANDLE ohWeak = pGCHandleTable->CreateGlobalWeakHandle(ObzjectFromHandle(oh));
+    OBJECTHANDLE ohWeak = pGCHandleTable->CreateGlobalWeakHandle(pGCHandleTable->ObjectFromHandle(oh));
     if (ohWeak == NULL)
         return -1;
 
@@ -238,7 +238,7 @@ int __cdecl main(int argc, char* argv[])
     pGCHeap->GarbageCollect();
 
     // Verify that the weak handle got cleared by the GC
-    assert(ObzjectFromHandle(ohWeak) == NULL);
+    assert(pGCHandleTable->ObjectFromHandle(ohWeak) == NULL);
 
     printf("Done\n");
 

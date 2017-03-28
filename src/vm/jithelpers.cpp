@@ -2985,7 +2985,7 @@ HCIMPL2(Object *, JIT_StrCns, unsigned rid, CORINFO_MODULE_HANDLE scopeHnd)
     hndStr = ConstructStringLiteral(scopeHnd, RidToToken(rid, mdtString));
     HELPER_METHOD_FRAME_END();
 
-    // Don't use ObzjectFromHandle; this isn't a real handle
+    // Don't use ObjectFromHandle; this isn't a real handle
     return *(Object**)hndStr;
 }
 HCIMPLEND

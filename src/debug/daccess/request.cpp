@@ -3890,7 +3890,7 @@ HRESULT ClrDataAccess::GetClrWatsonBucketsWorker(Thread * pThread, GenericModeBl
     if (ohThrowable != NULL)
     {
         // Get the object from handle and check if the throwable is preallocated or not
-        OBJECTREF oThrowable = ObzjectFromHandle(ohThrowable);
+        OBJECTREF oThrowable = OBJECTREFToObject(::HndFetchHandle(ohThrowable));
         if (oThrowable != NULL)
         {
             // Does the throwable have buckets?
@@ -4184,7 +4184,7 @@ HRESULT ClrDataAccess::GetCCWData(CLRDATA_ADDRESS ccw, struct DacpCCWData *ccwDa
     ccwData->isAggregated = pCCW->GetSimpleWrapper()->IsAggregated();
 
     if (pCCW->GetObjectHandle() != NULL)
-        ccwData->managedObject = PTR_CDADDR(ObzjectFromHandle(pCCW->GetObjectHandle()));
+        ccwData->managedObject = PTR_CDADDR(OBJECTREFToObject(::HndFetchHandle(pCCW->GetObjectHandle())));
 
     // count the number of COM vtables
     ccwData->interfaceCount = 0;
