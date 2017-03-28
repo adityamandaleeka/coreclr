@@ -100,7 +100,7 @@ OBJECTREF CLRException::GetThrowable()
     OBJECTHANDLE oh = GetThrowableHandle();
     if (oh != NULL)
     {
-        return ObzjectFromHandle(oh);
+        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(oh));
     }
    
     Exception *pLastException = pThread->m_pCreatingThrowableForException;
@@ -466,28 +466,28 @@ OBJECTREF CLRException::GetPreallocatedBaseException()
 {
     WRAPPER_NO_CONTRACT;
     _ASSERTE(g_pPreallocatedBaseException != NULL);
-    return ObzjectFromHandle(g_pPreallocatedBaseException);
+    return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedBaseException));
 }
 
 OBJECTREF CLRException::GetPreallocatedOutOfMemoryException()
 {
     WRAPPER_NO_CONTRACT;
     _ASSERTE(g_pPreallocatedOutOfMemoryException != NULL);
-    return ObzjectFromHandle(g_pPreallocatedOutOfMemoryException);
+    return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedOutOfMemoryException));
 }
 
 OBJECTREF CLRException::GetPreallocatedStackOverflowException()
 {
     WRAPPER_NO_CONTRACT;
     _ASSERTE(g_pPreallocatedStackOverflowException != NULL);
-    return ObzjectFromHandle(g_pPreallocatedStackOverflowException);
+    return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedStackOverflowException));
 }
 
 OBJECTREF CLRException::GetPreallocatedExecutionEngineException()
 {
     WRAPPER_NO_CONTRACT;
     _ASSERTE(g_pPreallocatedExecutionEngineException != NULL);
-    return ObzjectFromHandle(g_pPreallocatedExecutionEngineException);
+    return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedExecutionEngineException));
 }
 
 OBJECTREF CLRException::GetPreallocatedRudeThreadAbortException()
@@ -496,14 +496,14 @@ OBJECTREF CLRException::GetPreallocatedRudeThreadAbortException()
     // When we are hosted, we pre-create this exception.
     // This function should be called only if the exception has been created.
     _ASSERTE(g_pPreallocatedRudeThreadAbortException);
-    return ObzjectFromHandle(g_pPreallocatedRudeThreadAbortException);
+    return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedRudeThreadAbortException));
 }
 
 OBJECTREF CLRException::GetPreallocatedThreadAbortException()
 {
     WRAPPER_NO_CONTRACT;
     _ASSERTE(g_pPreallocatedThreadAbortException);
-    return ObzjectFromHandle(g_pPreallocatedThreadAbortException);
+    return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedThreadAbortException));
 }
 
 OBJECTHANDLE CLRException::GetPreallocatedOutOfMemoryExceptionHandle()
@@ -556,24 +556,24 @@ BOOL CLRException::IsPreallocatedExceptionObject(OBJECTREF o)
     }
     CONTRACTL_END;
 
-    if ((o == ObzjectFromHandle(g_pPreallocatedBaseException)) ||
-        (o == ObzjectFromHandle(g_pPreallocatedOutOfMemoryException)) ||
-        (o == ObzjectFromHandle(g_pPreallocatedStackOverflowException)) ||
-        (o == ObzjectFromHandle(g_pPreallocatedExecutionEngineException)))
+    if ((o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedBaseException))) ||
+        (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedOutOfMemoryException))) ||
+        (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedStackOverflowException))) ||
+        (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedExecutionEngineException))))
     {
         return TRUE;
     }
 
     // The preallocated rude thread abort exception is not always preallocated.
     if ((g_pPreallocatedRudeThreadAbortException != NULL) &&
-        (o == ObzjectFromHandle(g_pPreallocatedRudeThreadAbortException)))
+        (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedRudeThreadAbortException))))
     {
         return TRUE;
     }
 
     // The preallocated rude thread abort exception is not always preallocated.
     if ((g_pPreallocatedThreadAbortException != NULL) &&
-        (o == ObzjectFromHandle(g_pPreallocatedThreadAbortException)))
+        (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedThreadAbortException))))
     {
         return TRUE;
     }
@@ -631,30 +631,30 @@ OBJECTHANDLE CLRException::GetPreallocatedHandleForObject(OBJECTREF o)
     }
     CONTRACTL_END;
     
-    if (o == ObzjectFromHandle(g_pPreallocatedBaseException))
+    if (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedBaseException)))
     {
         return g_pPreallocatedBaseException;    		
     }
-    else if (o == ObzjectFromHandle(g_pPreallocatedOutOfMemoryException))
+    else if (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedOutOfMemoryException)))
     {
         return g_pPreallocatedOutOfMemoryException;
     }
-    else if (o == ObzjectFromHandle(g_pPreallocatedStackOverflowException))
+    else if (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedStackOverflowException)))
     {
         return g_pPreallocatedStackOverflowException;
     }
-    else if (o == ObzjectFromHandle(g_pPreallocatedExecutionEngineException))
+    else if (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedExecutionEngineException)))
     {
         return g_pPreallocatedExecutionEngineException;
     }
-    else if (o == ObzjectFromHandle(g_pPreallocatedThreadAbortException))
+    else if (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedThreadAbortException)))
     {
         return g_pPreallocatedThreadAbortException;
     }
 
     // The preallocated rude thread abort exception is not always preallocated.
     if ((g_pPreallocatedRudeThreadAbortException != NULL) &&
-        (o == ObzjectFromHandle(g_pPreallocatedRudeThreadAbortException)))
+        (o == ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedRudeThreadAbortException))))
     {
         return g_pPreallocatedRudeThreadAbortException;
     }

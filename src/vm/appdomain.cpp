@@ -282,7 +282,7 @@ OBJECTREF *LargeHeapHandleBucket::AllocateHandles(DWORD nRequested)
     CONTRACTL_END;
 
     _ASSERTE(nRequested > 0 && nRequested <= GetNumRemainingHandles());
-    _ASSERTE(m_pArrayDataPtr == (OBJECTREF*)((PTRARRAYREF)ObzjectFromHandle(m_hndHandleArray))->GetDataPtr());
+    _ASSERTE(m_pArrayDataPtr == (OBJECTREF*)((PTRARRAYREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hndHandleArray)))->GetDataPtr());
 
     // Store the handles in the buffer that was passed in
     OBJECTREF* ret = &m_pArrayDataPtr[m_CurrentPos];
@@ -302,7 +302,7 @@ OBJECTREF *LargeHeapHandleBucket::TryAllocateEmbeddedFreeHandle()
     }
     CONTRACTL_END;
 
-    OBJECTREF pPreallocatedSentinalObject = ObzjectFromHandle(g_pPreallocatedSentinelObject);
+    OBJECTREF pPreallocatedSentinalObject = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedSentinelObject));
     _ASSERTE(pPreallocatedSentinalObject  != NULL);
 
     for (int  i = m_CurrentEmbeddedFreePos; i < m_CurrentPos; i++)
@@ -577,7 +577,7 @@ void LargeHeapHandleTable::ReleaseHandles(OBJECTREF *pObjRef, DWORD nReleased)
     _ASSERTE(m_pCrstDebug->OwnedByCurrentThread());
 #endif
 
-    OBJECTREF pPreallocatedSentinalObject = ObzjectFromHandle(g_pPreallocatedSentinelObject);
+    OBJECTREF pPreallocatedSentinalObject = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(g_pPreallocatedSentinelObject));
     _ASSERTE(pPreallocatedSentinalObject  != NULL);
 
 
@@ -1799,7 +1799,7 @@ OBJECTREF AppDomain::LookupWinRTFactoryObject(MethodTable *pClassMT, LPVOID lpCt
     // and take the RCW with it. Therefore we have to save cookie in this cache    
     //
     if (pEntry->m_pCtxEntry == NULL || pEntry->m_pCtxEntry->GetCtxCookie() == lpCtxCookie)
-        return ObzjectFromHandle(pEntry->m_ohFactoryObject);
+        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(pEntry->m_ohFactoryObject));
     
     return NULL;
 }
@@ -1887,7 +1887,7 @@ OBJECTREF AppDomain::GetMissingObject()
         }
     }
 
-    return ObzjectFromHandle(m_hndMissing);
+    return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hndMissing));
 }
 
 #endif // DACCESS_COMPILE
@@ -6362,7 +6362,7 @@ void AppDomain::SetupSharedStatics()
 
     OBJECTREF* pHandle = (OBJECTREF*)
         ((TADDR)pLocalModule->GetPrecomputedGCStaticsBasePointer()+pFD->GetOffset());
-    SetObjectReference( pHandle, ObzjectFromHandle(hSharedStaticsHandle), this );
+    SetObjectReference( pHandle, ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(hSharedStaticsHandle)), this );
 
     // This is a convenient place to initialize String.Empty.
     // It is treated as intrinsic by the JIT as so the static constructor would never run.

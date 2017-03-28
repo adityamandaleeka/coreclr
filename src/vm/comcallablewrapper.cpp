@@ -911,7 +911,7 @@ HRESULT WeakReferenceImpl::ResolveInternal(Thread *pThread, REFIID riid, IInspec
         
         OBJECTREF refTarget = NULL;
         GCPROTECT_BEGIN_THREAD(pThread, refTarget);
-        refTarget = ObzjectFromHandle(m_ppObject);
+        refTarget = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_ppObject));
         if (refTarget != NULL)
         {
             //
@@ -986,7 +986,7 @@ void SimpleComCallWrapper::BuildRefCountLogMessage(LPCWSTR wszOperation, StackSS
             OBJECTHANDLE handle = GetMainWrapper()->GetRawObjectHandle();
             Object* obj = NULL;
             if (handle != NULL)
-                obj = OBJECTREFToObject(ObzjectFromHandle(handle));
+                obj = GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(handle);
 
             if (ETW_EVENT_ENABLED(MICROSOFT_WINDOWS_DOTNETRUNTIME_PRIVATE_PROVIDER_Context, CCWRefCountChange)) 
                 FireEtwCCWRefCountChange(handle, obj, this, dwEstimatedRefCount, (LONGLONG) ad.GetAddress(),

@@ -1433,7 +1433,7 @@ FCIMPL1( void, Log::AddLogSwitch,
         OBJECTHANDLE ObjHandle = pThread->GetDomain()->CreateStrongHandle(NULL);
 
         GCHeapUtilities::GetGCHandleTable()->StoreObjectInHandle(ObjHandle, OBJECTREFToObject(ObjectToOBJECTREF(gc.m_LogSwitch))); /////////// roundtrip to objectref???
-        // Use ObzjectFromHandle(ObjHandle) to get back the object. 
+        // Use ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(ObjHandle)) to get back the object. 
         
         hresult = g_sLogHashTable.AddEntryToHashTable(pstrCategoryName, ObjHandle);
 

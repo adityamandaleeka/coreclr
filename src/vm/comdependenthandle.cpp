@@ -60,7 +60,7 @@ FCIMPL2(VOID, DependentHandle::nGetPrimary, OBJECTHANDLE handle, Object **outPri
 {
     FCALL_CONTRACT;
     _ASSERTE(handle != NULL && outPrimary != NULL);
-    *outPrimary = OBJECTREFToObject(ObzjectFromHandle(handle));
+    *outPrimary = GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(handle);
 }
 FCIMPLEND
 

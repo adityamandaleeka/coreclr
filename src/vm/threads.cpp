@@ -455,7 +455,7 @@ BOOL Thread::SetThreadPriority(
     if (fRet)
     {
         GCX_COOP();
-        THREADBASEREF pObject = (THREADBASEREF)ObzjectFromHandle(m_ExposedObject);
+        THREADBASEREF pObject = (THREADBASEREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_ExposedObject));
         if (pObject != NULL)
         {
             // TODO: managed ThreadPriority only supports up to 4.
@@ -4794,7 +4794,7 @@ OBJECTREF Thread::GetExposedObject()
 
     _ASSERTE(pCurThread->PreemptiveGCDisabled());
 
-    if (ObzjectFromHandle(m_ExposedObject) == NULL)
+    if (ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_ExposedObject)) == NULL)
     {
         // Allocate the exposed thread object.
         THREADBASEREF attempt = (THREADBASEREF) AllocateObject(g_pThreadClass);
@@ -4853,7 +4853,7 @@ OBJECTREF Thread::GetExposedObject()
 
         GCPROTECT_END();
     }
-    return ObzjectFromHandle(m_ExposedObject);
+    return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_ExposedObject));
 }
 
 
@@ -4873,7 +4873,7 @@ void Thread::SetExposedObject(OBJECTREF exposed)
     {
         _ASSERTE (GetThread() != this);
         _ASSERTE(IsUnstarted());
-        _ASSERTE(ObzjectFromHandle(m_ExposedObject) == NULL);
+        _ASSERTE(ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_ExposedObject)) == NULL);
         // The exposed object keeps us alive until it is GC'ed.  This doesn't mean the
         // physical thread continues to run, of course.
         pHandleTable->StoreObjectInHandle(m_ExposedObject, OBJECTREFToObject(exposed));
@@ -10469,7 +10469,7 @@ INT32 Thread::ResetManagedThreadObjectInCoopMode(INT32 nPriority)
     }
     CONTRACTL_END;
 
-    THREADBASEREF pObject = (THREADBASEREF)ObzjectFromHandle(m_ExposedObject);
+    THREADBASEREF pObject = (THREADBASEREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_ExposedObject));
     if (pObject != NULL)
     {
         pObject->ResetCulture();
@@ -10519,7 +10519,7 @@ BOOL Thread::IsRealThreadPoolResetNeeded()
     if(!IsBackground())
         return TRUE;
 
-    THREADBASEREF pObject = (THREADBASEREF)ObzjectFromHandle(m_ExposedObject);
+    THREADBASEREF pObject = (THREADBASEREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_ExposedObject));
 
     if(pObject != NULL)
     {

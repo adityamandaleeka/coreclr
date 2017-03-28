@@ -657,7 +657,7 @@ LOADERHANDLE LoaderAllocator::AllocateHandle_Unlocked(OBJECTREF valueUNSAFE)
         // The handle table is read locklessly, be careful
         if (IsCollectible())
         {
-            gc.loaderAllocator = (LOADERALLOCATORREF)ObzjectFromHandle(m_hLoaderAllocatorObjectHandle);
+            gc.loaderAllocator = (LOADERALLOCATORREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hLoaderAllocatorObjectHandle));
             if (gc.loaderAllocator == NULL)
             {   // The managed LoaderAllocator is already collected, we cannot allocate any exposed managed objects for it
                 retVal = NULL;
@@ -777,7 +777,7 @@ OBJECTREF LoaderAllocator::CompareExchangeValueInHandle(LOADERHANDLE handle, OBJ
             _ASSERTE(!GCHeapUtilities::GetGCHandleTable()->ObjectHandleIsNull(m_hLoaderAllocatorObjectHandle));
 
             UINT_PTR index = (((UINT_PTR)handle) >> 1) - 1;
-            LOADERALLOCATORREF loaderAllocator = (LOADERALLOCATORREF)ObzjectFromHandle(m_hLoaderAllocatorObjectHandle);
+            LOADERALLOCATORREF loaderAllocator = (LOADERALLOCATORREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hLoaderAllocatorObjectHandle));
             PTRARRAYREF handleTable = loaderAllocator->GetHandleTable();
 
             gc.previous = handleTable->GetAt(index);
@@ -823,7 +823,7 @@ void LoaderAllocator::SetHandleValue(LOADERHANDLE handle, OBJECTREF value)
             _ASSERTE(!GCHeapUtilities::GetGCHandleTable()->ObjectHandleIsNull(m_hLoaderAllocatorObjectHandle));
 
             UINT_PTR index = (((UINT_PTR)handle) >> 1) - 1;
-            LOADERALLOCATORREF loaderAllocator = (LOADERALLOCATORREF)ObzjectFromHandle(m_hLoaderAllocatorObjectHandle);
+            LOADERALLOCATORREF loaderAllocator = (LOADERALLOCATORREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hLoaderAllocatorObjectHandle));
             PTRARRAYREF handleTable = loaderAllocator->GetHandleTable();
             handleTable->SetAt(index, value);
         }
@@ -881,7 +881,7 @@ void LoaderAllocator::ActivateManagedTracking()
     _ASSERTE(m_cReferences == (UINT32)-1);
     m_cReferences = (UINT32)1;
 
-    LOADERALLOCATORREF loaderAllocator = (LOADERALLOCATORREF)ObzjectFromHandle(m_hLoaderAllocatorObjectHandle);
+    LOADERALLOCATORREF loaderAllocator = (LOADERALLOCATORREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hLoaderAllocatorObjectHandle));
     loaderAllocator->SetNativeLoaderAllocator(this);
 }
 #endif // !CROSSGEN_COMPILE

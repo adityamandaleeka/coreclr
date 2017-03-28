@@ -1257,10 +1257,10 @@ void EEPolicy::LogFatalError(UINT exitCode, UINT_PTR address, LPCWSTR pszMessage
 
                 if (exitCode == static_cast<UINT>(COR_E_FAILFAST) && lto != NULL)
                 {
-                    EXCEPTIONREF curEx = (EXCEPTIONREF)ObzjectFromHandle(ohException);
+                    EXCEPTIONREF curEx = (EXCEPTIONREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(ohException));
                     curEx->SetInnerException(lto);
                 }
-                pThread->SetLastThrownObject(ObzjectFromHandle(ohException), TRUE);
+                pThread->SetLastThrownObject(ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(ohException)), TRUE);
             }
 
             // If a managed debugger is already attached, and if that debugger is thinking it might be inclined to
@@ -1329,7 +1329,7 @@ void DECLSPEC_NORETURN EEPolicy::HandleFatalStackOverflow(EXCEPTION_POINTERS *pE
             OBJECTHANDLE ohSO = CLRException::GetPreallocatedStackOverflowExceptionHandle();
             if (ohSO != NULL)
             {
-                pThread->SafeSetThrowables(ObzjectFromHandle(ohSO) 
+                pThread->SafeSetThrowables(ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(ohSO)) 
                                            DEBUG_ARG(ThreadExceptionState::STEC_CurrentTrackerEqualNullOkHackForFatalStackOverflow),
                                            TRUE);
             }

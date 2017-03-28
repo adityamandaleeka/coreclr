@@ -2297,7 +2297,7 @@ void StackTraceInfo::SaveStackTrace(BOOL bAllowAllocMem, OBJECTHANDLE hThrowable
     _ASSERTE(! bSkipLastElement || ! bReplaceStack);
 
     bool         fSuccess = false;
-    MethodTable* pMT      = ObzjectFromHandle(hThrowable)->GetTrueMethodTable();
+    MethodTable* pMT      = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(hThrowable))->GetTrueMethodTable();
 
     // Check if the flag indicating foreign exception raise has been setup or not,
     // and then reset it so that subsequent processing of managed frames proceeds
@@ -2370,7 +2370,7 @@ void StackTraceInfo::SaveStackTrace(BOOL bAllowAllocMem, OBJECTHANDLE hThrowable
                 if (fRaisingForeignException)
                 {
                     // Get the reference to stack trace and reset our flag if applicable.
-                    ((EXCEPTIONREF)ObzjectFromHandle(hThrowable))->GetStackTrace(gc.stackTraceTemp);
+                    ((EXCEPTIONREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(hThrowable)))->GetStackTrace(gc.stackTraceTemp);
                     if (gc.stackTraceTemp.Size() == 0)
                     {
                         fRaisingForeignException = FALSE;
@@ -2412,7 +2412,7 @@ void StackTraceInfo::SaveStackTrace(BOOL bAllowAllocMem, OBJECTHANDLE hThrowable
                 else
                 {
                     // Fetch the stacktrace and the dynamic method array
-                    ((EXCEPTIONREF)ObzjectFromHandle(hThrowable))->GetStackTrace(gc.stackTrace, &gc.pOrigDynamicArray);
+                    ((EXCEPTIONREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(hThrowable)))->GetStackTrace(gc.stackTrace, &gc.pOrigDynamicArray);
 
                     if (fRaisingForeignException)
                     {
@@ -2602,10 +2602,10 @@ void StackTraceInfo::SaveStackTrace(BOOL bAllowAllocMem, OBJECTHANDLE hThrowable
                     }
                 }
 
-                ((EXCEPTIONREF)ObzjectFromHandle(hThrowable))->SetStackTrace(gc.stackTrace, gc.dynamicMethodsArray);
+                ((EXCEPTIONREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(hThrowable)))->SetStackTrace(gc.stackTrace, gc.dynamicMethodsArray);
                 
                 // Update _stackTraceString field.
-                ((EXCEPTIONREF)ObzjectFromHandle(hThrowable))->SetStackTraceString(NULL);
+                ((EXCEPTIONREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(hThrowable)))->SetStackTraceString(NULL);
                 fSuccess = true;
 
                 GCPROTECT_END();    // gc
@@ -2625,7 +2625,7 @@ void StackTraceInfo::SaveStackTrace(BOOL bAllowAllocMem, OBJECTHANDLE hThrowable
         {
             _ASSERTE(IsException(pMT));         // what is the pathway here?
             if (bReplaceStack && IsException(pMT))
-                ((EXCEPTIONREF)ObzjectFromHandle(hThrowable))->ClearStackTraceForThrow();
+                ((EXCEPTIONREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(hThrowable)))->ClearStackTraceForThrow();
         }
         EX_CATCH
         {
@@ -10813,7 +10813,7 @@ void SetStateForWatsonBucketing(BOOL fIsRethrownException, OBJECTHANDLE ohOrigin
             //
             // We cannot assert for Watson buckets since the original throwable may not have got them in
             // SetupInitialThrowBucketDetails due to OOM
-            _ASSERTE((NULL != ohOriginalException) && (ObzjectFromHandle(ohOriginalException) == gc.oCurrentThrowable));
+            _ASSERTE((NULL != ohOriginalException) && (ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(ohOriginalException)) == gc.oCurrentThrowable));
             if ((((EXCEPTIONREF)gc.oCurrentThrowable)->AreWatsonBucketsPresent() == FALSE) &&
                 (((EXCEPTIONREF)gc.oCurrentThrowable)->IsIPForWatsonBucketsPresent() == FALSE))
             {

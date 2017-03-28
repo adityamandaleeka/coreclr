@@ -260,7 +260,7 @@ LPVOID MngStdItfBase::ForwardCallToManagedView(
 
                     // Prepare the arguments that will be passed to GetInstance.
                     ARG_SLOT MarshalNativeToManagedArgs[] = {
-                        ObjToArgSlot(ObzjectFromHandle(hndMarshaler)),
+                        ObjToArgSlot(ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(hndMarshaler))),
                         (ARG_SLOT)pNativeItf
                     };
 
