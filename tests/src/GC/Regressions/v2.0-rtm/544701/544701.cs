@@ -3,6 +3,8 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Diagnostics;
+
 internal class AllocBug
 {
     public int ret = 0;
@@ -14,8 +16,16 @@ internal class AllocBug
     {
         AllocBug ab = new AllocBug();
 
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
+
         ab.RunTest(41938869, 41943020);
+
+        sw.Stop();
+        Console.WriteLine("Elapsed={0}",sw.Elapsed);
+        
         Console.WriteLine(100 == ab.ret ? "Test Passed" : "Test Failed");
+
         return ab.ret;
     }
     private void RunTest(int start, int stop)
