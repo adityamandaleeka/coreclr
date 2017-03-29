@@ -123,7 +123,7 @@
     the less priority we give them.
    -->
   <PropertyGroup>
-    <CLRTestPriorityToBuild>0</CLRTestPriorityToBuild>
+    <CLRTestPriorityToBuild>-1</CLRTestPriorityToBuild>
   </PropertyGroup>
   
 </Project>
