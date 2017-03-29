@@ -22,7 +22,7 @@ internal class AllocBug
         ab.RunTest(41938869, 41943020);
 
         sw.Stop();
-        Console.WriteLine("Elapsed={0}",sw.Elapsed);
+        Console.WriteLine("Elapsed={0}", sw.Elapsed);
         
         Console.WriteLine(100 == ab.ret ? "Test Passed" : "Test Failed");
 
@@ -45,13 +45,8 @@ internal class AllocBug
     {
         try
         {
-            // Console.Write("Allocating ");
-            Console.Write(bytesToAlloc);
-            // Console.Write(" bytes... ");
-
+            Console.WriteLine(bytesToAlloc +" bytes");
             byte[] buffer = new byte[bytesToAlloc];
-
-            // Console.WriteLine("Passed");
         }
         catch (Exception)
         {
