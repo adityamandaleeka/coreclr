@@ -45,13 +45,13 @@ internal class AllocBug
     {
         try
         {
-            Console.Write("Allocating ");
+            // Console.Write("Allocating ");
             Console.Write(bytesToAlloc);
-            Console.Write(" bytes... ");
+            // Console.Write(" bytes... ");
 
             byte[] buffer = new byte[bytesToAlloc];
 
-            Console.WriteLine("Passed");
+            // Console.WriteLine("Passed");
         }
         catch (Exception)
         {
