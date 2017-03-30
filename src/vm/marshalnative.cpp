@@ -682,7 +682,7 @@ FCIMPL1(LPVOID, MarshalNative::GCHandleInternalGet, OBJECTHANDLE handle)
 
     OBJECTREF objRef;
 
-    objRef = ObjectFromHandle(handle);
+    objRef = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(handle));
 
     return *((LPVOID*)&objRef);
 }
@@ -736,7 +736,7 @@ FCIMPL1(LPVOID, MarshalNative::GCHandleInternalAddrOfPinnedObject, OBJECTHANDLE 
     FCALL_CONTRACT;
 
     LPVOID p;
-    OBJECTREF objRef = ObjectFromHandle(handle);
+    OBJECTREF objRef = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(handle));
 
     if (objRef == NULL)
     {

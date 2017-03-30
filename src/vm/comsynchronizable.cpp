@@ -202,8 +202,10 @@ void ThreadNative::KickOffThread_Worker(LPVOID ptr)
     }
     CONTRACTL_END;
 
+    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+
     KickOffThread_Args *args = (KickOffThread_Args *) ptr;
-    _ASSERTE(ObjectFromHandle(args->share->m_Threadable) != NULL);
+    _ASSERTE(ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(args->share->m_Threadable)) != NULL);
     args->retVal = 0;
 
     // we are saving the delagate and result primarily for debugging
@@ -222,8 +224,8 @@ void ThreadNative::KickOffThread_Worker(LPVOID ptr)
     GCPROTECT_BEGIN(gc);
     BEGIN_SO_INTOLERANT_CODE(pThread);
 
-    gc.orDelegate = ObjectFromHandle(args->share->m_Threadable);
-    gc.orThreadStartArg = ObjectFromHandle(args->share->m_ThreadStartArg);
+    gc.orDelegate = ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(args->share->m_Threadable));
+    gc.orThreadStartArg = ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(args->share->m_ThreadStartArg));
 
     // We cannot call the Delegate Invoke method directly from ECall.  The
     //  stub has not been created for non multicast delegates.  Instead, we

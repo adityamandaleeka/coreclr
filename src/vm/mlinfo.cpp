@@ -4312,7 +4312,7 @@ VOID MarshalInfo::MarshalTypeToString(SString& strMarshalType, BOOL fSizeIsSpeci
         
         OBJECTHANDLE objHandle = m_pCMHelper->GetCustomMarshalerInfo()->GetCustomMarshaler();
         {
-            OBJECTREF pObjRef = ObjectFromHandle(objHandle);
+            OBJECTREF pObjRef = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(objHandle));
             DefineFullyQualifiedNameForClassW();
 
             strMarshalType.Printf(W("custom marshaler (%s)"),

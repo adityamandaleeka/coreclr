@@ -851,7 +851,7 @@ struct RCW
                 if (fIsEnumerable)
                 {
                     if (VARIANCE_STUB_TARGET_IS_HANDLE(m_pAuxiliaryData->m_ohObjectVariantCallTarget_IEnumerable))
-                        return ObjectFromHandle(m_pAuxiliaryData->m_ohObjectVariantCallTarget_IEnumerable);
+                        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_pAuxiliaryData->m_ohObjectVariantCallTarget_IEnumerable));
 
                     if (m_pAuxiliaryData->m_ohObjectVariantCallTarget_IEnumerable == VARIANCE_STUB_TARGET_USE_STRING)
                         *pfUseString = TRUE;
@@ -861,7 +861,7 @@ struct RCW
                 else
                 {
                     if (VARIANCE_STUB_TARGET_IS_HANDLE(m_pAuxiliaryData->m_ohObjectVariantCallTarget_IReadOnlyList))
-                        return ObjectFromHandle(m_pAuxiliaryData->m_ohObjectVariantCallTarget_IReadOnlyList);
+                        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_pAuxiliaryData->m_ohObjectVariantCallTarget_IReadOnlyList));
 
                     if (m_pAuxiliaryData->m_ohObjectVariantCallTarget_IReadOnlyList == VARIANCE_STUB_TARGET_USE_STRING)
                         *pfUseString = TRUE;

@@ -22,3 +22,8 @@ void GCHandleTable::Shutdown()
 {
     Ref_Shutdown();
 }
+
+Object* GCHandleTable::ObjectFromHandle(OBJECTHANDLE handle)
+{
+    return OBJECTREFToObject(::HndFetchHandle(handle));
+}

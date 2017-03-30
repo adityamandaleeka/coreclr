@@ -391,6 +391,8 @@ public:
     virtual bool Initialize() = 0;
 
     virtual void Shutdown() = 0;
+
+    virtual Object* ObjectFromHandle(OBJECTHANDLE handle) = 0;
 };
 
 // IGCHeap is the interface that the VM will use when interacting with the GC.

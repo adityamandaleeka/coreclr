@@ -1254,13 +1254,15 @@ void EEPolicy::LogFatalError(UINT exitCode, UINT_PTR address, LPCWSTR pszMessage
                 // for the FEEE we'll be reporting.  this can help the Watson back-end to generate better
                 // buckets for apps that call Environment.FailFast() and supply an exception object.
                 OBJECTREF lto = pThread->LastThrownObject();
+                IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
 
                 if (exitCode == static_cast<UINT>(COR_E_FAILFAST) && lto != NULL)
                 {
-                    EXCEPTIONREF curEx = (EXCEPTIONREF)ObjectFromHandle(ohException);
+                    EXCEPTIONREF curEx = (EXCEPTIONREF)ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(ohException));
                     curEx->SetInnerException(lto);
                 }
-                pThread->SetLastThrownObject(ObjectFromHandle(ohException), TRUE);
+
+                pThread->SetLastThrownObject(ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(ohException)), TRUE);
             }
 
             // If a managed debugger is already attached, and if that debugger is thinking it might be inclined to
@@ -1329,7 +1331,7 @@ void DECLSPEC_NORETURN EEPolicy::HandleFatalStackOverflow(EXCEPTION_POINTERS *pE
             OBJECTHANDLE ohSO = CLRException::GetPreallocatedStackOverflowExceptionHandle();
             if (ohSO != NULL)
             {
-                pThread->SafeSetThrowables(ObjectFromHandle(ohSO) 
+                pThread->SafeSetThrowables(ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(ohSO)) 
                                            DEBUG_ARG(ThreadExceptionState::STEC_CurrentTrackerEqualNullOkHackForFatalStackOverflow),
                                            TRUE);
             }

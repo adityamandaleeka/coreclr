@@ -91,7 +91,7 @@ public:
             MODE_COOPERATIVE;
         }
         CONTRACTL_END;
-        return ObjectFromHandle(m_hndCustomMarshaler)->GetTypeHandle();
+        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hndCustomMarshaler))->GetTypeHandle();
     }
 
     // Helper function to retrieve a custom marshaler method desc.

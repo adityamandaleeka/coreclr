@@ -158,12 +158,12 @@ OBJECTREF ThreadExceptionState::GetThrowable()
 #ifdef WIN64EXCEPTIONS
     if (m_pCurrentTracker && m_pCurrentTracker->m_hThrowable)
     {
-        return ObjectFromHandle(m_pCurrentTracker->m_hThrowable);
+        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_pCurrentTracker->m_hThrowable));
     }
 #else // WIN64EXCEPTIONS
     if (m_currentExInfo.m_hThrowable)
     {
-        return ObjectFromHandle(m_currentExInfo.m_hThrowable);
+        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_currentExInfo.m_hThrowable));
     }
 #endif // WIN64EXCEPTIONS    
 

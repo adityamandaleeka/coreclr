@@ -1518,10 +1518,10 @@ void Log::DebuggerModifyingLogSwitch (int iNewLevel,
 
     // check if an entry with this name exists in the hash table.
     OBJECTHANDLE ObjHandle = g_sLogHashTable.GetEntryFromHashTable (pLogSwitchName);
-    if ( ObjHandle != NULL)
+    if (ObjHandle != NULL)
     {
-        OBJECTREF obj = ObjectFromHandle (ObjHandle);
-        LogSwitchObject *pLogSwitch = (LogSwitchObject *)(OBJECTREFToObject (obj));
+        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
+        LogSwitchObject *pLogSwitch = (LogSwitchObject *)(pHandleTable->ObjectFromHandle(ObjHandle));
 
         pLogSwitch->SetLevel (iNewLevel);
     }

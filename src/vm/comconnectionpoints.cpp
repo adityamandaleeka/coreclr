@@ -448,7 +448,7 @@ void ConnectionPoint::UnadviseWorker(DWORD dwCookie)
         ConnectionCookieHolder pConCookie = FindWithLock(dwCookie);
 
         // Retrieve the COM+ object from the cookie which in fact is the object handle.
-        pEventItfObj = (COMOBJECTREF) ObjectFromHandle(pConCookie->m_hndEventProvObj); 
+        pEventItfObj = (COMOBJECTREF) ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(pConCookie->m_hndEventProvObj)); 
         if (!pEventItfObj)
             COMPlusThrowHR(E_INVALIDARG);
 

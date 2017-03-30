@@ -13,6 +13,8 @@ public:
     virtual bool Initialize();
 
     virtual void Shutdown();
+    
+    virtual Object* ObjectFromHandle(OBJECTHANDLE handle);
 };
 
 #endif  // GCHANDLETABLE_H_

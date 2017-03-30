@@ -134,12 +134,17 @@ public:
         return m_pPrevNestedInfo;
     }
     
-    // Returns the throwble associated with the tracker
+    // Returns the throwable associated with the tracker
     inline OBJECTREF GetThrowable()
     {
         LIMITED_METHOD_CONTRACT;
+
+        if (m_hThrowable != NULL)
+        {
+            return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hThrowable));
+        }
         
-        return (m_hThrowable != NULL)?ObjectFromHandle(m_hThrowable):NULL;
+        return NULL;
     }
 
     // Returns the throwble associated with the tracker as handle
