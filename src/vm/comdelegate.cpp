@@ -1463,7 +1463,7 @@ OBJECTREF COMDelegate::ConvertToDelegate(LPVOID pCallback, MethodTable* pMT)
         OBJECTREF pDelegate = NULL;
         GCPROTECT_BEGIN(pDelegate);
 
-        pDelegate = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle((OBJECTHANDLE)DelegateHnd));
+        pDelegate = ObjectFromHandle((OBJECTHANDLE)DelegateHnd);
 
         // Make sure we're not trying to sneak into another domain.
         SyncBlock* pSyncBlock = pDelegate->GetSyncBlock();

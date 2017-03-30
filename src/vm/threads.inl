@@ -168,8 +168,7 @@ inline OBJECTREF Thread::GetExposedObjectRaw()
     }
     CONTRACTL_END;
 
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    return ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_ExposedObject));
+    return ObjectFromHandle(m_ExposedObject);
 }
 
 inline void Thread::FinishSOWork()

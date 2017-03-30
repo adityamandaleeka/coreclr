@@ -2011,14 +2011,12 @@ public:
             MODE_COOPERATIVE;
         }
         CONTRACTL_END;
-
-        if (!m_ExposedObject)
-        {
+        if (m_ExposedObject) {
+            return ObjectFromHandle(m_ExposedObject);
+        }
+        else {
             return NULL;
         }
-
-        IGCHandleTable * pHandleTable = GCHeapUtilities::GetGCHandleTable();
-        return (OBJECTREF)pHandleTable->ObjectFromHandle(m_ExposedObject);
     }
 
     OBJECTHANDLE GetRawExposedObjectHandleForDebugger() { LIMITED_METHOD_DAC_CONTRACT; return m_ExposedObject; }

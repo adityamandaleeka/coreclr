@@ -758,8 +758,7 @@ private:
                     ENTER_DOMAIN_ID(owningAD);
                     {
                         // Read the GC handle
-                        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-                        refSH = (SAFEHANDLEREF) ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(hndSafeHandle));
+                        refSH = (SAFEHANDLEREF) ObjectToOBJECTREF(ObjectFromHandle(hndSafeHandle));
 
                         // Destroy the GC handle
                         DestroyHandle(hndSafeHandle);

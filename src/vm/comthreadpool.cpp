@@ -320,9 +320,7 @@ RegisterWaitForSingleObjectCallback_Worker(LPVOID ptr)
     GCPROTECT_BEGIN( orState );
 
     RegisterWaitForSingleObjectCallback_Args *args = (RegisterWaitForSingleObjectCallback_Args *) ptr;
-
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    orState = ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(((DelegateInfo*) args->delegateInfo)->m_stateHandle));
+    orState = ObjectFromHandle(((DelegateInfo*) args->delegateInfo)->m_stateHandle);
 
 #ifdef _DEBUG
     MethodDesc *pMeth = MscorlibBinder::GetMethod(METHOD__TPWAITORTIMER_HELPER__PERFORM_WAITORTIMER_CALLBACK);

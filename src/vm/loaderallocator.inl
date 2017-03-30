@@ -12,14 +12,7 @@
 inline LOADERALLOCATORREF LoaderAllocator::GetExposedObject() 
 { 
     LIMITED_METHOD_CONTRACT;
-
-    OBJECTREF loaderAllocatorObject = NULL;
-    if (m_hLoaderAllocatorObjectHandle != NULL)
-    {
-        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-        loaderAllocatorObject = (OBJECTREF)pHandleTable->ObjectFromHandle(m_hLoaderAllocatorObjectHandle);
-    }
-
+    OBJECTREF loaderAllocatorObject = (m_hLoaderAllocatorObjectHandle != NULL) ? ObjectFromHandle(m_hLoaderAllocatorObjectHandle) : NULL;
     return (LOADERALLOCATORREF)loaderAllocatorObject;
 }
 #endif
@@ -156,8 +149,7 @@ FORCEINLINE BOOL LoaderAllocator::GetHandleValueFastPhase2(LOADERHANDLE handle, 
         return FALSE;
 
     /* This is lockless access to the handle table, be careful */
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    OBJECTREF loaderAllocatorAsObjectRef = (OBJECTREF)pHandleTable->ObjectFromHandle(m_hLoaderAllocatorObjectHandle);
+    OBJECTREF loaderAllocatorAsObjectRef = ObjectFromHandle(m_hLoaderAllocatorObjectHandle);
 
     // If the managed loader allocator has been collected, then the handles associated with it are dead as well.
     if (loaderAllocatorAsObjectRef == NULL)
@@ -180,8 +172,7 @@ FORCEINLINE OBJECTREF LoaderAllocator::GetHandleValueFastCannotFailType2(LOADERH
     STATIC_CONTRACT_GC_NOTRIGGER;
 
     /* This is lockless access to the handle table, be careful */
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-    OBJECTREF loaderAllocatorAsObjectRef = (OBJECTREF)pHandleTable->ObjectFromHandle(m_hLoaderAllocatorObjectHandle);
+    OBJECTREF loaderAllocatorAsObjectRef = ObjectFromHandle(m_hLoaderAllocatorObjectHandle);
     LOADERALLOCATORREF loaderAllocator = dac_cast<LOADERALLOCATORREF>(loaderAllocatorAsObjectRef);
     PTRARRAYREF handleTable = loaderAllocator->GetHandleTable();
     UINT_PTR index = (((UINT_PTR)handle) >> 1) - 1;

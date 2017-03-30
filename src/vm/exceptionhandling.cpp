@@ -3844,7 +3844,7 @@ ExceptionTracker* ExceptionTracker::GetOrCreateTracker(
         {
             if (fIsRethrow)
             {
-                oThrowable = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(pTracker->m_hThrowable));
+                oThrowable = ObjectFromHandle(pTracker->m_hThrowable);
             }
             else
             {

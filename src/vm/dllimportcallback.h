@@ -376,7 +376,7 @@ public:
         {
             GCX_COOP();
 
-            DELEGATEREF orDelegate = (DELEGATEREF)ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(hndDelegate));
+            DELEGATEREF orDelegate = (DELEGATEREF)ObjectFromHandle(hndDelegate);
             _ASSERTE(orDelegate != NULL);
             _ASSERTE(m_pMD->IsEEImpl());
                 

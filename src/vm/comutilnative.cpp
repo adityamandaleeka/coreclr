@@ -1815,11 +1815,12 @@ FCIMPL1(int, GCInterface::GetGenerationWR, LPVOID handle)
 
     HELPER_METHOD_FRAME_BEGIN_RET_0();
 
-    Object* obj = GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle((OBJECTHANDLE) handle);
-    if (obj == NULL)
+    OBJECTREF temp;
+    temp = ObjectFromHandle((OBJECTHANDLE) handle);
+    if (temp == NULL)
         COMPlusThrowArgumentNull(W("weak handle"));
 
-    iRetVal = (INT32)GCHeapUtilities::GetGCHeap()->WhichGeneration(obj);
+    iRetVal = (INT32)GCHeapUtilities::GetGCHeap()->WhichGeneration(OBJECTREFToObject(temp));
 
     HELPER_METHOD_FRAME_END();
 

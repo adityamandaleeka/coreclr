@@ -1100,7 +1100,7 @@ void LCGMethodResolver::GetJitContextCoop(SecurityControlFlags * securityControl
 
     MethodDescCallSite getJitContext(METHOD__RESOLVER__GET_JIT_CONTEXT, m_managedResolver);
 
-    OBJECTREF resolver = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_managedResolver));
+    OBJECTREF resolver = ObjectFromHandle(m_managedResolver);
     _ASSERTE(resolver); // gc root must be up the stack
 
     ARG_SLOT args[] =
@@ -1134,7 +1134,7 @@ BYTE* LCGMethodResolver::GetCodeInfo(unsigned *pCodeSize, unsigned *pStackSize, 
         // get the code - Byte[] Resolver.GetCodeInfo(ref ushort stackSize, ref int EHCount)
         MethodDescCallSite getCodeInfo(METHOD__RESOLVER__GET_CODE_INFO, m_managedResolver);
 
-        OBJECTREF resolver = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_managedResolver));
+        OBJECTREF resolver = ObjectFromHandle(m_managedResolver);
         VALIDATEOBJECTREF(resolver); // gc root must be up the stack
 
         DWORD initLocals = 0, EHSize = 0;
@@ -1187,7 +1187,7 @@ LCGMethodResolver::GetLocalSig()
 
         MethodDescCallSite getLocalsSignature(METHOD__RESOLVER__GET_LOCALS_SIGNATURE, m_managedResolver);
 
-        OBJECTREF resolver = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_managedResolver));
+        OBJECTREF resolver = ObjectFromHandle(m_managedResolver);
         VALIDATEOBJECTREF(resolver); // gc root must be up the stack
 
         ARG_SLOT args[] =
@@ -1260,7 +1260,7 @@ LCGMethodResolver::GetStringLiteral(
 
     MethodDescCallSite getStringLiteral(METHOD__RESOLVER__GET_STRING_LITERAL, m_managedResolver);
 
-    OBJECTREF resolver = ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_managedResolver));
+    OBJECTREF resolver = ObjectFromHandle(m_managedResolver);
     VALIDATEOBJECTREF(resolver); // gc root must be up the stack
 
     ARG_SLOT args[] = {
@@ -1337,13 +1337,11 @@ void LCGMethodResolver::ResolveToken(mdToken token, TypeHandle * pTH, MethodDesc
 
     GCX_COOP();
 
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-
-    PREPARE_SIMPLE_VIRTUAL_CALLSITE(METHOD__RESOLVER__RESOLVE_TOKEN, ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_managedResolver)));
+    PREPARE_SIMPLE_VIRTUAL_CALLSITE(METHOD__RESOLVER__RESOLVE_TOKEN, ObjectFromHandle(m_managedResolver));
 
     DECLARE_ARGHOLDER_ARRAY(args, 5);
 
-    args[ARGNUM_0] = OBJECTREF_TO_ARGHOLDER(ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_managedResolver)));
+    args[ARGNUM_0] = OBJECTREF_TO_ARGHOLDER(ObjectFromHandle(m_managedResolver));
     args[ARGNUM_1] = DWORD_TO_ARGHOLDER(token);
     args[ARGNUM_2] = pTH;
     args[ARGNUM_3] = ppMD;
@@ -1375,13 +1373,11 @@ LCGMethodResolver::ResolveSignature(
 
     U1ARRAYREF dataArray = NULL;
 
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-
-    PREPARE_SIMPLE_VIRTUAL_CALLSITE(METHOD__RESOLVER__RESOLVE_SIGNATURE, ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_managedResolver)));
+    PREPARE_SIMPLE_VIRTUAL_CALLSITE(METHOD__RESOLVER__RESOLVE_SIGNATURE, ObjectFromHandle(m_managedResolver));
 
     DECLARE_ARGHOLDER_ARRAY(args, 3);
 
-    args[ARGNUM_0] = OBJECTREF_TO_ARGHOLDER(ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_managedResolver)));
+    args[ARGNUM_0] = OBJECTREF_TO_ARGHOLDER(ObjectFromHandle(m_managedResolver));
     args[ARGNUM_1] = DWORD_TO_ARGHOLDER(token);
     args[ARGNUM_2] = DWORD_TO_ARGHOLDER(0);
 
@@ -1408,13 +1404,11 @@ LCGMethodResolver::ResolveSignatureForVarArg(
 
     U1ARRAYREF dataArray = NULL;
 
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-
-    PREPARE_SIMPLE_VIRTUAL_CALLSITE(METHOD__RESOLVER__RESOLVE_SIGNATURE, ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_managedResolver)));
+    PREPARE_SIMPLE_VIRTUAL_CALLSITE(METHOD__RESOLVER__RESOLVE_SIGNATURE, ObjectFromHandle(m_managedResolver));
 
     DECLARE_ARGHOLDER_ARRAY(args, 3);
 
-    args[ARGNUM_0] = OBJECTREF_TO_ARGHOLDER(ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_managedResolver)));
+    args[ARGNUM_0] = OBJECTREF_TO_ARGHOLDER(ObjectFromHandle(m_managedResolver));
     args[ARGNUM_1] = DWORD_TO_ARGHOLDER(token);
     args[ARGNUM_2] = DWORD_TO_ARGHOLDER(1);
 
@@ -1437,17 +1431,15 @@ void LCGMethodResolver::GetEHInfo(unsigned EHnumber, CORINFO_EH_CLAUSE* clause)
 
     GCX_COOP();
 
-    IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-
     // attempt to get the raw EHInfo first
     {
         U1ARRAYREF dataArray;
 
-        PREPARE_SIMPLE_VIRTUAL_CALLSITE(METHOD__RESOLVER__GET_RAW_EH_INFO, ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_managedResolver)));
+        PREPARE_SIMPLE_VIRTUAL_CALLSITE(METHOD__RESOLVER__GET_RAW_EH_INFO, ObjectFromHandle(m_managedResolver));
 
         DECLARE_ARGHOLDER_ARRAY(args, 1);
 
-        args[ARGNUM_0] = OBJECTREF_TO_ARGHOLDER(ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_managedResolver)));
+        args[ARGNUM_0] = OBJECTREF_TO_ARGHOLDER(ObjectFromHandle(m_managedResolver));
 
         CALL_MANAGED_METHOD_RETREF(dataArray, U1ARRAYREF, args);
 
@@ -1472,11 +1464,11 @@ void LCGMethodResolver::GetEHInfo(unsigned EHnumber, CORINFO_EH_CLAUSE* clause)
 
     // failed, get the info off the ilgenerator
     {
-        PREPARE_SIMPLE_VIRTUAL_CALLSITE(METHOD__RESOLVER__GET_EH_INFO, ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_managedResolver)));
+        PREPARE_SIMPLE_VIRTUAL_CALLSITE(METHOD__RESOLVER__GET_EH_INFO, ObjectFromHandle(m_managedResolver));
 
         DECLARE_ARGHOLDER_ARRAY(args, 3);
 
-        args[ARGNUM_0] = OBJECTREF_TO_ARGHOLDER(ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_managedResolver)));
+        args[ARGNUM_0] = OBJECTREF_TO_ARGHOLDER(ObjectFromHandle(m_managedResolver));
         args[ARGNUM_1] = DWORD_TO_ARGHOLDER(EHnumber);
         args[ARGNUM_2] = PTR_TO_ARGHOLDER(clause);
 
@@ -1492,7 +1484,7 @@ void LCGMethodResolver::GetEHInfo(unsigned EHnumber, CORINFO_EH_CLAUSE* clause)
 OBJECTREF LCGMethodResolver::GetManagedResolver()
 { 
     LIMITED_METHOD_CONTRACT;
-    return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_managedResolver));
+    return ObjectFromHandle(m_managedResolver);
 }
 
 

@@ -184,7 +184,7 @@ OBJECTREF CustomMarshalerInfo::InvokeMarshalNativeToManagedMeth(void *pNative)
     MethodDescCallSite marshalNativeToManaged(m_pMarshalNativeToManagedMD, m_hndCustomMarshaler);
     
     ARG_SLOT Args[] = {
-        ObjToArgSlot(ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hndCustomMarshaler))),
+        ObjToArgSlot(ObjectFromHandle(m_hndCustomMarshaler)),
         PtrToArgSlot(pNative)
     };
 
@@ -211,7 +211,7 @@ void *CustomMarshalerInfo::InvokeMarshalManagedToNativeMeth(OBJECTREF MngObj)
     MethodDescCallSite marshalManagedToNative(m_pMarshalManagedToNativeMD, m_hndCustomMarshaler);
 
     ARG_SLOT Args[] = {
-        ObjToArgSlot(ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hndCustomMarshaler))),
+        ObjToArgSlot(ObjectFromHandle(m_hndCustomMarshaler)),
         ObjToArgSlot(MngObj)
     };
 
@@ -239,7 +239,7 @@ void CustomMarshalerInfo::InvokeCleanUpNativeMeth(void *pNative)
     MethodDescCallSite cleanUpNativeData(m_pCleanUpNativeDataMD, m_hndCustomMarshaler);
 
     ARG_SLOT Args[] = {
-        ObjToArgSlot(ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hndCustomMarshaler))),
+        ObjToArgSlot(ObjectFromHandle(m_hndCustomMarshaler)),
         PtrToArgSlot(pNative)
     };
 
@@ -264,7 +264,7 @@ void CustomMarshalerInfo::InvokeCleanUpManagedMeth(OBJECTREF MngObj)
     MethodDescCallSite cleanUpManagedData(m_pCleanUpManagedDataMD, m_hndCustomMarshaler);
 
     ARG_SLOT Args[] = {
-        ObjToArgSlot(ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hndCustomMarshaler))),
+        ObjToArgSlot(ObjectFromHandle(m_hndCustomMarshaler)),
         ObjToArgSlot(MngObj)
     };
 

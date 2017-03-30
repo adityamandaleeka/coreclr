@@ -254,8 +254,7 @@ public:
         if (NULL != m_hThrowable)
         {
 #ifndef DACCESS_COMPILE
-            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-            return (OBJECTREF)pHandleTable->ObjectFromHandle(m_hThrowable);
+            return ObjectFromHandle(m_hThrowable);
 #else
             return ::HndFetchHandle(m_hThrowable);
 #endif

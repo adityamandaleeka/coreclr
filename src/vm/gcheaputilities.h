@@ -209,5 +209,22 @@ private:
     GCHeapUtilities() = delete;
 };
 
+
+
+inline OBJECTREF ObjectFromHandle(OBJECTHANDLE handle)
+{
+    // sanity
+    _ASSERTE(handle);
+
+#ifdef _DEBUG_IMPL
+    return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(handle));
+#else // _DEBUG_IMPL
+
+    // wrap the raw objectref and return it
+    return UNCHECKED_OBJECTREF_TO_OBJECTREF(*PTR_UNCHECKED_OBJECTREF(handle));
+
+#endif
+}
+
 #endif // _GCHEAPUTILITIES_H_
 

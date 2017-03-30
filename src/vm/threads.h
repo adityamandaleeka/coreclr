@@ -2641,9 +2641,7 @@ public:
             MODE_COOPERATIVE;
         }
         CONTRACTL_END;
-
-        IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-        return (pHandleTable->ObjectFromHandle(m_ExposedObject) != NULL);
+        return (ObjectFromHandle(m_ExposedObject) != NULL) ;
     }
 
     void GetSynchronizationContext(OBJECTREF *pSyncContextObj)
@@ -4041,12 +4039,9 @@ public:
         }
         else
         {
-            IGCHandleTable *pHandleTable = GCHeapUtilities::GetGCHandleTable();
-            OBJECTREF lastThrownObj = ObjectToOBJECTREF(pHandleTable->ObjectFromHandle(m_LastThrownObjectHandle));
-
             // We only have a handle if we have an object to keep in it.
-            _ASSERTE(lastThrownObj != NULL);
-            return lastThrownObj;
+            _ASSERTE(ObjectFromHandle(m_LastThrownObjectHandle) != NULL);
+            return ObjectFromHandle(m_LastThrownObjectHandle);
         }
     }
 

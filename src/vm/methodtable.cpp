@@ -974,16 +974,11 @@ OBJECTREF MethodTable::GetObjCreateDelegate()
         NOTHROW;
     }
     CONTRACTL_END;
-
     _ASSERT(!IsInterface());
     if (GetOHDelegate())
-    {
-        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(GetOHDelegate()));
-    }
+        return ObjectFromHandle(GetOHDelegate());
     else
-    {
         return NULL;
-    }
 }
 
 //==========================================================================================

@@ -138,13 +138,8 @@ public:
     inline OBJECTREF GetThrowable()
     {
         LIMITED_METHOD_CONTRACT;
-
-        if (m_hThrowable != NULL)
-        {
-            return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hThrowable));
-        }
         
-        return NULL;
+        return (m_hThrowable != NULL)?ObjectFromHandle(m_hThrowable):NULL;
     }
 
     // Returns the throwble associated with the tracker as handle

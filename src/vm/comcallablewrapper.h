@@ -1270,7 +1270,7 @@ public:
             AccessNeuteredCCW_FailFast();
         }
         
-        RETURN ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_ppThis));
+        RETURN ObjectFromHandle(m_ppThis);
     }
 
     //

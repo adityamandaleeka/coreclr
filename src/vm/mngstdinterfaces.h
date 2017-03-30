@@ -180,7 +180,7 @@ public: \
     OBJECTREF GetCustomMarshaler() \
     { \
         WRAPPER_NO_CONTRACT; \
-        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_hndCustomMarshaler)); \
+        return ObjectFromHandle(m_hndCustomMarshaler); \
     } \
 \
     MethodDesc* GetCustomMarshalerMD(EnumCustomMarshalerMethods Method) \

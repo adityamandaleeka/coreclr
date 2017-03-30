@@ -70,7 +70,7 @@ public:
     OBJECTREF GetManagedPsetObject()
     {
         WRAPPER_NO_CONTRACT;
-        return ObjectToOBJECTREF(GCHeapUtilities::GetGCHandleTable()->ObjectFromHandle(m_handle)); 
+        return ObjectFromHandle(m_handle); 
     }
 
     bool ContainsBuiltinCASPermsOnly (DWORD dwAction);
