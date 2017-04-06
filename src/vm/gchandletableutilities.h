@@ -98,6 +98,7 @@ inline OBJECTHANDLE CreateRefcountedHandle(HHANDLETABLE table, OBJECTREF object)
 
 inline OBJECTHANDLE CreateGlobalHandle(OBJECTREF object)
 {
+    CONDITIONAL_CONTRACT_VIOLATION(ModeViolation, object == NULL);
     return GCHandleTableUtilities::GetGCHandleTable()->CreateGlobalHandleOfType(OBJECTREFToObject(object), HNDTYPE_DEFAULT);
 }
 
@@ -108,6 +109,7 @@ inline OBJECTHANDLE CreateGlobalWeakHandle(OBJECTREF object)
 
 inline OBJECTHANDLE CreateGlobalShortWeakHandle(OBJECTREF object)
 {
+    CONDITIONAL_CONTRACT_VIOLATION(ModeViolation, object == NULL);
     return GCHandleTableUtilities::GetGCHandleTable()->CreateGlobalHandleOfType(OBJECTREFToObject(object), HNDTYPE_WEAK_SHORT);
 }
 
@@ -118,6 +120,7 @@ inline OBJECTHANDLE CreateGlobalLongWeakHandle(OBJECTREF object)
 
 inline OBJECTHANDLE CreateGlobalStrongHandle(OBJECTREF object)
 {
+    CONDITIONAL_CONTRACT_VIOLATION(ModeViolation, object == NULL);
     return GCHandleTableUtilities::GetGCHandleTable()->CreateGlobalHandleOfType(OBJECTREFToObject(object), HNDTYPE_STRONG);
 }
 
