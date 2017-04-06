@@ -509,6 +509,9 @@ public:
     gc_reason reason;
     gc_pause_mode pause_mode;
     BOOL found_finalizers;
+    BOOL high_mem_p;
+    BOOL high_mem_compact_throttle;
+    int high_mem_compact_try_count;
 
 #ifdef BACKGROUND_GC
     BOOL background_p;
@@ -2500,6 +2503,8 @@ protected:
     size_t get_current_allocated();
     PER_HEAP_ISOLATED
     size_t get_total_allocated();
+    PER_HEAP_ISOLATED
+    float get_total_frag_ratio(int gen_number);
     PER_HEAP
     size_t current_generation_size (int gen_number);
     PER_HEAP

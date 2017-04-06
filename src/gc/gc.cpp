@@ -5624,6 +5624,8 @@ void gc_mechanisms::first_init()
     gen0_reduction_count = 0;
     should_lock_elevation = FALSE;
     elevation_locked_count = 0;
+    high_mem_compact_throttle = FALSE;
+    high_mem_compact_try_count = 0;
     reason = reason_empty;
 #ifdef BACKGROUND_GC
     pause_mode = gc_heap::gc_can_use_concurrent ? pause_interactive : pause_batch;
@@ -14292,8 +14294,9 @@ int gc_heap::joined_generation_to_condemn (BOOL should_evaluate_elevation,
                                            STRESS_HEAP_ARG(int n_original))
 {
     int n = n_initial;
-#ifdef MULTIPLE_HEAPS
     BOOL blocking_p = *blocking_collection_p;
+
+#ifdef MULTIPLE_HEAPS
     if (!blocking_p)
     {
         for (int i = 0; i < n_heaps; i++)
@@ -14336,6 +14339,33 @@ int gc_heap::joined_generation_to_condemn (BOOL should_evaluate_elevation,
     {
         settings.should_lock_elevation = FALSE;
         settings.elevation_locked_count = 0;
+    }
+
+    ////////////
+    if (n == max_generation && blocking_p && !recursive_gc_sync::background_running_p())
+    {
+        if (settings.high_mem_compact_throttle)
+        {
+            // If we are throttling 
+            settings.high_mem_compact_try_count++;
+            if (settings.high_mem_compact_try_count == 6)
+            {
+                settings.high_mem_compact_try_count = 0;
+            }
+            else
+            {
+                n = max_generation - 1;
+            }
+        }
+        else
+        {
+            settings.high_mem_compact_try_count = 0;
+        }
+    }
+    else
+    {
+        settings.high_mem_compact_throttle = FALSE;
+        settings.high_mem_compact_try_count = 0;
     }
 
 #ifdef STRESS_HEAP
@@ -14738,6 +14768,7 @@ int gc_heap::generation_to_condemn (int n_initial,
             }
 #endif //SIMPLE_DPRINTF
 
+            settings.high_mem_p = TRUE;
             high_memory_load = TRUE;
 
             if (memory_load >= v_high_memory_load_th || low_memory_detected)
@@ -29699,15 +29730,19 @@ size_t gc_heap::generation_plan_size (int gen_number)
 size_t gc_heap::generation_size (int gen_number)
 {
     if (0 == gen_number)
+    {
         return max((heap_segment_allocated (ephemeral_heap_segment) -
                     generation_allocation_start (generation_of (gen_number))),
                    (int)Align (min_obj_size));
+    }
     else
     {
         generation* gen = generation_of (gen_number);
         if (heap_segment_rw (generation_start_segment (gen)) == ephemeral_heap_segment)
+        {
             return (generation_allocation_start (generation_of (gen_number - 1)) -
                     generation_allocation_start (generation_of (gen_number)));
+        }
         else
         {
             size_t gensize = 0;
@@ -35022,6 +35057,28 @@ BOOL gc_heap::should_do_sweeping_gc (BOOL compact_p)
 }
 #endif //GC_CONFIG_DRIVEN
 
+
+float gc_heap::get_total_frag_ratio(int gen_number)
+{
+    size_t total_gen_size = 0;
+    size_t total_frag = 0;
+
+#ifdef MULTIPLE_HEAPS
+    for (int i = 0; i < gc_heap::n_heaps; i++)
+    {
+        gc_heap* hp = gc_heap::g_heaps[i];
+        total_gen_size += hp->generation_size(gen_number);
+        total_frag += dd_fragmentation(hp->dynamic_data_of(gen_number));
+    }
+#else //MULTIPLE_HEAPS
+    total_gen_size = pGenGCHeap->generation_size(gen_number);
+    total_frag = dd_fragmentation(pGenGCHeap->dynamic_data_of(gen_number));
+#endif
+
+    return ((float)total_frag / (float)total_gen_size);
+}
+
+
 void gc_heap::do_post_gc()
 {
     if (!settings.concurrent)
@@ -35060,6 +35117,25 @@ void gc_heap::do_post_gc()
         dd_collection_count(hp->dynamic_data_of(0)),
         settings.condemned_generation,
         (settings.concurrent ? "BGC" : "GC")));
+
+    if (!settings.concurrent && settings.compaction && settings.high_mem_p && settings.condemned_generation == max_generation)
+    {
+        // A level of fragmentation which, when encountered after a compacting GC, is
+        // indicative of an unproductive attempt at compaction.
+        const float post_compact_high_frag_threshold = 0.15f;
+        
+        float frag_ratio = get_total_frag_ratio(max_generation);
+        if (frag_ratio > post_compact_high_frag_threshold)
+        {
+            // We just did a blocking, compacting, full GC under high-memory load, and there is still
+            // a bunch of fragmentation. This probably means there are things like pinned plugs which
+            // we can't compact. We will consider this GC unproductive and do fewer of these for a
+            // while. Otherwise, we'll constantly be trying to reduce fragmentation with compacting
+            // Gen2s that aren't able to reduce fragmentation.
+
+            settings.high_mem_compact_throttle = TRUE;
+        }
+    }
 
     GCHeap::UpdatePostGCCounters();
 #ifdef FEATURE_APPDOMAIN_RESOURCE_MONITORING
