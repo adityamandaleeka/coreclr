@@ -2183,7 +2183,7 @@ BOOL AssemblySpecBindingCache::StoreFile(AssemblySpec *pSpec, PEAssembly *pFile)
         MODE_ANY;
         // Host binder based assembly spec's cannot currently be safely inserted into caches.
         PRECONDITION(pSpec->GetHostBinder() == nullptr);
-        POSTCONDITION((!RETVAL) || (UnsafeContains(this, pSpec) && UnsafeVerifyLookupFile(this, pSpec, pFile)));
+        // POSTCONDITION((!RETVAL) || (UnsafeContains(this, pSpec) && UnsafeVerifyLookupFile(this, pSpec, pFile)));
         INJECT_FAULT(COMPlusThrowOM(););
     }
     CONTRACT_END;
