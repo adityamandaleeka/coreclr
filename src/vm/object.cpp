@@ -256,8 +256,7 @@ TypeHandle Object::GetGCSafeTypeHandleIfPossible() const
     // problems; however, it seems prudent to add this protection just in case.
     LoaderAllocator * pLoaderAllocator = pLoaderModule->GetLoaderAllocator();
     _ASSERTE(pLoaderAllocator != NULL);
-    if ((pLoaderAllocator->IsCollectible()) &&
-        (ObjectHandleIsNull(pLoaderAllocator->GetLoaderAllocatorObjectHandle())))
+    if (pLoaderAllocator->IsCollectible() && (*(Object**)pLoaderAllocator->GetLoaderAllocatorObjectHandle() == NULL))
     {
         return NULL;
     }
