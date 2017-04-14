@@ -8,33 +8,6 @@
 #include "gcinterface.h"
 #include "objecthandle.h"
 
-class GCHandleStore : public IGCHandleStore
-{
-public:
-    GCHandleStore(HandleTableBucket *bucket) 
-        : _underlyingBucket(bucket)
-        { }
-
-    virtual void Uproot();
-
-    virtual bool ContainsHandle(OBJECTHANDLE handle);
-
-    virtual OBJECTHANDLE CreateHandleOfType(Object* object, int type);
-
-    virtual OBJECTHANDLE CreateHandleOfType(Object* object, int type, int heapToAffinitizeTo);
-
-    virtual OBJECTHANDLE CreateHandleWithExtraInfo(Object* object, int type, void* pExtraInfo);
-
-    virtual OBJECTHANDLE CreateDependentHandle(Object* primary, Object* secondary);
-
-    virtual ~GCHandleStore();
-
-private:
-    HandleTableBucket* _underlyingBucket;
-};
-
-extern GCHandleStore* g_gcGlobalHandleStore;
-
 class GCHandleManager : public IGCHandleManager
 {
 public:
@@ -60,5 +33,27 @@ public:
 
     virtual void* GetExtraInfoFromHandle(OBJECTHANDLE handle);
 };
+
+class GCHandleStore : public IGCHandleStore
+{
+public:
+    virtual void Uproot();
+
+    virtual bool ContainsHandle(OBJECTHANDLE handle);
+
+    virtual OBJECTHANDLE CreateHandleOfType(Object* object, int type);
+
+    virtual OBJECTHANDLE CreateHandleOfType(Object* object, int type, int heapToAffinitizeTo);
+
+    virtual OBJECTHANDLE CreateHandleWithExtraInfo(Object* object, int type, void* pExtraInfo);
+
+    virtual OBJECTHANDLE CreateDependentHandle(Object* primary, Object* secondary);
+
+    virtual ~GCHandleStore();
+
+    HandleTableBucket _underlyingBucket;
+};
+
+extern GCHandleStore* g_gcGlobalHandleStore;
 
 #endif  // GCHANDLETABLE_H_
