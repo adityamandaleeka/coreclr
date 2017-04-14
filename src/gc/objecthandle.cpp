@@ -638,7 +638,7 @@ bool Ref_Initialize()
         return false;
     }
 
-    // Initialize the first bucket
+    // Initialize the bucket in the global handle store
     HandleTableBucket* pBucket = &g_gcGlobalHandleStore->_underlyingBucket;
 
     pBucket->HandleTableIndex = 0;
@@ -681,6 +681,10 @@ bool Ref_Initialize()
 CleanupAndFail:
     if (pBuckets != NULL)
         delete[] pBuckets;
+
+    if (g_gcGlobalHandleStore != NULL)
+        delete g_gcGlobalHandleStore;
+
     return false;
 }
 
@@ -807,8 +811,6 @@ bool Ref_InitializeHandleTableBucket(HandleTableBucket* bucket, void* context)
         walk = last->pNext;
         offset = last->dwMaxIndex;
     }
-
-    return true;
 }
 #endif // !FEATURE_REDHAWK
 
