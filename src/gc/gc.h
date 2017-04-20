@@ -74,6 +74,32 @@ enum gc_reason
     reason_max
 };
 
+enum gc_reason_flags
+{
+    reason2_empty               =     0,
+    reason2_alloc               =   0x1,
+    reason2_soh                 =   0x2,
+    reason2_induced             =   0x4,
+    reason2_lowmemory           =   0x8,
+    reason2_loh                 =  0x10,
+    reason2_oos                 =  0x20,
+    reason2_noforce             =  0x40,
+    reason2_gcstress            =  0x80,
+    reason2_blocking            = 0x100,
+    reason2_compacting          = 0x200,
+    reason2_host                = 0x400, //////// do we need this? I don't think we care
+};
+
+inline gc_reason_flags operator| (gc_reason_flags a, gc_reason_flags b)
+{
+    return static_cast<gc_reason_flags>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+inline gc_reason_flags operator|= (gc_reason_flags &a, gc_reason_flags b)
+{
+    return static_cast<gc_reason_flags>(static_cast<int>(a) |= static_cast<int>(b));
+}
+
 /* forward declerations */
 class CObjectHeader;
 class Object;

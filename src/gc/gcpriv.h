@@ -1258,7 +1258,7 @@ public:
     // returning FALSE means we actually didn't do a GC. This happens
     // when we figured that we needed to do a BGC.
     PER_HEAP
-    int garbage_collect (int n);
+    int garbage_collect (int n, gc_reason gc_trigger_reason);
 
     PER_HEAP
     void init_records();

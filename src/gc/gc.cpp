@@ -2309,9 +2309,9 @@ size_t      gc_heap::reserved_memory = 0;
 size_t      gc_heap::reserved_memory_limit = 0;
 BOOL        gc_heap::g_low_memory_status;
 
-#ifndef DACCESS_COMPILE
-static gc_reason gc_trigger_reason = reason_empty;
-#endif //DACCESS_COMPILE
+// #ifndef DACCESS_COMPILE
+// static gc_reason gc_trigger_reason = reason_empty;
+// #endif //DACCESS_COMPILE
 
 gc_mechanisms  gc_heap::settings;
 
@@ -16333,7 +16333,7 @@ void gc_heap::init_records()
 #endif //GC_CONFIG_DRIVEN
 }
 
-int gc_heap::garbage_collect (int n)
+int gc_heap::garbage_collect (int n, gc_reason gc_trigger_reason)
 {
     //reset the number of alloc contexts
     alloc_contexts_used = 0;
@@ -34500,25 +34500,25 @@ GCHeap::GetContainingObject (void *pInteriorPtr)
     return (Object *)o;
 }
 
-BOOL should_collect_optimized (dynamic_data* dd, BOOL low_memory_p)
+bool should_collect_optimized (dynamic_data* dd, BOOL low_memory_p)
 {
     if (dd_new_allocation (dd) < 0)
     {
-        return TRUE;
+        return true;
     }
 
     if (((float)(dd_new_allocation (dd)) / (float)dd_desired_allocation (dd)) < (low_memory_p ? 0.7 : 0.3))
     {
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 //----------------------------------------------------------------------------
 // #GarbageCollector
 //
-//  API to ensure that a complete new garbage collection takes place
+//  API to ensure that a garbage collection takes place
 //
 HRESULT
 GCHeap::GarbageCollect (int generation, BOOL low_memory_p, int mode)
@@ -34528,6 +34528,7 @@ GCHeap::GarbageCollect (int generation, BOOL low_memory_p, int mode)
     {
         size_t total_allocated = 0;
         size_t total_desired = 0;
+
 #ifdef MULTIPLE_HEAPS
         int hn = 0;
         for (hn = 0; hn < gc_heap::n_heaps; hn++)
@@ -34560,21 +34561,29 @@ GCHeap::GarbageCollect (int generation, BOOL low_memory_p, int mode)
     gc_heap* hpt = 0;
 #endif //MULTIPLE_HEAPS
 
+    ///// Why do we need to treat <0 as max? AFAICT there'a  place in mscorlib/GC.cs where -1 is used for max. We could
+    ///// change that and remove this I think...
     generation = (generation < 0) ? max_generation : min (generation, max_generation);
+
     dynamic_data* dd = hpt->dynamic_data_of (generation);
 
 #ifdef BACKGROUND_GC
     if (recursive_gc_sync::background_running_p())
     {
-        if ((mode == collection_optimized) || (mode & collection_non_blocking))
+        if (mode == collection_optimized || mode & collection_non_blocking)
         {
+            // We already have a running background GC so there's nothing to do.
             return S_OK;
         }
+
         if (mode & collection_blocking)
         {
             pGenGCHeap->background_gc_wait();
+
             if (mode & collection_optimized)
             {
+                // It's up to us when to do the GC, so we're not going to do anything if a
+                // background GC just finished.
                 return S_OK;
             }
         }
@@ -34587,10 +34596,11 @@ GCHeap::GarbageCollect (int generation, BOOL low_memory_p, int mode)
         {
             return S_OK;
         }
-        else 
+        else
         {
-            BOOL should_collect = FALSE;
-            BOOL should_check_loh = (generation == max_generation);
+            bool should_collect = false;
+            bool should_check_loh = (generation == max_generation);
+
 #ifdef MULTIPLE_HEAPS
             for (int i = 0; i < gc_heap::n_heaps; i++)
             {
@@ -34601,12 +34611,13 @@ GCHeap::GarbageCollect (int generation, BOOL low_memory_p, int mode)
 
                 if (should_collect_optimized (dd1, low_memory_p))
                 {
-                    should_collect = TRUE;
+                    should_collect = true;
                     break;
                 }
+
                 if (dd2 && should_collect_optimized (dd2, low_memory_p))
                 {
-                    should_collect = TRUE;
+                    should_collect = true;
                     break;
                 }
             }
@@ -34614,10 +34625,10 @@ GCHeap::GarbageCollect (int generation, BOOL low_memory_p, int mode)
             should_collect = should_collect_optimized (dd, low_memory_p);
             if (!should_collect && should_check_loh)
             {
-                should_collect = 
-                    should_collect_optimized (hpt->dynamic_data_of (max_generation + 1), low_memory_p);
+                should_collect = should_collect_optimized (hpt->dynamic_data_of (max_generation + 1), low_memory_p);
             }
 #endif //MULTIPLE_HEAPS
+
             if (!should_collect)
             {
                 return S_OK;
@@ -34625,17 +34636,17 @@ GCHeap::GarbageCollect (int generation, BOOL low_memory_p, int mode)
         }
     }
 
-    size_t CollectionCountAtEntry = dd_collection_count (dd);
-    size_t BlockingCollectionCountAtEntry = gc_heap::full_gc_counts[gc_type_blocking];
-    size_t CurrentCollectionCount = 0;
+    size_t collectionCountAtEntry = dd_collection_count (dd);
+    size_t blockingCollectionCountAtEntry = gc_heap::full_gc_counts[gc_type_blocking];
+    size_t currentCollectionCount = 0;
 
 retry:
 
-    CurrentCollectionCount = GarbageCollectTry(generation, low_memory_p, mode);
-    
+    currentCollectionCount = GarbageCollectTry(generation, low_memory_p, mode);
+
     if ((mode & collection_blocking) && 
         (generation == max_generation) && 
-        (gc_heap::full_gc_counts[gc_type_blocking] == BlockingCollectionCountAtEntry))
+        (gc_heap::full_gc_counts[gc_type_blocking] == blockingCollectionCountAtEntry))
     {
 #ifdef BACKGROUND_GC
         if (recursive_gc_sync::background_running_p())
@@ -34647,8 +34658,9 @@ retry:
         goto retry;
     }
 
-    if (CollectionCountAtEntry == CurrentCollectionCount)
+    if (collectionCountAtEntry == currentCollectionCount)
     {
+        // We didn't do a GC.
         goto retry;
     }
 
@@ -34662,8 +34674,40 @@ GCHeap::GarbageCollectTry (int generation, BOOL low_memory_p, int mode)
                max_generation : min (generation, max_generation);
 
     gc_reason reason = reason_empty;
-    
-    if (low_memory_p) 
+    gc_reason_flags reason2 = reason2_empty;
+
+    if (low_memory_p)
+    {
+        reason2 |= reason2_lowmemory;
+    }
+    else 
+    {
+        reason2 |= reason2_induced;
+    }
+
+    if (mode & collection_blocking)
+    {
+        reason2 |= reason2_blocking;
+    }
+
+    if (mode & collection_compacting)
+    {
+        reason2 |= reason2_compacting;
+    }
+
+    if (mode & collection_non_blocking)
+    {
+        reason2 |= reason2_noforce;
+    }
+
+    if (mode & collection_gcstress)
+    {
+        reason2 |= reason2_gcstress;
+    }
+
+
+    ///// OLD STUFF
+    if (low_memory_p)
     {
         if (mode & collection_blocking)
             reason = reason_lowmemory_blocking;
@@ -34671,7 +34715,9 @@ GCHeap::GarbageCollectTry (int generation, BOOL low_memory_p, int mode)
             reason = reason_lowmemory;
     }
     else
+    {
         reason = reason_induced;
+    }
 
     if (reason == reason_induced)
     {
@@ -34953,6 +34999,7 @@ GCHeap::GarbageCollectGeneration (unsigned int gen, gc_reason reason)
 #else
     gc_heap* hpt = 0;
 #endif //MULTIPLE_HEAPS
+
     Thread* current_thread = GetThread();
     BOOL cooperative_mode = TRUE;
     dynamic_data* dd = hpt->dynamic_data_of (gen);
@@ -34993,10 +35040,13 @@ GCHeap::GarbageCollectGeneration (unsigned int gen, gc_reason reason)
 #endif //COUNT_CYCLES
 #endif //TRACE_GC
 
+    // gc_heap::g_low_memory_status = (reason2 & reason2_lowmemory) || g_bLowMemoryFromHost;
+
     gc_heap::g_low_memory_status = (reason == reason_lowmemory) || 
                                    (reason == reason_lowmemory_blocking) ||
                                    g_bLowMemoryFromHost;
 
+    /// this part goes away
     if (g_bLowMemoryFromHost)
         reason = reason_lowmemory_host;
 
